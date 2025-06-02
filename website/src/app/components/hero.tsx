@@ -19,7 +19,7 @@ export default function Hero() {
     <section className="w-full h-[80vh] flex flex-row max-w-10xl mx-auto px-16 pt-12">
       {/* Left column: headline, claims, button */}
       <div className="flex flex-col flex-1">
-        <h1 className={`text-5xl font-bold text-left pb-6 ${style.colors.sections.hero.mainFont}`}>
+        <h1 className={`text-5xl font-bold text-left pb-6 ${style.colors.sections.hero.mainFontColoured}`}>
           {title}
         </h1>
         <p className={`text-xl text-left ${style.colors.sections.hero.secondaryFont}`}>

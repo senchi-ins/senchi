@@ -24,7 +24,7 @@ export default function hero() {
             <h1 
                 className={
                     `text-5xl text-left py-12 max-w-10xl mx-auto px-27
-                    ${style.colors.sections.hero.mainFont}
+                    ${style.colors.sections.hero.accentFont}
                     `
                 }
             >

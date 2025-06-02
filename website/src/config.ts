@@ -8,9 +8,11 @@ const colors = {
             text: "text-black hover:text-senchi-main",
         },
         hero: {
-            bg: "bg-text-main-blue",
-            mainFont: "text-main-blue",
-            secondaryFont: "text-main-blue"
+            bg: "bg-text-senchi-main",
+            mainFontColoured: "text-senchi-main",
+            mainFont: "text-black",
+            secondaryFont: "text-black",
+            accentFont: "text-white",
         },
         product: {
             bg: "bg-senchi-background",
