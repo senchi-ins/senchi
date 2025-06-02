@@ -13,15 +13,17 @@ export default function hero() {
   return (
     <section className="w-full h-[80vh] flex flex-col">
         <div className={`w-screen bg-senchi-main text-white relative left-1/2 right-1/2 -mx-[50vw]`}>
+            <div className="max-w-7xl mx-auto px-4 md:px-16">
             <h1 
                 className={
-                    `text-5xl text-left py-12 max-w-10xl mx-auto px-27
+                    `text-5xl text-left py-12 max-w-10xl mx-auto
                     ${style.colors.sections.hero.accentFont}
                     `
                 }
             >
                 {content.title}
             </h1>
+            </div>
         </div>
         <div className="flex flex-col flex-1 max-w-10xl mx-auto px-16 pt-12">
             <h2 className={`text-3xl text-left pb-6 ${style.colors.sections.hero.mainFont}`}>

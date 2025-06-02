@@ -20,29 +20,31 @@ const content = {
 export default function hero() {
   return (
     <section className="w-full h-[80vh] flex flex-col">
-        <div className="w-screen bg-senchi-main text-white relative left-1/2 right-1/2 -mx-[50vw]">
-            <h1 
-                className={
-                    `text-5xl text-left py-12 max-w-10xl mx-auto px-27
-                    ${style.colors.sections.hero.accentFont}
-                    `
-                }
-            >
-                {content.title}
-            </h1>
+        <div className="w-full bg-senchi-main text-white">
+            <div className="max-w-7xl mx-auto px-4 md:px-16 py-12">
+                <h1 
+                    className={
+                        `text-5xl text-left ${style.colors.sections.hero.accentFont}`
+                    }
+                >
+                    {content.title}
+                </h1>
+            </div>
         </div>
-        <div className="flex flex-col flex-1 max-w-10xl mx-auto px-16 pt-12">
-            <h2 className={`text-3xl text-left pb-6 ${style.colors.sections.hero.mainFont}`}>
-                {content.header}
-            </h2>
-            <p className={`text-xl text-left ${style.colors.sections.hero.secondaryFont}`}>
-                {content.description.split('\n').map((line, idx, arr) => (
-                  <React.Fragment key={idx}>
-                    {line}
-                    {idx < arr.length - 1 && <br />}
-                  </React.Fragment>
-                ))}
-            </p>
+        <div className="flex-1 flex flex-col justify-center items-center w-full mx-auto">
+            <div className="w-full max-w-7xl px-4 md:px-16">
+                <h2 className={`text-3xl text-left pb-6 ${style.colors.sections.hero.mainFont}`}>
+                    {content.header}
+                </h2>
+                <p className={`text-base md:text-xl text-left w-full break-words ${style.colors.sections.hero.secondaryFont}`}>
+                    {content.description.split('\n').map((line, idx, arr) => (
+                      <React.Fragment key={idx}>
+                        {line}
+                        {idx < arr.length - 1 && <br />}
+                      </React.Fragment>
+                    ))}
+                </p>
+            </div>
         </div>
     </section>
   )

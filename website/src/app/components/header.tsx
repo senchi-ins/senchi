@@ -85,6 +85,7 @@ const defaultNavItems: NavItem[] = [
 
 export default function Header({ navItems = defaultNavItems }: HeaderProps) {
   const [openMenuIdx, setOpenMenuIdx] = useState<number | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navRef = useRef<HTMLDivElement>(null);
 
   // Close menu on outside click
@@ -108,12 +109,23 @@ export default function Header({ navItems = defaultNavItems }: HeaderProps) {
   }, []);
 
   return (
-    <header className={`flex items-center ${style.colors.sections.header.bg} w-full border-b-2 border-gray-300 py-2`}>
-      <div ref={navRef} className="w-full max-w-7xl mx-auto px-16 flex items-center py-0.5">
+    <header className="flex items-center w-full border-b-2 border-gray-300 py-2" style={{ backgroundColor: "#EFEEE7" }}>
+      <div ref={navRef} className="w-full max-w-7xl mx-auto px-4 md:px-16 flex items-center py-0.5">
         <Link href="/">
           <Logo imgPath='/senchi.png' width={100} height={54}/>
         </Link>
-        <nav className="flex items-center gap-6 text-gray-800 text-sm ml-auto pr-10">
+        {/* Hamburger icon for mobile */}
+        <button
+          className="ml-auto md:hidden p-2 focus:outline-none"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          aria-label="Open menu"
+        >
+          <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+        {/* Desktop nav */}
+        <nav className="hidden md:flex items-center gap-6 text-gray-800 text-sm ml-auto pr-10">
           {navItems.map((item, idx) => (
             <div key={item.name + idx} className={`relative ${style.colors.sections.header.text}`}>
               <div className="flex items-center">
@@ -192,12 +204,38 @@ export default function Header({ navItems = defaultNavItems }: HeaderProps) {
             </div>
           ))}
         </nav>
-        {/* <a 
-          href="#start"
-          className={`${style.colors.baseAccent.bg} ${style.colors.baseAccent.bgHover} text-white px-4 py-1.5 rounded flex items-center gap-2 transition-colors`}>
-          Book a demo
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7" /></svg>
-        </a> */}
+        {/* Mobile nav */}
+        <nav className={`md:hidden fixed top-0 left-0 w-full h-full bg-white z-50 flex flex-col items-start pt-24 px-8 transition-transform duration-300 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`} style={{ pointerEvents: mobileMenuOpen ? 'auto' : 'none' }}>
+          <button
+            className="absolute top-6 right-6 p-2 text-2xl"
+            onClick={() => setMobileMenuOpen(false)}
+            aria-label="Close menu"
+          >
+            &times;
+          </button>
+          {navItems.map((item, idx) => (
+            <div key={item.name + idx} className="w-full mb-6">
+              {item.megaMenu ? (
+                <button
+                  type="button"
+                  className="w-full text-left py-2 text-xl font-semibold border-b border-gray-200"
+                  onClick={() => setOpenMenuIdx(openMenuIdx === idx ? null : idx)}
+                  aria-expanded={openMenuIdx === idx}
+                >
+                  {item.name}
+                </button>
+              ) : item.href ? (
+                <a href={item.href} className="block py-2 text-xl font-semibold border-b border-gray-200">
+                  {item.name}
+                </a>
+              ) : (
+                <span className="block py-2 text-xl font-semibold border-b border-gray-200 cursor-pointer">
+                  {item.name}
+                </span>
+              )}
+            </div>
+          ))}
+        </nav>
       </div>
     </header>
   )
