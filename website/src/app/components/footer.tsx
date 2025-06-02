@@ -52,8 +52,8 @@ const defaultContact: ContactInfo = {
 
 const defaultLinks: FooterLink[] = [
   // { name: 'Terms of Service', href: '#' },
-  // { name: 'Legal', href: '#' },
-  // { name: 'Accessibility', href: '#' },
+  { name: 'Legal', href: '#' },
+  { name: 'Accessibility', href: '#' },
 ];
 
 const defaultDisclaimer =
@@ -99,14 +99,14 @@ export default function Footer({
                 </div>
             </div>
             <div>
-                {/* <h2 className="font-bold mb-2">Links</h2>
+                <h2 className="font-bold mb-2">Links</h2>
                 <ul>
                 {links.map((link) => (
                     <li key={link.name}>
                     <a href={link.href} className="underline hover:text-blue-600 transition-colors">{link.name}</a>
                     </li>
                 ))}
-                </ul> */}
+                </ul>
             </div>
             </div>
             <div className="text-xs text-gray-500 border-t border-gray-200 pt-6">

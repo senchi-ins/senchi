@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "North: AI Insurance",
-  description: "Insurance in the AI era",
+  title: "Senchi: AI Insurance",
+  description: "The future of insurance",
 };
 
 export default function RootLayout({

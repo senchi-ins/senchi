@@ -1,7 +1,7 @@
 "use client"
 
 import React from 'react'
-// import Image from 'next/image'
+import Image from 'next/image'
 import { style } from '../../config'
 
 const title = "Building Canada's first AI-powered insurance company"
@@ -16,9 +16,9 @@ Senchi uses AI to speed up processing time and reduce fraud, saving you time and
 
 export default function Hero() {
   return (
-    <section className="w-full h-[80vh] flex flex-col md:flex-row max-w-7xl mx-auto px-4 md:px-16 pt-12">
+    <section className="w-full h-[80vh] flex flex-col md:flex-row items-stretch max-w-7xl mx-auto px-4 md:px-16 pt-12">
       {/* Left column: headline, claims, button */}
-      <div className="flex flex-col justify-center flex-1 w-full items-center text-center md:items-start md:text-left md:text-left md:pl-0">
+      <div className="flex flex-col flex-1 w-full justify-center h-full items-center text-center md:items-start md:text-left md:pl-0">
         <h1 className={`text-5xl font-bold pb-6 ${style.colors.sections.hero.mainFontColoured}`}>{title}</h1>
         <p className={`text-xl ${style.colors.sections.hero.secondaryFont}`}>{subtitle}</p>
         <div className="mb-8">
@@ -40,15 +40,16 @@ export default function Hero() {
         </div>
       </div>
       {/* Right column: image, bottom-aligned (hidden on mobile) */}
-      <div className="hidden md:flex flex-col justify-end items-end flex-1">
-        {/* <Image 
-          src="/landing_img_nbg.png"
+      <div className="hidden md:flex flex-col justify-end items-end flex-1 h-full">
+        <Image
+          src="/images/hero_img.png"
           alt="Insurance AI Illustration"
-          width={600}
-          height={600}
+          width={500}
+          height={500}
+          sizes="(max-width: 1024px) 300px, 400px"
           style={{ height: 'auto', maxWidth: '100%' }}
           priority
-        /> */}
+        />
       </div>
     </section>
   )
