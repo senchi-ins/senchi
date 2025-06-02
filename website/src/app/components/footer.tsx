@@ -39,9 +39,9 @@ interface FooterProps {
 }
 
 const defaultSocials: Social[] = [
-  { name: 'Twitter', icon: <TwitterIcon />, href: '' },
-  { name: 'Instagram', icon: <InstagramIcon />, href: '' },
-  { name: 'TikTok', icon: <TikTokIcon />, href: '' }
+  { name: 'Twitter', icon: <TwitterIcon />, href: 'https://x.com/trysenchi' },
+  { name: 'Instagram', icon: <InstagramIcon />, href: 'https://www.instagram.com/trysenchi/' },
+  { name: 'TikTok', icon: <TikTokIcon />, href: 'https://www.tiktok.com/@trysenchi' }
 ];
 
 const defaultContact: ContactInfo = {
