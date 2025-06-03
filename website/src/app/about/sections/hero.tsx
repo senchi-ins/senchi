@@ -3,7 +3,7 @@ import React from 'react'
 
 const content = {
     title: "About Us",
-    header: "We're a new kind of insurance company.",
+    header: "We're building a new kind of insurance company.",
     description: `Our belief is that insurance doesn't need to be expensive, and the money 
     shouldn't just evaporate into corporate profits.
     

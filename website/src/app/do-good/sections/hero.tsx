@@ -4,8 +4,7 @@ import React from 'react'
 const content = {
     title: "Do Good",
     header: "Protecting what matters.",
-    description: `We believe that insurance should make you feel good, not just be a necessary evil. To achieve 
-    this, we operate under a capped profit structure - we take a flat 20% fee, cover costs, and donate the rest to a charity of your choosing.
+    description: `We believe that insurance should make you feel good, not just be a necessary evil. To achieve this, we operate under a capped profit structure - we take a flat 20% fee, cover costs, and donate the rest to a charity of your choosing.
 
     For you, this means that when you buy insurance from us, you're protecting the things that matter to you regardless of if you ever make a claim.
 
