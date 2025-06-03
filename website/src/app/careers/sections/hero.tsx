@@ -5,13 +5,14 @@ const content = {
     title: "Help us build the future of insurance",
     header: "Check back soon for opportunities to join our team!",
     description: `We're a small team and expect to grow quickly. If you're interested in working with us, 
-    please send an email to founders@senchi.ca.
+    please send an email to adam@senchi.ca or mike@senchi.ca.
     `,
 }
+const emails = ['adam@senchi.ca', 'mike@senchi.ca'];
 
 export default function hero() {
   return (
-    <section className="w-full h-[80vh] flex flex-col">
+    <section className="w-full h-[80vh] flex flex-col justify-center">
         <div className={`w-screen bg-senchi-main text-white relative left-1/2 right-1/2 -mx-[50vw]`}>
             <div className="max-w-7xl mx-auto px-4 md:px-16">
             <h1 
@@ -31,20 +32,22 @@ export default function hero() {
             </h2>
             <p className={`text-xl text-left ${style.colors.sections.hero.secondaryFont}`}>
                 {content.description.split('\n').map((line, idx, arr) => {
-                  const email = 'founders@senchi.ca';
-                  const parts = line.split(email);
+                  // Regex to match either email
+                  const emailRegex = new RegExp(emails.join('|'), 'g');
+                  const parts = line.split(emailRegex);
+                  const matches = [...line.matchAll(emailRegex)];
                   return (
                     <React.Fragment key={idx}>
                       {parts.map((part, i) => (
                         <React.Fragment key={i}>
                           {part}
-                          {i < parts.length - 1 && (
-                            <a 
-                              href={`mailto:${email}`}
+                          {i < matches.length && (
+                            <a
+                              href={`mailto:${matches[i][0]}`}
                               className="underline"
                               style={{ color: '#240DBF' }}
                             >
-                              {email}
+                              {matches[i][0]}
                             </a>
                           )}
                         </React.Fragment>

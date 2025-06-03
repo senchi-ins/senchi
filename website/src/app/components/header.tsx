@@ -80,6 +80,10 @@ const defaultNavItems: NavItem[] = [
         //     { name: 'Careers', href: '#careers' },
         // ],
     },
+    { 
+        name: 'Do Good', 
+        href: '/do-good',
+    },
 
 ];
 

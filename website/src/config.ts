@@ -9,6 +9,7 @@ const colors = {
         },
         hero: {
             bg: "bg-text-senchi-main",
+            mainBg: "bg-senchi-background",
             mainFontColoured: "text-senchi-main",
             mainFont: "text-black",
             secondaryFont: "text-black",

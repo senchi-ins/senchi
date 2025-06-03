@@ -12,8 +12,8 @@ const content = {
     profit and donate it to charity so you can feel good about your purchase.
 
     We've spent the last 2 years builing pricing models and developing GenAI workflows
-    at McKinsey to help some of the world's largest companies. Now, we're bringing our
-    experience to insurance to help Canadians get the best deals on insurance.
+    at McKinsey to help some of the world's largest companies. Now, we're helping 
+    Canadians get the best deals on insurance.
     `,
 }
 
@@ -31,7 +31,7 @@ export default function hero() {
                 </h1>
             </div>
         </div>
-        <div className="flex-1 flex flex-col justify-center items-center w-full mx-auto">
+        <div className="flex-1 flex flex-col pt-12 items-center w-full mx-auto">
             <div className="w-full max-w-7xl px-4 md:px-16">
                 <h2 className={`text-3xl text-left pb-6 ${style.colors.sections.hero.mainFont}`}>
                     {content.header}
