@@ -4,8 +4,7 @@ import React from 'react'
 const content = {
     title: "Help us build the future of insurance",
     header: "Check back soon for opportunities to join our team!",
-    description: `We're a small team and expect to grow quickly. If you're interested in working with us, 
-    please send an email to adam@senchi.ca or mike@senchi.ca.
+    description: `We're a small team and expect to grow quickly. If you're interested in working with us, please send an email to adam@senchi.ca or mike@senchi.ca.
     `,
 }
 const emails = ['adam@senchi.ca', 'mike@senchi.ca'];
