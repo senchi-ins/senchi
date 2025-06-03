@@ -30,7 +30,7 @@ export default function hero() {
             </h1>
             </div>
         </div>
-        <div className="flex flex-col flex-1 max-w-10xl px-16 pt-12">
+        <div className="flex flex-col flex-1 max-w-7xl mx-auto px-4 md:px-16 pt-12">
             <h2 className={`text-3xl text-left pb-6 ${style.colors.sections.hero.mainFont}`}>
                 {content.header}
             </h2>
