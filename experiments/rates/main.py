@@ -1,9 +1,9 @@
 from playwright.sync_api import Playwright, sync_playwright
 
-from bot import InsuranceQuoteBot
-from config import HOME_INSURANCE_PATH
+from ratebot.bot import InsuranceQuoteBot
+from ratebot.config import HOME_INSURANCE_PATH
 from data.sample import home_profile
-from experiments.rates.utils import extract_insurance_quotes
+from ratebot.utils import extract_insurance_quotes
 
 
 def run(
@@ -32,6 +32,7 @@ def run(
         
     finally:
         bot.teardown()
+
 
 if __name__ == "__main__":
     website = "https://www.rates.ca/"
