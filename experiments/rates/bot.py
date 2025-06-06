@@ -1,21 +1,21 @@
-from playwright.sync_api import sync_playwright, Playwright
-import time
-from data.sample import home_profile
-from config import HOME_INSURANCE_PATH
-from helper import extract_insurance_quotes
 import csv
+import os
+import time
 import uuid
 from datetime import datetime
-import os
-from typing import Dict, Any
+from typing import Any, Dict
+
+from playwright.sync_api import Playwright
+
 
 class InsuranceQuoteBot:
     def __init__(
             self, 
             playwright: Playwright, 
             website: str, 
-            data: dict = home_profile, 
+            data: dict, 
             verbose: bool = False,
+            screenshots: bool = False,
         ):
         self.playwright = playwright
         self.website = website
@@ -23,6 +23,7 @@ class InsuranceQuoteBot:
         self.browser = None
         self.page = None
         self.verbose = verbose
+        self.screenshots = screenshots
         self.screenshot_counter = 0
         
     def setup(self):
@@ -45,7 +46,7 @@ class InsuranceQuoteBot:
             
     def take_screenshot(self, description: str):
         """Take a screenshot if verbose mode is enabled"""
-        if self.verbose:
+        if self.screenshots:
             self.screenshot_counter += 1
             os.makedirs("ss", exist_ok=True)
             self.page.screenshot(path=f"ss/{self.screenshot_counter:02d}_{description}.png")
@@ -77,7 +78,8 @@ class InsuranceQuoteBot:
                     print(f"Skipping readonly field: {description}")
                 return True
             element.fill(value)
-            self.take_screenshot(f"after_{description}")
+            if self.screenshots:
+                self.take_screenshot(f"after_{description}")
             return True
         print(f"Could not find {description} with selector '{selector}'")
         return False
@@ -91,7 +93,8 @@ class InsuranceQuoteBot:
                     print(f"Skipping readonly field: {description}")
                 return True
             element.select_option(value)
-            self.take_screenshot(f"after_{description}")
+            if self.screenshots:
+                self.take_screenshot(f"after_{description}")
             return True
         print(f"Could not find {description} with selector '{selector}'")
         return False
@@ -114,7 +117,8 @@ class InsuranceQuoteBot:
                 span = label.query_selector('span')
                 if span:
                     span.click()
-                    self.take_screenshot(f"after_{description}")
+                    if self.screenshots:
+                        self.take_screenshot(f"after_{description}")
                     return True
         print(f"Could not find {description} with value '{value}'")
         return False
@@ -180,7 +184,7 @@ class InsuranceQuoteBot:
                 print(f"Action: {action}")
                 print(f"Error: {str(e)}")
                 print("\nCurrent page URL:", self.page.url)
-                if self.verbose:
+                if self.screenshots:
                     self.take_screenshot(f"error_{step_id}")
                 raise Exception(f"Failed at step {step_id}: {str(e)}")
 
@@ -246,28 +250,3 @@ class InsuranceQuoteBot:
                     'annual_premium': quote_data.get('annually', '')
                 }
                 writer.writerow(row)
-
-def run(playwright: Playwright, website: str, data: dict = home_profile, verbose: bool = False):
-    """Main execution function"""
-    bot = InsuranceQuoteBot(playwright, website, data, verbose)
-    try:
-        bot.setup()
-        
-        # Navigate through the configured path
-        bot.navigate_path(HOME_INSURANCE_PATH)
-        
-        # Extract and save quotes
-        quotes = extract_insurance_quotes(bot.page.content())
-        print("\nInsurance Quotes:")
-        for carrier, quote_data in quotes.items():
-            print(f"{carrier}: monthly = ${quote_data['monthly']}, annually = ${quote_data['annually']}")
-            
-        bot.save_quotes_to_csv(quotes)
-        
-    finally:
-        bot.teardown()
-
-if __name__ == "__main__":
-    website = "https://www.rates.ca/"
-    with sync_playwright() as playwright:
-        run(playwright, website, verbose=False)

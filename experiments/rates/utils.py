@@ -14,35 +14,28 @@ def extract_insurance_quotes(html_content):
     soup = BeautifulSoup(html_content, 'html.parser')
     quotes_dict = {}
     
-    # Find all quote-info divs
     quote_elements = soup.find_all('div', class_='quote-info')
     
     for quote_element in quote_elements:
-        # Extract carrier name
         carrier_name_element = quote_element.find('div', class_='name')
         if not carrier_name_element:
             continue
             
         carrier_name = carrier_name_element.get_text(strip=True)
         
-        # Extract monthly premium
         monthly_element = quote_element.find('div', class_='monthly')
         monthly_span = monthly_element.find('span') if monthly_element else None
         monthly_premium = monthly_span.get_text(strip=True) if monthly_span else None
         
-        # Extract annual premium
         annual_element = quote_element.find('div', class_='annual')
         annual_span = annual_element.find('span') if annual_element else None
         annual_premium = annual_span.get_text(strip=True) if annual_span else None
         
-        # Clean and convert carrier name to dictionary key format
         carrier_key = clean_carrier_name(carrier_name)
         
-        # Clean premium values (remove $ and commas, convert to float)
         monthly_clean = clean_premium_value(monthly_premium)
         annual_clean = clean_premium_value(annual_premium)
         
-        # Add to dictionary
         quotes_dict[carrier_key] = {
             "monthly": monthly_clean,
             "annually": annual_clean,
@@ -64,11 +57,9 @@ def clean_carrier_name(name):
     if not name:
         return "unknown"
     
-    # Convert to lowercase and replace spaces/special chars with underscores
     cleaned = re.sub(r'[^\w\s]', '', name.lower())
     cleaned = re.sub(r'\s+', '_', cleaned.strip())
     
-    # Handle specific company names
     name_mappings = {
         'square_one_insurance_services': 'square_one',
         'sgi_canada': 'sgi_canada',
@@ -92,7 +83,6 @@ def clean_premium_value(premium_str):
     if not premium_str:
         return None
     
-    # Remove $ sign, commas, and any extra whitespace
     cleaned = re.sub(r'[$,\s]', '', premium_str)
     
     try:
@@ -113,12 +103,10 @@ def extract_property_details(html_content):
     soup = BeautifulSoup(html_content, 'html.parser')
     details = {}
     
-    # Find details pane
     details_pane = soup.find('div', class_='details-pane')
     if not details_pane:
         return details
     
-    # Find all detail items
     detail_elements = details_pane.find_all('div', class_='detail')
     
     for detail in detail_elements:
@@ -126,7 +114,7 @@ def extract_property_details(html_content):
         if len(spans) >= 2:
             key = spans[0].get_text(strip=True)
             value = spans[1].get_text(strip=True)
-            if value:  # Only add if value is not empty
+            if value:
                 details[key] = value
     
     return details
@@ -153,7 +141,7 @@ def extract_complete_data(html_content):
         }
     }
 
-# Example usage:
+
 if __name__ == "__main__":
     with open("final_page.html", "r", encoding="utf-8") as f:
         html_content = f.read()
@@ -165,5 +153,3 @@ if __name__ == "__main__":
         print(f"{carrier}: monthly = ${data['monthly']}, annually = ${data['annually']}")
     
     complete_data = extract_complete_data(html_content)
-    # print("\nComplete Data Structure:")
-    # print(complete_data)

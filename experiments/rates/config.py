@@ -266,7 +266,7 @@ HOME_INSURANCE_PATH = {
             'action': 'click',
             'selector': 'button[type="submit"]#discount-form-submit',
             'description': 'discount form submit button',
-            'wait': 30
+            'wait': 60
         },
         # Final steps
         {
@@ -284,14 +284,4 @@ HOME_INSURANCE_PATH = {
             'wait': 50  # Wait for quotes to load
         }
     ]
-}
-
-nav = {
-    "auto": {
-        "vehicle_year": "select[name='vehicle-year[]']",
-    },
-    "home": {
-        "tab_name": "insurance-search-icons-insurance-cta-block-home",
-        "year": "select[name='home-year[]']",
-    },
 }
