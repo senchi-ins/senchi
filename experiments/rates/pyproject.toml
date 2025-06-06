@@ -1,0 +1,12 @@
+[project]
+name = "rates"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "browser-use>=0.2.5",
+    "bs4>=0.0.2",
+    "dotenv>=0.9.9",
+    "playwright>=1.52.0",
+]

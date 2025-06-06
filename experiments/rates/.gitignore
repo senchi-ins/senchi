@@ -1,0 +1,5 @@
+/data
+/output/*.html
+/ss/*
+
+/__pycache__/*
