@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from core.config import settings
+from config import settings
 from api.v1.api import api_router
 import uvicorn
 
@@ -9,7 +9,7 @@ app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
     description=settings.DESCRIPTION,
-    openapi_url=f"{settings.API_V1_STR}/openapi.json"
+    openapi_url=f"{settings.API_PREFIX}/openapi.json"
 )
 
 app.add_middleware(
@@ -20,7 +20,7 @@ app.add_middleware(
     allow_headers=settings.ALLOWED_HEADERS,
 )
 
-app.include_router(api_router, prefix=settings.API_V1_STR)
+app.include_router(api_router, prefix=settings.API_PREFIX)
 
 @app.get("/")
 async def root():

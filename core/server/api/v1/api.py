@@ -2,7 +2,7 @@ from fastapi import APIRouter
 import importlib
 import pkgutil
 from pathlib import Path
-from core.config import settings
+from config import settings
 
 api_router = APIRouter()
 
