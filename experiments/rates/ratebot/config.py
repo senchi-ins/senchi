@@ -28,7 +28,7 @@ HOME_INSURANCE_PATH = {
             'action': 'click',
             'selector': 'button[type="submit"]#submitBtn',
             'description': 'get my quote button',
-            'wait': 30
+            'wait': 5
         },
         
         # Address information
@@ -44,7 +44,7 @@ HOME_INSURANCE_PATH = {
             'action': 'click',
             'selector': 'button[name="submit"]#continue-button',
             'description': 'continue button',
-            'wait': 30
+            'wait': 5
         },
         {
             'id': 'street_address_input',
@@ -86,7 +86,7 @@ HOME_INSURANCE_PATH = {
             'action': 'click',
             'selector': 'button[name="submit"]#continue-button',
             'description': 'continue button',
-            'wait': 30
+            'wait': 5
         },
         
         # Personal information
@@ -142,7 +142,8 @@ HOME_INSURANCE_PATH = {
             'action': 'select',
             'selector': 'select[name="num-families"]',
             'data_key': 'occupants',
-            'description': 'occupants select'
+            'description': 'occupants select',
+            'wait': 5
         },
         
         # Insurance history
@@ -167,6 +168,52 @@ HOME_INSURANCE_PATH = {
             'data_key': 'num_claims',
             'description': 'number of claims select'
         },
+        # If there were claims, enter the dates
+        {
+            'id': 'claim_one_month_select',
+            'action': 'select',
+            'selector': 'select[name="claim-month[0]"]',
+            'data_key': 'claim_month_zero',
+            'description': 'claim date select'
+        },
+        {
+            'id': 'claim_one_year_select',
+            'action': 'select',
+            'selector': 'select[name="claim-year[0]"]',
+            'data_key': 'claim_year_zero',
+            'description': 'claim year select'
+        },
+        # Enter the claim type
+        {
+            'id': 'claim_one_type_select',
+            'action': 'select',
+            'selector': 'select[name="claim-type[0]"]',
+            'data_key': 'claim_type_zero',
+            'description': 'claim type select'
+        },
+        # If there was a second claim, enter the dates
+        {
+            'id': 'claim_two_month_select',
+            'action': 'select',
+            'selector': 'select[name="claim-month[1]"]',
+            'data_key': 'claim_month_one',
+            'description': 'claim date select'
+        },
+        {
+            'id': 'claim_two_year_select',
+            'action': 'select',
+            'selector': 'select[name="claim-year[1]"]',
+            'data_key': 'claim_year_one',
+            'description': 'claim year select'
+        },
+        # Enter the claim type
+        {
+            'id': 'claim_two_type_select',
+            'action': 'select',
+            'selector': 'select[name="claim-type[1]"]',
+            'data_key': 'claim_type_one',
+            'description': 'claim type select'
+        },
         {
             'id': 'num_cancellations_select',
             'action': 'select',
@@ -174,14 +221,61 @@ HOME_INSURANCE_PATH = {
             'data_key': 'num_cancellations',
             'description': 'number of cancellations select'
         },
+        # Select the calcellation month
+        {
+            'id': 'cancellation_month_select',
+            'action': 'select',
+            'selector': 'select[name="cancellation-month"]',
+            'data_key': 'cancellation_month',
+            'description': 'cancellation month select'
+        },
+        # Select the cancellation year
+        {
+            'id': 'cancellation_year_select',
+            'action': 'select',
+            'selector': 'select[name="cancellation-year"]',
+            'data_key': 'cancellation_year',
+            'description': 'cancellation year select'
+        },
         {
             'id': 'submit_button_1',
             'action': 'click',
             'selector': 'button[type="submit"].has-spinner',
             'description': 'submit button',
-            'wait': 30
+            'wait': 5
         },
-        
+        # Additional property information
+        {
+            'id': 'nearest_firehall_select',
+            'action': 'select',
+            'selector': 'select[name="firehall-distance"]',
+            'data_key': 'nearest_firehall',
+            'description': 'approx distance to nearest fire station select'
+        },
+        # Nearest firehydrant
+        {
+            'id': 'nearest_firehydrant_select',
+            'action': 'select',
+            'selector': 'select[name="hydrants-distance"]',
+            'data_key': 'nearest_firehydrant',
+            'description': 'approx distance to nearest fire hydrant select'
+        },
+        # Primary heating
+        {
+            'id': 'primary_heating_select',
+            'action': 'select',
+            'selector': 'select[name="primary-heating-type"]',
+            'data_key': 'primary_heating',
+            'description': 'primary heating select'
+        },
+        # Click the submit button
+        {
+            'id': 'submit_button_2',
+            'action': 'click',
+            'selector': 'button[type="submit"].has-spinner',
+            'description': 'submit button',
+            'wait': 5
+        },
         # Discounts
         {
             'id': 'multiline_discount_radio',
@@ -266,7 +360,7 @@ HOME_INSURANCE_PATH = {
             'action': 'click',
             'selector': 'button[type="submit"]#discount-form-submit',
             'description': 'discount form submit button',
-            'wait': 60
+            'wait': 5
         },
         # Final steps
         {
@@ -281,7 +375,16 @@ HOME_INSURANCE_PATH = {
             'action': 'click',
             'selector': 'button[name="action"]',
             'description': 'final submit button',
-            'wait': 50  # Wait for quotes to load
+            'wait': 150
+        },
+        # If quotes don't load, click the link to reload
+        {
+            'id': 'reload_quotes_link',
+            'action': 'click',
+            'selector': 'a[href="?noquote"]',
+            'description': 'click here if quotes dont load',
+            'optional': True,
+            'wait': 150
         }
     ]
 }
