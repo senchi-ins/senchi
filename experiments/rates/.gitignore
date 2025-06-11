@@ -1,5 +1,7 @@
 /data
 /output/*.html
+*/archive/*
+*/incomplete/*
 /ss/*
 
 # Byte-compiled / optimized / DLL files

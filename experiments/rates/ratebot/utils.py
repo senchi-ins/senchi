@@ -1,5 +1,7 @@
 from bs4 import BeautifulSoup
 import re
+import pandas as pd
+
 
 def extract_insurance_quotes(html_content):
     """
@@ -140,6 +142,15 @@ def extract_complete_data(html_content):
             "best_quote": min(quotes.items(), key=lambda x: x[1]["annually"] or float('inf')) if quotes else None
         }
     }
+
+def row_to_dict(row):
+    d = {}
+    for key, value in row.items():
+        if pd.isna(value):
+            d[key] = None
+        else:
+            d[key] = value
+    return d
 
 
 if __name__ == "__main__":
