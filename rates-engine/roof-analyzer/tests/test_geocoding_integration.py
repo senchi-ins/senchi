@@ -20,10 +20,15 @@ requires_api_key = pytest.mark.skipif(
 def test_real_toronto_address():
     """Test geocoding with a real Toronto address."""
     geocoder = GoogleMapsGeocoder()
-    location = geocoder.geocode_address("483 Queen St W, Toronto, ON")
+    location = geocoder.geocode_address("362 Howland Ave, Toronto, ON")
     
-    assert location.latitude == pytest.approx(43.6488, abs=0.01)
-    assert location.longitude == pytest.approx(-79.3978, abs=0.01)
+    print("\n=== Toronto Address Test Results ===")
+    print(f"Formatted Address: {location.formatted_address}")
+    print(f"Latitude: {location.latitude}")
+    print(f"Longitude: {location.longitude}")
+    
+    assert location.latitude == pytest.approx(43.6762, abs=0.01)
+    assert location.longitude == pytest.approx(-79.4133, abs=0.01)
     assert "Toronto" in location.formatted_address
     assert "Canada" in location.formatted_address
 
@@ -31,10 +36,15 @@ def test_real_toronto_address():
 def test_real_vancouver_address():
     """Test geocoding with a real Vancouver address."""
     geocoder = GoogleMapsGeocoder()
-    location = geocoder.geocode_address("800 Robson St, Vancouver, BC")
+    location = geocoder.geocode_address("2855 W 20th Ave, Vancouver, BC")
     
-    assert location.latitude == pytest.approx(49.2827, abs=0.01)
-    assert location.longitude == pytest.approx(-123.1207, abs=0.01)
+    print("\n=== Vancouver Address Test Results ===")
+    print(f"Formatted Address: {location.formatted_address}")
+    print(f"Latitude: {location.latitude}")
+    print(f"Longitude: {location.longitude}")
+    
+    assert location.latitude == pytest.approx(49.2548, abs=0.01)
+    assert location.longitude == pytest.approx(-123.1690, abs=0.01)
     assert "Vancouver" in location.formatted_address
     assert "Canada" in location.formatted_address
 

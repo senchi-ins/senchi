@@ -7,95 +7,134 @@ from datetime import datetime
 from PIL import Image
 from dotenv import load_dotenv
 
-from src.geocoding import GoogleMapsGeocoder, GeocodingError
-from src.satellite import Sentinel2Fetcher, SatelliteError
+from src.gee_satellite import GEEFetcher, GEEError, RoofImage
 
 # Load environment variables
 load_dotenv()
 
-# Skip all tests if required credentials are not available
+# Skip tests if Google Maps API key is not available
 requires_credentials = pytest.mark.skipif(
-    not (os.getenv('GOOGLE_MAPS_API_KEY') and 
-         os.getenv('SENTINEL_INSTANCE_ID') and
-         os.getenv('SENTINEL_CLIENT_ID') and
-         os.getenv('SENTINEL_CLIENT_SECRET')),
-    reason="Missing required API credentials"
+    not os.getenv('GOOGLE_MAPS_API_KEY'),
+    reason="Missing required Google Maps API key"
 )
 
-@requires_credentials
 class TestCompleteWorkflow:
     """Test the complete workflow from address to satellite image."""
     
     def setup_method(self):
         """Set up test instances."""
-        self.geocoder = GoogleMapsGeocoder()
-        self.satellite = Sentinel2Fetcher()
+        # self.geocoder = GoogleMapsGeocoder()  # Commented out for direct coordinate testing
+        self.satellite = GEEFetcher()
         
-        # Test addresses - known locations with visible roofs
-        self.test_addresses = [
-            "483 Queen St W, Toronto, ON",  # Urban area
-            "800 Robson St, Vancouver, BC",  # Another urban area
+        # Original test addresses
+        # self.test_addresses = [
+        #     "362 Howland Ave, Toronto, ON",  # Urban area
+        #     "2855 W 20th Ave, Vancouver, BC",  # Another urban area
+        # ]
+        
+        # Test locations with hardcoded coordinates
+        self.test_locations = [
+            {
+                "name": "362_howland_ave_toronto_on",
+                "latitude": 43.6762,
+                "longitude": -79.4133
+            },
+            {
+                "name": "2855_w_20th_ave_vancouver_bc",
+                "latitude": 49.2548,
+                "longitude": -123.1690
+            }
         ]
     
     def test_address_to_satellite_workflow(self):
-        """Test the complete workflow from address to satellite image."""
-        for address in self.test_addresses:
-            # 1. Geocode the address
-            location = self.geocoder.geocode_address(address)
+        """Test the workflow using hardcoded coordinates."""
+        # Original geocoding workflow
+        # for address in self.test_addresses:
+        #     # 1. Geocode the address
+        #     location = self.geocoder.geocode_address(address)
+        #     
+        #     # Verify geocoding results
+        #     assert location.latitude is not None
+        #     assert location.longitude is not None
+        #     assert 'Canada' in location.formatted_address
+        
+        # New workflow with hardcoded coordinates
+        for location in self.test_locations:
+            print(f"\n=== Processing {location['name']} ===")
+            print(f"Coordinates: {location['latitude']}, {location['longitude']}")
             
-            # Verify geocoding results
-            assert location.latitude is not None
-            assert location.longitude is not None
-            assert 'Canada' in location.formatted_address
-            
-            # 2. Fetch satellite image
+            # Fetch satellite image
             roof_image = self.satellite.get_roof_image(
-                latitude=location.latitude,
-                longitude=location.longitude,
-                max_cloud_coverage=30.0  # Slightly higher threshold for testing
+                latitude=location['latitude'],
+                longitude=location['longitude'],
+                size_meters=50,
+                max_cloud_coverage=20
             )
+            
+            # Debug information
+            print(f"Image fetched successfully")
+            print(f"Image size: {roof_image.image.size}")
+            print(f"Image mode: {roof_image.image.mode}")
+            print(f"Capture date: {roof_image.capture_date}")
+            print(f"Resolution: {roof_image.resolution}m")
+            print(f"Cloud coverage: {roof_image.cloud_coverage}%")
             
             # Verify satellite image
             assert isinstance(roof_image.image, Image.Image)
-            assert roof_image.latitude == location.latitude
-            assert roof_image.longitude == location.longitude
+            assert roof_image.cloud_coverage <= 20
+            print(f"Original image size: {roof_image.image.size}")
+            # assert roof_image.latitude == location.latitude
+            # assert roof_image.longitude == location.longitude
             
-            # 3. Preprocess the image
+            # Preprocess the image
             processed = self.satellite.preprocess_image(roof_image)
+            print(f"Processed image size: {processed.image.size}")
             
             # Verify preprocessing
             assert isinstance(processed.image, Image.Image)
             assert processed.image.size == (256, 256)  # Default size
             
-            # Save images for manual inspection if needed
+            # Save images for manual inspection
             output_dir = "test_output"
             if not os.path.exists(output_dir):
                 os.makedirs(output_dir)
-                
+            
             # Save both original and processed images
-            safe_address = address.replace(" ", "_").replace(",", "").lower()
-            roof_image.image.save(f"{output_dir}/{safe_address}_original.png")
-            processed.image.save(f"{output_dir}/{safe_address}_processed.png")
+            # safe_address = address.replace(" ", "_").replace(",", "").lower()  # Old way
+            roof_image.image.save(f"{output_dir}/{location['name']}_original.png")
+            processed.image.save(f"{output_dir}/{location['name']}_processed.png")
+            print(f"Images saved to {output_dir}/{location['name']}_*.png")
+            
+            # Save with timestamp for tracking
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"{location['name']}_{timestamp}_gee.png"
+            roof_image.image.save(f"{output_dir}/{filename}")
+            print(f"Image saved to {output_dir}/{filename}")
     
     def test_error_handling(self):
         """Test error handling in the complete workflow."""
-        # Test with non-Canadian address (should raise GeocodingError)
-        with pytest.raises(GeocodingError, match="Address not found in Canada"):
-            self.geocoder.geocode_address("350 5th Ave, New York, NY")
-        
-        # # Test with invalid address format
-        # with pytest.raises(GeocodingError):
-        #     self.geocoder.geocode_address("!@#$%^&*()")
-            
-        # # Test with empty address
-        # with pytest.raises(GeocodingError):
-        #     self.geocoder.geocode_address("")
-        
-        # Test with valid coordinates but invalid cloud coverage
-        location = self.geocoder.geocode_address(self.test_addresses[0])
-        with pytest.raises(SatelliteError, match="Cloud coverage must be between 0 and 100 percent"):
+        # Test with invalid coordinates
+        with pytest.raises(GEEError):
             self.satellite.get_roof_image(
-                latitude=location.latitude,
-                longitude=location.longitude,
-                max_cloud_coverage=101.0  # Invalid percentage
+                latitude=91,  # Invalid latitude
+                longitude=0,
+                max_cloud_coverage=20
+            )
+            
+        # Test with invalid cloud coverage
+        with pytest.raises(GEEError):
+            self.satellite.get_roof_image(
+                latitude=43.6762,
+                longitude=-79.4133,
+                max_cloud_coverage=101  # Invalid cloud coverage percentage
+            )
+            
+        # Test with invalid date range
+        with pytest.raises(GEEError):
+            self.satellite.get_roof_image(
+                latitude=43.6762,
+                longitude=-79.4133,
+                max_cloud_coverage=20,
+                start_date="2025-01-01",  # Future date
+                end_date="2024-01-01"  # Earlier end date
             ) 

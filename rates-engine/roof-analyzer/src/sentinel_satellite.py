@@ -26,6 +26,7 @@ class RoofImage:
     longitude: float
     capture_date: datetime
     resolution: float  # Ground resolution in meters per pixel
+    cloud_coverage: float = 0.0  # Cloud coverage percentage (0-100)
 
 class SatelliteError(Exception):
     """Custom exception for satellite imagery-related errors."""
