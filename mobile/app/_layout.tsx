@@ -18,6 +18,10 @@ export default function RootLayout() {
         name="index" 
         options={{ headerShown: false }}
       />
+      <Stack.Screen 
+        name="quote" 
+        options={{ headerShown: false }}
+      />
     </Stack>
   )
 }

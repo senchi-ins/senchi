@@ -22,21 +22,22 @@ export const included = {
             description: "Fire",
             icon: require("../../assets/coverage/fire_home.png")
         },
+        water: {
+            title: "Flood",
+            description: "Water",
+            icon: require("../../assets/coverage/flood_home.png")
+        },
         theft: {
             title: "Theft", 
-            icon: require("../../assets/coverage/fire_condo.png")
-        },
-        water: {
-            title: "Water",
-            description: "Water",
-            icon: require("../../assets/coverage/fire_condo.png")
+            description: "Theft",
+            icon: require("../../assets/coverage/theft_home.png")
         },
     },
     auto: {
         collision: {
             title: "Collision",
             description: "Collision",
-            icon: require("../../assets/coverage/fire_condo.png")
+            icon: require("../../assets/coverage/collision.png")
         },
     },
    
