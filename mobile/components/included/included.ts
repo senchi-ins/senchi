@@ -1,12 +1,12 @@
 export const included = {
     rental: {
         fire: {
-            title: "Fire",
+            title: "Fire & Smoke",
             description: "Fire",
             icon: require("../../assets/coverage/fire_condo.png")
         },
         water: {
-            title: "Water",
+            title: "Water Damage",
             description: "Water",
             icon: require("../../assets/coverage/flood_condo.png")
         },
@@ -18,12 +18,12 @@ export const included = {
     },
     home: {
         fire: {
-            title: "Fire",
+            title: "Fire & Smoke",
             description: "Fire",
             icon: require("../../assets/coverage/fire_home.png")
         },
         water: {
-            title: "Flood",
+            title: "Water Damage",
             description: "Water",
             icon: require("../../assets/coverage/flood_home.png")
         },

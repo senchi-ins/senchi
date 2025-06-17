@@ -22,7 +22,7 @@ export default function Included({ selectedIndex }: IncludedProps) {
 
   return (
     <View style={{
-      width: '100%',
+      width: '90%',
       paddingHorizontal: 16,
       marginTop: 16,
     }}>
@@ -34,7 +34,7 @@ export default function Included({ selectedIndex }: IncludedProps) {
           textAlign: 'left',
           color: Colours.light.primary,
         }}
-      >{"What's included?"}</Text>
+      >{"We assess your home's risk for:"}</Text>
       <View style={{    
         flexDirection: 'row',
         gap: 16,

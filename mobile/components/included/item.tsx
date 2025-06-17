@@ -34,8 +34,8 @@ export default function IncludedItem({ item, selected }: IncludedItemProps) {
             resizeMode="contain"
             />
         )}
-        <Text style={{ fontWeight: 'bold', color: selected ? '#4338ca' : '#222' }}>{item.title}</Text>
-        <Text style={{ fontSize: 12, color: '#666' }}>{item.description}</Text>
+        <Text style={{ fontWeight: 'bold', color: selected ? '#4338ca' : '#222', }}>{item.title}</Text>
+        <Text style={{ fontSize: 10, color: '#666' }}>{item.description}</Text>
     </View>
   );
 }
