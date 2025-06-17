@@ -375,7 +375,7 @@ HOME_INSURANCE_PATH = {
             'action': 'click',
             'selector': 'button[name="action"]',
             'description': 'final submit button',
-            'wait': 150
+            'wait': 30
         },
         # If quotes don't load, click the link to reload
         {
@@ -384,7 +384,7 @@ HOME_INSURANCE_PATH = {
             'selector': 'a[href="?noquote"]',
             'description': 'click here if quotes dont load',
             'optional': True,
-            'wait': 150
+            'wait': 30
         }
     ]
 }

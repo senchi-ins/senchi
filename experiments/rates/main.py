@@ -10,7 +10,7 @@ from ratebot.cleaning import clean_data
 
 from ratebot.utils import extract_insurance_quotes, row_to_dict
 
-CHECKPOINT_INDEX = 111
+CHECKPOINT_INDEX = 129
 
 def run(
         playwright: Playwright, 
