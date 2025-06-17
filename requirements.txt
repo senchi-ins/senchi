@@ -1,0 +1,35 @@
+# Testing
+pytest==7.4.3
+
+# Core dependencies
+python-dotenv==1.0.0
+pydantic==2.5.2
+numpy==1.26.4
+
+# Image processing
+pillow==10.2.0
+opencv-python==4.9.0.80
+scikit-image==0.22.0
+rasterio==1.3.9
+
+# API clients
+googlemaps==4.10.0
+sentinelhub==3.9.0
+earthengine-api>=0.1.367
+geemap>=0.20.0
+
+# Deep learning - install these first
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.2.0
+torchvision==0.17.0
+timm==0.9.12
+transformers==4.37.2
+supervision>=0.22.0
+
+# Segmentation models - install these last
+segment-anything @ git+https://github.com/facebookresearch/segment-anything.git
+git+https://github.com/IDEA-Research/GroundingDINO.git
+
+# LLM Integration
+openai==1.12.0
+requests==2.31.0
