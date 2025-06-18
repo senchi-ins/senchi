@@ -18,6 +18,16 @@ export default function RootLayout() {
         name="index" 
         options={{ headerShown: false }}
       />
+      <Stack.Screen 
+        name="quote/index" 
+        options={{ 
+          headerShown: false,
+          // presentation: 'modal',
+          animation: 'slide_from_bottom',
+          animationDuration: 350,
+          gestureEnabled: false
+        }}
+      />
     </Stack>
   )
 }
