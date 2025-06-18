@@ -19,7 +19,7 @@ async def get_risk():
 
 @router.post("/upload-file")
 async def upload_file_endpoint(
-        address: str, 
+        address: str,
         heading: int, 
         zoom: int = 21, 
         file_type: str = "png",

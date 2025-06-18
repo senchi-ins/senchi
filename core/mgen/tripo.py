@@ -12,7 +12,7 @@ load_dotenv()
 
 API_KEY = os.getenv("TRIPPO_API_KEY")
 
-def create_text_to_model_task(prompt: str) -> dict:
+async def create_text_to_model_task(prompt: str) -> dict:
     """
     Create a text-to-model task using the Tripo API.
     
@@ -133,10 +133,10 @@ async def generate_model(
     return response.json()
 
 async def get_model_output(task_id: str) -> Optional[dict]:
-    result = asyncio.run(receive_one(task_id))
+    result = await receive_one(task_id)
 
     if result['event'] == 'finalized':
-        return None
+        return result
 
     pbr_model_url = result['data']['result']['pbr_model']['url']
     rendered_image_url = result['data']['result']['rendered_image']['url']
@@ -147,7 +147,14 @@ async def get_model_output(task_id: str) -> Optional[dict]:
     }
 
 if __name__ == "__main__":
-    # prompt = "a small cat"
+    prompt = "a small cat"
+    # task = asyncio.run(create_text_to_model_task(prompt))
+    # print(task)
+
+    task = {'code': 0, 'data': {'task_id': '21a6930a-143f-44c3-9e2f-db343792298c'}}
+    task_id = task["data"]["task_id"]
+    result = asyncio.run(get_model_output(task_id))
+    print(result)
 
     # upload the file
     # file_path = "images/parents_home.png"
@@ -155,7 +162,7 @@ if __name__ == "__main__":
     # success = asyncio.run(upload_file(file_path, format))
     # print(success)
 
-    success = {'code': 0, 'data': {'image_token': '3f04687c-fc71-484c-b1fb-dfa2d158a3c5'}}
+    # success = {'code': 0, 'data': {'image_token': '3f04687c-fc71-484c-b1fb-dfa2d158a3c5'}}
 
     # Generate the model
     # model_version = "v2.5-20250123"

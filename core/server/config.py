@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     
     # CORS Configuration
     ALLOWED_ORIGINS: List[AnyHttpUrl] = [
-        AnyHttpUrl(os.environ.get("ALLOWED_ORIGINS", "http://localhost:3000")),
+        AnyHttpUrl(os.environ.get("ALLOWED_ORIGINS", "*")),
     ]
     ALLOWED_CREDENTIALS: bool = os.environ.get("ALLOWED_CREDENTIALS", "true") == "true"
     ALLOWED_HEADERS: List[str] = ["*"]
