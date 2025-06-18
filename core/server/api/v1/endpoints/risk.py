@@ -25,10 +25,9 @@ async def upload_file_endpoint(
         file_type: str = "png",
     ):
     response = get_streetview_image(address, heading, zoom)
+    result = asyncio.run(process_vector_image(response["sv_response"]))
 
-    # Currently only using streetview image
-    file = response["sv_response"]
-    success = asyncio.run(upload_file(file, file_type))
+    success = asyncio.run(upload_file(result, file_type))
     return success
 
 @router.post("/generate-model")
@@ -43,25 +42,12 @@ async def get_model_output_endpoint(task_id: str):
     result = asyncio.run(get_model_output(task_id))
     return result
 
-@router.post("/generate-vector-image")
-async def generate_vector_image_endpoint(
-    address: str,
-    heading: int,
-    zoom: int = 21,
-):
-    # Get streetview image
-    response = get_streetview_image(address, heading, zoom)
-    
-    # Process through complete vector pipeline
-    result = asyncio.run(process_vector_image(response["sv_response"]))
-    return result
-
-@router.post("/analyze-house")
-async def analyze_house_endpoint(
-    address: str,
-    heading: int,
-    zoom: int = 21,
-):
-    response = get_streetview_image(address, heading, zoom)
-    result = asyncio.run(label_house(response["sv_response"]))
-    return result
+# @router.post("/analyze-house")
+# async def analyze_house_endpoint(
+#     address: str,
+#     heading: int,
+#     zoom: int = 21,
+# ):
+#     response = get_streetview_image(address, heading, zoom)
+#     result = asyncio.run(label_house(response["sv_response"]))
+#     return result

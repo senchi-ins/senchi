@@ -133,7 +133,6 @@ async def generate_model(
     return response.json()
 
 async def get_model_output(task_id: str) -> Optional[dict]:
-    task_id = task["data"]["task_id"]
     result = asyncio.run(receive_one(task_id))
 
     if result['event'] == 'finalized':
