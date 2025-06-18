@@ -24,23 +24,65 @@ async def upload_file_endpoint(
         zoom: int = 21, 
         file_type: str = "png",
     ):
-    response = get_streetview_image(address, heading, zoom)
-    result = asyncio.run(process_vector_image(response["sv_response"]))
-
-    success = asyncio.run(upload_file(result, file_type))
-    return success
+    try:
+        # Get Street View image
+        response = get_streetview_image(address, heading, zoom)
+        if not response or not response.get("sv_response"):
+            raise HTTPException(
+                status_code=400,
+                detail="Failed to fetch Street View image - no response received"
+            )
+            
+        # Process the image
+        try:
+            result = await process_vector_image(response["sv_response"])
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to process vector image: {str(e)}"
+            )
+            
+        # Upload the processed image
+        try:
+            success = await upload_file(result, file_type)
+            return success
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to upload processed image: {str(e)}"
+            )
+            
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"An unexpected error occurred: {str(e)}"
+        )
 
 @router.post("/generate-model")
 async def generate_model_endpoint(
     file: dict, file_type: str, model_seed: int, texture: bool, style: str
     ):
-    task = asyncio.run(generate_model(file, file_type, model_seed, texture, style))
-    return task
+    try:
+        task = await generate_model(file, file_type, model_seed, texture, style)
+        return task
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate model: {str(e)}"
+        )
 
 @router.get("/get-model-output")
 async def get_model_output_endpoint(task_id: str):
-    result = asyncio.run(get_model_output(task_id))
-    return result
+    try:
+        result = await get_model_output(task_id)
+        return result
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get model output: {str(e)}"
+        )
 
 # @router.post("/analyze-house")
 # async def analyze_house_endpoint(

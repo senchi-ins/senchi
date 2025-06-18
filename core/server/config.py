@@ -26,6 +26,12 @@ class Settings(BaseSettings):
     ALLOWED_HEADERS: List[str] = ["*"]
     ALLOWED_METHODS: List[str] = ["*"]
     
+    # API Keys
+    openai_api_key: str = ""
+    google_sv_api_key: str = ""
+    trippo_api_key: str = ""
+    api_secret_key: str = ""
+    
     # Security
     SECRET_KEY: str = os.environ.get("API_SECRET_KEY", "")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # 8 days
@@ -33,5 +39,8 @@ class Settings(BaseSettings):
     # TODO: Move this to a separate file
     DATABASE_URL: str = os.environ.get("DATABASE_URL", "")
     
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
 
 settings = Settings() 
