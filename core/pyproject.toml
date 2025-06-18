@@ -15,6 +15,10 @@ dependencies = [
     "python-jose[cryptography]>=3.5.0",
     "python-multipart>=0.0.20",
     "uvicorn>=0.34.3",
+    "dotenv>=0.9.9",
+    "googlemaps>=4.10.0",
+    "requests>=2.32.4",
+    "websockets>=15.0.1",
 ]
 
 [tool.uv.workspace]
