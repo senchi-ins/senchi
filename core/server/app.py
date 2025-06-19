@@ -20,7 +20,9 @@ app.add_middleware(
         "http://localhost:8000", 
         "https://localhost:8000",
         "https://api.senchi.ca",
-        "http://api.senchi.ca"
+        "http://api.senchi.ca",
+        "https://www.senchi.ca",
+        "http://www.senchi.ca"
     ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
