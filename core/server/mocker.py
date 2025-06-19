@@ -5,28 +5,28 @@ address = "383 Wettlaufer Terrace, Milton, ON, L9T 7N4"
 dev_api_url_base = "http://localhost:8000/api/v1/risk"
 
 health_check = dev_api_url_base + "/"
-# response = requests.get(health_check)
+response = requests.get(health_check)
 
-# response = requests.post(
-#     dev_api_url_base + "/upload-file",
-#     params={"address": address, "heading": 120, "bucket": "senchi-gen-dev"}
-# )
+response = requests.post(
+    dev_api_url_base + "/upload-file",
+    params={"address": address, "heading": 120, "bucket": "senchi-gen-dev"}
+)
 
-# response = {'code': 0, 'data': {'image_token': '6ae37d34-0462-41b8-8f4d-2bad3cc3e5f6'}}
+response = {'code': 0, 'data': {'image_token': '6ae37d34-0462-41b8-8f4d-2bad3cc3e5f6'}}
 
-# file = response
-# file_type = "png"
+file = response
+file_type = "png"
 
-# task = requests.post(
-#     dev_api_url_base + "/generate-model",
-#     json={
-#         "file": file, 
-#         "file_type": file_type, 
-#         "model_type": "image_to_model"
-#     }
-# )
+task = requests.post(
+    dev_api_url_base + "/generate-model",
+    json={
+        "file": file, 
+        "file_type": file_type, 
+        "model_type": "image_to_model"
+    }
+)
 
-# print(task.json())
+print(task.json())
 
 task = {'code': 0, 'data': {'task_id': '2b434ee4-cc3d-4f91-a144-cf2974617ac6'}}
 
