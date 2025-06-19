@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D House Model</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #87CEEB;
+            font-family: Arial, sans-serif;
+            cursor: grab;
+        }
+        body.dragging {
+            cursor: grabbing;
+        }
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            z-index: 100;
+        }
+        #controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: white;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 100;
+        }
+        #zoom-controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.7);
+            padding: 15px;
+            border-radius: 10px;
+            color: white;
+            z-index: 100;
+        }
+        #zoom-slider {
+            width: 150px;
+            height: 5px;
+            background: #ddd;
+            outline: none;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+            border-radius: 5px;
+        }
+        #zoom-slider:hover {
+            opacity: 1;
+        }
+        #zoom-slider::-webkit-slider-thumb {
+            width: 15px;
+            height: 15px;
+            background: #4CAF50;
+            cursor: pointer;
+            border-radius: 50%;
+            border: none;
+            -webkit-appearance: none;
+        }
+        #zoom-slider::-moz-range-thumb {
+            width: 15px;
+            height: 15px;
+            background: #4CAF50;
+            cursor: pointer;
+            border-radius: 50%;
+            border: none;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">
+        <div>3D House Model</div>
+        <div>Based on your parents' house photo</div>
+    </div>
+    <div id="controls">
+        <div>Click & Drag: Rotate view</div>
+        <div>Scroll: Zoom in/out</div>
+        <div>Slider: Zoom control</div>
+    </div>
+    <div id="zoom-controls">
+        <div style="margin-bottom: 8px; font-size: 12px;">Zoom</div>
+        <input type="range" id="zoom-slider" min="8" max="35" value="20" step="0.5">
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let scene, camera, renderer, house;
+        let mouseX = 0, mouseY = 0;
+        let targetRotationX = 0, targetRotationY = 0;
+        let isInitialized = false;
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+
+        function init() {
+            // Scene setup
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x87CEEB);
+            
+            // Camera
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(20, 10, 20);
+            camera.lookAt(0, 0, 0);
+            
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.body.appendChild(renderer.domElement);
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(20, 20, 10);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 2048;
+            directionalLight.shadow.mapSize.height = 2048;
+            directionalLight.shadow.camera.near = 0.1;
+            directionalLight.shadow.camera.far = 100;
+            directionalLight.shadow.camera.left = -50;
+            directionalLight.shadow.camera.right = 50;
+            directionalLight.shadow.camera.top = 50;
+            directionalLight.shadow.camera.bottom = -50;
+            scene.add(directionalLight);
+
+            createHouse();
+            setupControls();
+            
+            // Set initial slider value
+            setTimeout(() => {
+                const distance = camera.position.distanceTo(new THREE.Vector3(0, 0, 0));
+                document.getElementById('zoom-slider').value = distance;
+                isInitialized = true;
+            }, 100);
+            
+            animate();
+        }
+
+        function createHouse() {
+            house = new THREE.Group();
+
+            // Materials
+            const brickMaterial = new THREE.MeshLambertMaterial({ color: 0xa0522d });
+            const roofMaterial = new THREE.MeshLambertMaterial({ color: 0x2F4F2F });
+            const windowMaterial = new THREE.MeshLambertMaterial({ color: 0x4682B4 });
+            const doorMaterial = new THREE.MeshLambertMaterial({ color: 0x654321 });
+            const garageMaterial = new THREE.MeshLambertMaterial({ color: 0xD3D3D3 });
+            const concreteMaterial = new THREE.MeshLambertMaterial({ color: 0xC0C0C0 });
+
+            // Ground
+            const groundGeometry = new THREE.PlaneGeometry(60, 60);
+            const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x228B22 });
+            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+            ground.rotation.x = -Math.PI / 2;
+            ground.position.y = -0.5;
+            ground.receiveShadow = true;
+            scene.add(ground);
+
+            // Main house structure (first floor)
+            const mainHouseGeometry = new THREE.BoxGeometry(8, 6, 6);
+            const mainHouse = new THREE.Mesh(mainHouseGeometry, brickMaterial);
+            mainHouse.position.set(0, 3, 0);
+            mainHouse.castShadow = true;
+            house.add(mainHouse);
+
+            // Second floor
+            const secondFloorGeometry = new THREE.BoxGeometry(7, 5, 5.5);
+            const secondFloor = new THREE.Mesh(secondFloorGeometry, brickMaterial);
+            secondFloor.position.set(0, 8.5, 0);
+            secondFloor.castShadow = true;
+            house.add(secondFloor);
+
+            // Bay window (protruding front section)
+            const bayWindowGeometry = new THREE.BoxGeometry(3, 4, 1.5);
+            const bayWindow = new THREE.Mesh(bayWindowGeometry, brickMaterial);
+            bayWindow.position.set(0, 2, 3.75);
+            bayWindow.castShadow = true;
+            house.add(bayWindow);
+
+            // Second floor bay window
+            const bayWindow2Geometry = new THREE.BoxGeometry(2.5, 3, 1.2);
+            const bayWindow2 = new THREE.Mesh(bayWindow2Geometry, brickMaterial);
+            bayWindow2.position.set(0, 7, 3.6);
+            bayWindow2.castShadow = true;
+            house.add(bayWindow2);
+
+            // Main roof
+            const roofGeometry = new THREE.ConeGeometry(6, 3, 4);
+            const roof = new THREE.Mesh(roofGeometry, roofMaterial);
+            roof.position.set(0, 13, 0);
+            roof.rotation.y = Math.PI / 4;
+            roof.castShadow = true;
+            house.add(roof);
+
+            // Bay window roofs
+            const bayRoofGeometry = new THREE.ConeGeometry(2, 1.5, 4);
+            const bayRoof = new THREE.Mesh(bayRoofGeometry, roofMaterial);
+            bayRoof.position.set(0, 5, 3.75);
+            bayRoof.rotation.y = Math.PI / 4;
+            bayRoof.castShadow = true;
+            house.add(bayRoof);
+
+            const bayRoof2 = bayRoof.clone();
+            bayRoof2.position.set(0, 9, 3.6);
+            house.add(bayRoof2);
+
+            // Garage
+            const garageGeometry = new THREE.BoxGeometry(4, 5, 4);
+            const garage = new THREE.Mesh(garageGeometry, brickMaterial);
+            garage.position.set(-6, 2.5, 0);
+            garage.castShadow = true;
+            house.add(garage);
+
+            // Garage roof
+            const garageRoofGeometry = new THREE.ConeGeometry(3.5, 2, 4);
+            const garageRoof = new THREE.Mesh(garageRoofGeometry, roofMaterial);
+            garageRoof.position.set(-6, 6.5, 0);
+            garageRoof.rotation.y = Math.PI / 4;
+            garageRoof.castShadow = true;
+            house.add(garageRoof);
+
+            // Windows
+            function createWindow(width, height, x, y, z, rotationY = 0) {
+                const windowGeometry = new THREE.PlaneGeometry(width, height);
+                const window = new THREE.Mesh(windowGeometry, windowMaterial);
+                window.position.set(x, y, z);
+                window.rotation.y = rotationY;
+                return window;
+            }
+
+            // Front windows
+            house.add(createWindow(1, 1.5, -1.5, 2, 4.5));
+            house.add(createWindow(1, 1.5, 1.5, 2, 4.5));
+            house.add(createWindow(2, 1.2, 0, 7, 4.4));
+            
+            // Side windows
+            house.add(createWindow(1, 1.5, -4.1, 2, 1, Math.PI / 2));
+            house.add(createWindow(1, 1.5, -4.1, 2, -1, Math.PI / 2));
+            house.add(createWindow(1, 1.5, -4.1, 7, 1, Math.PI / 2));
+
+            // Front door
+            const doorGeometry = new THREE.PlaneGeometry(1, 2.5);
+            const door = new THREE.Mesh(doorGeometry, doorMaterial);
+            door.position.set(-2.5, 1.25, 3.1);
+            house.add(door);
+
+            // Garage door
+            const garageDoorGeometry = new THREE.PlaneGeometry(3, 4);
+            const garageDoor = new THREE.Mesh(garageDoorGeometry, garageMaterial);
+            garageDoor.position.set(-6, 2, 2.1);
+            house.add(garageDoor);
+
+            // Front steps
+            const stepsGeometry = new THREE.BoxGeometry(2, 0.5, 1);
+            const steps = new THREE.Mesh(stepsGeometry, concreteMaterial);
+            steps.position.set(-2.5, -0.25, 4);
+            steps.castShadow = true;
+            house.add(steps);
+
+            // Driveway
+            const drivewayGeometry = new THREE.PlaneGeometry(15, 8);
+            const driveway = new THREE.Mesh(drivewayGeometry, concreteMaterial);
+            driveway.rotation.x = -Math.PI / 2;
+            driveway.position.set(-3, -0.1, 2);
+            driveway.receiveShadow = true;
+            house.add(driveway);
+
+            scene.add(house);
+        }
+
+        function setupControls() {
+            // Mouse controls
+            document.addEventListener('mousedown', onMouseDown, false);
+            document.addEventListener('mousemove', onMouseMove, false);
+            document.addEventListener('mouseup', onMouseUp, false);
+            document.addEventListener('wheel', onMouseWheel, false);
+
+            // Zoom slider
+            const zoomSlider = document.getElementById('zoom-slider');
+            zoomSlider.addEventListener('input', onZoomSlider, false);
+        }
+
+        function onMouseDown(event) {
+            isDragging = true;
+            previousMousePosition = {
+                x: event.clientX,
+                y: event.clientY
+            };
+            document.body.style.cursor = 'grabbing';
+        }
+
+        function onMouseUp(event) {
+            isDragging = false;
+            document.body.style.cursor = 'default';
+        }
+
+        function onMouseMove(event) {
+            if (!isDragging) return;
+
+            const deltaMove = {
+                x: event.clientX - previousMousePosition.x,
+                y: event.clientY - previousMousePosition.y
+            };
+
+            // Update rotation based on mouse movement
+            targetRotationY += deltaMove.x * 0.01;
+            targetRotationX += deltaMove.y * 0.01;
+
+            // Constrain vertical rotation
+            targetRotationX = Math.max(-Math.PI/3, Math.min(Math.PI/3, targetRotationX));
+
+            previousMousePosition = {
+                x: event.clientX,
+                y: event.clientY
+            };
+        }
+
+        function onMouseWheel(event) {
+            const distance = camera.position.distanceTo(new THREE.Vector3(0, 0, 0));
+            let newDistance = distance;
+            
+            if (event.deltaY > 0 && distance < 35) {
+                newDistance = Math.min(distance * 1.1, 35);
+            } else if (event.deltaY < 0 && distance > 8) {
+                newDistance = Math.max(distance * 0.9, 8);
+            }
+            
+            const direction = camera.position.clone().normalize();
+            camera.position.copy(direction.multiplyScalar(newDistance));
+            camera.lookAt(0, 0, 0);
+            
+            // Update slider
+            if (isInitialized) {
+                document.getElementById('zoom-slider').value = newDistance;
+            }
+        }
+
+        function onZoomSlider(event) {
+            if (!isInitialized) return;
+            
+            const zoomValue = parseFloat(event.target.value);
+            const direction = camera.position.clone().normalize();
+            camera.position.copy(direction.multiplyScalar(zoomValue));
+            camera.lookAt(0, 0, 0);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // Smooth rotation based on mouse
+            targetRotationX = mouseY * 0.1;
+            targetRotationY = mouseX * 0.3;
+            
+            // Apply rotation
+            const distance = camera.position.distanceTo(new THREE.Vector3(0, 0, 0));
+            const phi = Math.acos(camera.position.y / distance) - targetRotationX * 0.05;
+            const theta = Math.atan2(camera.position.x, camera.position.z) + targetRotationY * 0.05;
+            
+            // Constrain phi to prevent flipping
+            const constrainedPhi = Math.max(0.1, Math.min(Math.PI - 0.1, phi));
+            
+            camera.position.x = distance * Math.sin(constrainedPhi) * Math.sin(theta);
+            camera.position.y = distance * Math.cos(constrainedPhi);
+            camera.position.z = distance * Math.sin(constrainedPhi) * Math.cos(theta);
+            
+            // Keep camera looking at center
+            camera.lookAt(0, 0, 0);
+            
+            renderer.render(scene, camera);
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Initialize when page loads
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>

@@ -19,10 +19,8 @@ class Settings(BaseSettings):
     API_PREFIX: str = "/api/v1"
     
     # CORS Configuration
-    ALLOWED_ORIGINS: List[AnyHttpUrl] = [
-        AnyHttpUrl(os.environ.get("ALLOWED_ORIGINS", "http://localhost:3000")),
-    ]
-    ALLOWED_CREDENTIALS: bool = os.environ.get("ALLOWED_CREDENTIALS", "true") == "true"
+    ALLOWED_ORIGINS: List[str] = ["*"]  # Temporarily allow all origins for testing
+    ALLOWED_CREDENTIALS: bool = False  # Must be False when using "*"
     ALLOWED_HEADERS: List[str] = ["*"]
     ALLOWED_METHODS: List[str] = ["*"]
     
@@ -32,6 +30,21 @@ class Settings(BaseSettings):
     
     # TODO: Move this to a separate file
     DATABASE_URL: str = os.environ.get("DATABASE_URL", "")
-    
 
-settings = Settings() 
+    HIGHSIGHT_API_KEY: str = os.environ.get("HIGHSIGHT_API_KEY", "")
+    GOOGLE_SV_API_KEY: str = os.environ.get("GOOGLE_SV_API_KEY", "")
+    GOOGLE_STREETVIEW_SECRET: str = os.environ.get("GOOGLE_STREETVIEW_SECRET", "")
+    GOOGLE_MAPS_API_KEY: str = os.environ.get("GOOGLE_MAPS_API_KEY", "")
+    TRIPPO_API_KEY: str = os.environ.get("TRIPPO_API_KEY", "")
+    OPENAI_API_KEY: str = os.environ.get("OPENAI_API_KEY", "")
+    AWS_ACCESS_KEY_ID: str = os.environ.get("AWS_ACCESS_KEY_ID", "")
+    AWS_SECRET_ACCESS_KEY: str = os.environ.get("AWS_SECRET_ACCESS_KEY", "")
+    AWS_REGION: str = os.environ.get("AWS_REGION", "")
+    AWS_S3_SIGNATURE_VERSION: str = os.environ.get("AWS_S3_SIGNATURE_VERSION", "s3v4")
+    AWS_S3_REGION_NAME: str = os.environ.get("AWS_S3_REGION_NAME", 'us-east-2')
+    
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+
+settings = Settings()
