@@ -14,7 +14,14 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://localhost:3000", "http://localhost:8000", "https://localhost:8000"],
+    allow_origins=[
+        "http://localhost:3000", 
+        "https://localhost:3000", 
+        "http://localhost:8000", 
+        "https://localhost:8000",
+        "https://api.senchi.ca",
+        "http://api.senchi.ca"
+    ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
