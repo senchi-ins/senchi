@@ -108,12 +108,12 @@ if __name__ == "__main__":
     # prompt = "a small cat"
 
     # upload the file
-    # file_path = "images/parents_home.png"
-    # format = "png"
-    # success = asyncio.run(upload_file(file_path, format))
-    # print(success)
+    file_path = "https://senchi-gen-dev.s3.amazonaws.com/5e2fa30ef3068eca8d202780f0413519549ce6ac517359c3147fcbb780ee2a1c_vector.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA5FG6V3P65DCFWZNC%2F20250619%2Fus-east-2%2Fs3%2Faws4_request&X-Amz-Date=20250619T011813Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=73e7c7e6a2a2c6f3b28eb0a56872158e079813bdb6b970d2151b6c61599cbded"
+    format = "png"
+    success = asyncio.run(upload_file(file_path, format))
+    print(success)
 
-    success = {'code': 0, 'data': {'image_token': '3f04687c-fc71-484c-b1fb-dfa2d158a3c5'}}
+    # success = {'code': 0, 'data': {'image_token': '3f04687c-fc71-484c-b1fb-dfa2d158a3c5'}}
 
     # Generate the model
     # model_version = "v2.5-20250123"
@@ -127,23 +127,23 @@ if __name__ == "__main__":
 
     # task = {'code': 0, 'data': {'task_id': 'a32d1cef-e70e-4b6c-9e0d-1a187c76dca3'}}
     # task = {'code': 0, 'data': {'task_id': '2ed8bda2-643c-41e2-88d3-3df19ef1f282'}}
-    task = {'code': 0, 'data': {'task_id': 'dbf86d89-7bc8-4da6-bfd9-54897767d356'}}
+    # task = {'code': 0, 'data': {'task_id': 'dbf86d89-7bc8-4da6-bfd9-54897767d356'}}
 
-    task_id = task["data"]["task_id"]
-    start = time.time()
-    while True:
-        result = asyncio.run(receive_one(task_id))
-        print(result["event"])
-        if result['event'] == 'finalized':
-            break
-        time.sleep(1)
+    # task_id = task["data"]["task_id"]
+    # start = time.time()
+    # while True:
+    #     result = asyncio.run(receive_one(task_id))
+    #     print(result["event"])
+    #     if result['event'] == 'finalized':
+    #         break
+    #     time.sleep(1)
 
-    end = time.time()
-    print(f"Generated model in {end - start} seconds")
+    # end = time.time()
+    # print(f"Generated model in {end - start} seconds")
 
-    pbr_model_url = result['data']['result']['pbr_model']['url']
-    rendered_image_url = result['data']['result']['rendered_image']['url']
+    # pbr_model_url = result['data']['result']['pbr_model']['url']
+    # rendered_image_url = result['data']['result']['rendered_image']['url']
 
-    # print(rendered_image_url)
-    print(pbr_model_url)
+    # # print(rendered_image_url)
+    # print(pbr_model_url)
 

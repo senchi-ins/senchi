@@ -11,3 +11,9 @@ run-dev:
 	else \
 		docker run --env-file .env -p 8000:8000 senchi-api-v$(version); \
 	fi
+
+build-and-run-dev:
+	@echo "Building the docker image..."
+	@make build-dev
+	@echo "Running the docker container..."
+	@make run-dev

@@ -9,6 +9,8 @@ from openai import AsyncOpenAI
 from typing import Optional, Union
 import time
 
+from mgen.prompts import openai_image_to_model_prompt
+
 load_dotenv()
 
 API_KEY = os.getenv("OPENAI_API_KEY")
@@ -16,10 +18,10 @@ client = AsyncOpenAI(api_key=API_KEY)
 
 async def prepare_image(file_input: Union[str, bytes], format: str = "png") -> BytesIO:
     """
-    Prepare an image for the OpenAI API. Can accept either a file path or raw image content.
+    Prepare an image for the OpenAI API. Can accept either a file path, URL, or raw image content.
     
     Args:
-        file_input (Union[str, bytes]): Either a file path (str) or raw image content (bytes)
+        file_input (Union[str, bytes]): Either a file path (str), URL (str), or raw image content (bytes)
         format (str): The format of the image (default: 'png')
         
     Returns:
@@ -30,8 +32,14 @@ async def prepare_image(file_input: Union[str, bytes], format: str = "png") -> B
     """
     try:
         if isinstance(file_input, str):
-            # Handle file path
-            img = Image.open(file_input)
+            if file_input.startswith(('http://', 'https://')):
+                # Handle URL
+                response = requests.get(file_input)
+                response.raise_for_status()  # Raise an exception for bad status codes
+                img = Image.open(BytesIO(response.content))
+            else:
+                # Handle file path
+                img = Image.open(file_input)
         else:
             # Handle raw image content
             img = Image.open(BytesIO(file_input))
@@ -46,16 +54,18 @@ async def prepare_image(file_input: Union[str, bytes], format: str = "png") -> B
         # Prepare the image
         img_buffer = BytesIO()
         img.save(img_buffer, format=format)
-        img_buffer.seek(0)
+        img_buffer.seek(0)  # Reset buffer position to start
         
         return img_buffer
     
+    except requests.RequestException as e:
+        raise ValueError(f"Failed to fetch image from URL: {str(e)}")
     except Exception as e:
         raise ValueError(f"Failed to process image: {str(e)}")
 
 async def generate_vector_image(
     image_buffer: BytesIO,
-    style: str = "isometric",
+    prompt: str = openai_image_to_model_prompt,
 ) -> dict:
     """
     Generate a vector-style image using the OpenAI gpt-image-1 API.
@@ -70,67 +80,31 @@ async def generate_vector_image(
     if not API_KEY:
         raise ValueError("OPENAI_API_KEY environment variable not set")
 
-    # Style-specific prompts
-    style_prompts = {
-        "isometric": """Turn this image into an isometric vector illustration with clean outlines, 
-        simplified shapes, soft shadows, and muted colors; flat 3D perspective similar to architectural 
-        diagrams or infographics; minimalistic, cartoon-like, and neatly stylized. Remove all other 
-        noise from the photo including neighbouring houses, snow, lamp posts, and cars. Keep only the 
-        main house and the surrounding trees, shrubs, and grass."""
-    }
-
-    # Get the appropriate prompt
-    prompt = style_prompts.get(style, style_prompts["isometric"])
-
     try:
         # Generate the vector image using gpt-image-1
         response = await client.images.edit(
             model="gpt-image-1",
-            image=image_buffer,
+            image=("image.png", image_buffer, "image/png"),
             prompt=prompt,
             n=1,
             size="1024x1024",
-            response_format="url"
         )
 
         if response and response.data:
-            return {"url": response.data[0].url}
+            image_base64 = response.data[0].b64_json
+            image_bytes = base64.b64decode(image_base64)
+            return image_bytes
         else:
             raise Exception("No output received from the API")
 
     except Exception as e:
         raise Exception(f"Failed to generate vector image: {str(e)}")
 
-async def get_vector_image(url: str, output_path: Optional[str] = None) -> str:
-    """
-    Download and save the generated vector image.
-    
-    Args:
-        url (str): URL of the generated image
-        output_path (Optional[str]): Path where to save the image
-        
-    Returns:
-        str: Path to the saved image
-    """
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-
-        if output_path is None:
-            output_path = f"output_vector_{int(time.time())}.png"
-
-        with open(output_path, 'wb') as f:
-            f.write(response.content)
-        
-        return output_path
-
-    except Exception as e:
-        raise Exception(f"Failed to download vector image: {str(e)}")
 
 async def process_vector_image(
     input_path: str,
     output_path: Optional[str] = None,
-    style: str = "isometric",
+    prompt: str = openai_image_to_model_prompt,
 ) -> str:
     """
     Complete pipeline to process an image into a vector illustration using OpenAI's DALL-E.
@@ -144,27 +118,26 @@ async def process_vector_image(
         str: Path to the processed image
     """
     try:
-        # Prepare the image
         image_buffer = await prepare_image(input_path)
-        
-        # Generate the vector image
-        result = await generate_vector_image(image_buffer, style=style)
-        
-        # Download and save the result
-        final_path = await get_vector_image(result["url"], output_path)
-        
-        return final_path
 
+        result = await generate_vector_image(image_buffer, prompt=prompt)
+
+        return result
+    
     except Exception as e:
         raise Exception(f"Failed to process vector image: {str(e)}")
 
 if __name__ == "__main__":
-    # Example usage
-    input_image = "path/to/input.png"
-    output_image = "path/to/output.png"
+
+    input_image = "https://senchi-gen-dev.s3.amazonaws.com/383%20Wettlaufer%20Terrace%2C%20Milton%2C%20ON%2C%20L9T%207N4_120.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA5FG6V3P65DCFWZNC%2F20250618%2Fus-east-2%2Fs3%2Faws4_request&X-Amz-Date=20250618T234521Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=1b0467cccd7d9e22701ba6dd67461bb0e52eb123816fdb0b5d623e8e87df9be7"
+    output_image = "images/testing.png"
     
+    import time
+    start_time = time.time()
     try:
         result_path = asyncio.run(process_vector_image(input_image, output_image))
         print(f"Vector image saved to: {result_path}")
+        end_time = time.time()
+        print(f"Time taken: {end_time - start_time} seconds")
     except Exception as e:
         print(f"Error: {str(e)}")

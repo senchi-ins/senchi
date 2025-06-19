@@ -1,17 +1,25 @@
 import asyncio
-from fastapi import APIRouter, HTTPException, Depends
+import hashlib
+from fastapi import APIRouter, HTTPException, Depends, Body
 from typing import List, Optional
+from pydantic import BaseModel
 
 from mgen.gmaps import get_streetview_image
-from mgen.tripo import upload_file, generate_model, get_model_output
+from mgen.tripo import upload_file_to_tripo, generate_model, get_model_output
 from mgen.vector_image import process_vector_image
 from mgen.house_labelling import label_house
 from openai import OpenAI
+from bucket.s3 import upload_file_from_bytes, get_file_url
 
 TAG = "Risk"
 PREFIX = "/risk"
 
 router = APIRouter()
+
+class GenerateModelRequest(BaseModel):
+    file: dict
+    file_type: str
+    model_type: str = "image_to_model"
 
 @router.get("/")
 async def get_risk():
@@ -20,52 +28,66 @@ async def get_risk():
 @router.post("/upload-file")
 async def upload_file_endpoint(
         address: str,
-        heading: int, 
+        heading: int,
+        bucket: str = "senchi-gen-dev",
         zoom: int = 21, 
         file_type: str = "png",
     ):
-    try:
+        print("starting upload-file")
         # Get Street View image
         response = get_streetview_image(address, heading, zoom)
-        if not response or not response.get("sv_response"):
+        object_name = address + "_" + str(heading)
+
+        # Hash the object name to avoid leaking sensitive information
+        object_name = hashlib.sha256(object_name.encode()).hexdigest()
+        # object_name = "house_testing"
+        sv_success = upload_file_from_bytes(
+            stream=response["sv_response"],
+            bucket=bucket,
+            object_name=f"{object_name}.png"
+        )
+
+        if sv_success:
+            print(f"Uploaded streetview image to S3: {object_name}.png")
+            file_url = get_file_url(bucket, f"{object_name}.png")
+        else:
             raise HTTPException(
-                status_code=400,
-                detail="Failed to fetch Street View image - no response received"
+                status_code=500,
+                detail="Failed to upload file to S3"
             )
             
         # Process the image
-        try:
-            result = await process_vector_image(response["sv_response"])
-        except Exception as e:
+        result = await process_vector_image(file_url)
+
+        # Add the file to the bucket
+        gen_success = upload_file_from_bytes(
+            stream=result,
+            bucket=bucket,
+            object_name=f"{object_name}_vector.png"
+        )
+
+        if gen_success:
+            print(f"Uploaded vector image to S3: {object_name}_vector.png")
+            file_url = get_file_url(bucket, f"{object_name}_vector.png")
+        else:
             raise HTTPException(
                 status_code=500,
-                detail=f"Failed to process vector image: {str(e)}"
+                detail="Failed to upload file to S3"
             )
-            
-        # Upload the processed image
         try:
-            success = await upload_file(result, file_type)
+            success =  await upload_file_to_tripo(file_url, file_type)
             return success
         except Exception as e:
             raise HTTPException(
                 status_code=500,
-                detail=f"Failed to upload processed image: {str(e)}"
+                detail=f"Failed to upload file to tripo: {str(e)}"
             )
-            
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"An unexpected error occurred: {str(e)}"
-        )
+
 
 @router.post("/generate-model")
-async def generate_model_endpoint(
-    file: dict, file_type: str, model_seed: int, texture: bool, style: str
-    ):
+async def generate_model_endpoint(request: GenerateModelRequest):
     try:
-        task = await generate_model(file, file_type, model_seed, texture, style)
+        task = await generate_model(request.file, request.file_type, model_type=request.model_type)
         return task
     except Exception as e:
         raise HTTPException(
@@ -83,13 +105,3 @@ async def get_model_output_endpoint(task_id: str):
             status_code=500,
             detail=f"Failed to get model output: {str(e)}"
         )
-
-# @router.post("/analyze-house")
-# async def analyze_house_endpoint(
-#     address: str,
-#     heading: int,
-#     zoom: int = 21,
-# ):
-#     response = get_streetview_image(address, heading, zoom)
-#     result = asyncio.run(label_house(response["sv_response"]))
-#     return result

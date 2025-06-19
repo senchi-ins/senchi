@@ -57,12 +57,12 @@ async def receive_one(tid):
               break
   return data
 
-async def upload_file(file_input: Union[str, bytes], format: str):
+async def upload_file_to_tripo(file_input: Union[str, bytes], format: str):
     """
-    Upload a file to Tripo API. Can accept either a file path or raw image content.
+    Upload a file to Tripo API. Can accept either a file path, URL, or raw image content.
     
     Args:
-        file_input (Union[str, bytes]): Either a file path (str) or raw image content (bytes)
+        file_input (Union[str, bytes]): Either a file path (str), URL (str), or raw image content (bytes)
         format (str): The format of the image ('webp', 'jpeg', or 'png')
         
     Returns:
@@ -83,34 +83,33 @@ async def upload_file(file_input: Union[str, bytes], format: str):
     }
     
     if isinstance(file_input, str):
-        # Handle file path
-        with open(file_input, "rb") as f:
-            print("file found:", file_input)
-            files = {'file': (file_input, f, f'image/{format}')}
-            response = requests.post(url, headers=headers, files=files)
+        if file_input.startswith(('http://', 'https://')):
+            # Handle URL - download the content first
+            response = requests.get(file_input)
+            response.raise_for_status()
+            file_content = response.content
+            files = {'file': (f'image.{format}', file_content, f'image/{format}')}
+        else:
+            # Handle file path
+            with open(file_input, "rb") as f:
+                print("file found:", file_input)
+                files = {'file': (file_input, f, f'image/{format}')}
     else:
         # Handle raw image content
         files = {'file': (f'image.{format}', file_input, f'image/{format}')}
-        response = requests.post(url, headers=headers, files=files)
     
+    response = requests.post(url, headers=headers, files=files)
     return response.json()
 
 async def generate_model(
-        model_version: str,
         file: dict,
         file_type: str,
-        model_seed: int,
-        texture: bool,
-        style: str,
-        auto_size: bool = False,
-        orientation: str = "default",
-        quad: bool = False,
-        type: str = "image_to_model",
+        model_type: str = "image_to_model",
     ):
     url = "https://api.tripo3d.ai/v2/openapi/task"
 
     data = {
-        "type": type,
+        "type": model_type,
         "file": {
             "type": file_type,
             "file_token": file["data"]["image_token"]
@@ -151,28 +150,24 @@ if __name__ == "__main__":
     # task = asyncio.run(create_text_to_model_task(prompt))
     # print(task)
 
-    task = {'code': 0, 'data': {'task_id': '21a6930a-143f-44c3-9e2f-db343792298c'}}
-    task_id = task["data"]["task_id"]
-    result = asyncio.run(get_model_output(task_id))
-    print(result)
+    # task = {'code': 0, 'data': {'task_id': '21a6930a-143f-44c3-9e2f-db343792298c'}}
+    # task_id = task["data"]["task_id"]
+    # result = asyncio.run(get_model_output(task_id))
+    # print(result)
 
     # upload the file
-    # file_path = "images/parents_home.png"
+    # file_path = "https://senchi-gen-dev.s3.amazonaws.com/5e2fa30ef3068eca8d202780f0413519549ce6ac517359c3147fcbb780ee2a1c_vector.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA5FG6V3P65DCFWZNC%2F20250619%2Fus-east-2%2Fs3%2Faws4_request&X-Amz-Date=20250619T011813Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=73e7c7e6a2a2c6f3b28eb0a56872158e079813bdb6b970d2151b6c61599cbded"
     # format = "png"
     # success = asyncio.run(upload_file(file_path, format))
     # print(success)
 
-    # success = {'code': 0, 'data': {'image_token': '3f04687c-fc71-484c-b1fb-dfa2d158a3c5'}}
+    success = {'code': 0, 'data': {'image_token': '6ae37d34-0462-41b8-8f4d-2bad3cc3e5f6'}}
 
     # Generate the model
-    # model_version = "v2.5-20250123"
-    # file = success
-    # file_type = "png"
-    # model_seed = 42
-    # texture = False
-    # style = "default"
-    # task = asyncio.run(generate_model(model_version, file, file_type, model_seed, texture, style))
-    # print(task)
+    file = success
+    file_type = "png"
+    task = asyncio.run(generate_model(file, file_type, model_type="image_to_model"))
+    print(task)
 
     # task = {'code': 0, 'data': {'task_id': 'a32d1cef-e70e-4b6c-9e0d-1a187c76dca3'}}
     # task = {'code': 0, 'data': {'task_id': '2ed8bda2-643c-41e2-88d3-3df19ef1f282'}}
