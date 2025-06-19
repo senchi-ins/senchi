@@ -8,6 +8,7 @@ from mgen.gmaps import get_streetview_image
 from mgen.tripo import upload_file_to_tripo, generate_model, get_model_output
 from mgen.vector_image import process_vector_image
 from mgen.house_labelling import label_house
+from mgen.river_discharge import get_discharge_graph
 from openai import OpenAI
 from bucket.s3 import upload_file_from_bytes, get_file_url
 
@@ -105,3 +106,26 @@ async def get_model_output_endpoint(task_id: str):
             status_code=500,
             detail=f"Failed to get model output: {str(e)}"
         )
+
+@router.get("/river-discharge")
+async def get_river_discharge_endpoint(
+    latitude: float,
+    longitude: float,
+):
+    try:
+        if not (-90 <= latitude <= 90):
+            raise ValueError("Latitude must be between -90 and 90 degrees")
+        if not (-180 <= longitude <= 180):
+            raise ValueError("Longitude must be between -180 and 180 degrees")
+            
+        figure = get_discharge_graph(latitude, longitude)
+        return figure.to_dict()
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get river discharge data: {str(e)}"
+        )
+

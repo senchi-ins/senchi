@@ -5,6 +5,16 @@
       "description": "Remove leaves, pine needles, and other flammable debris from the roof and gutters.",
       "location": "Roof"
     },
+        {
+      "title": "Install gutter guards",
+      "description": "Install guards to prevent leaves and debris from clogging gutters.",
+      "location": "Gutters"
+    },
+        {
+      "title": "Extend gutter downspouts away from the house",
+      "description": "Extend downspouts to carry roof water at least 5-10 feet from the foundation.",
+      "location": "Corner of the house"
+    },
     {
       "title": "Install non-combustible siding",
       "description": "Use materials like fiber cement, brick, or stucco for siding.",
@@ -19,11 +29,6 @@
       "title": "Use non-combustible fencing within five feet of the home",
       "description": "Use fences from non-combustible materials like metal or vinyl.",
       "location": "Yard, perimeter of the property"
-    },
-    {
-      "title": "Create a 30-foot defensible space",
-      "description": "Clear a 30-foot zone around the house of flammable vegetation.",
-      "location": "Yard"
     },
     {
       "title": "Reinforce the garage door",
@@ -46,24 +51,14 @@
       "location": "Bottom of the house"
     },
     {
-      "title": "Extend gutter downspouts away from the house",
-      "description": "Extend downspouts to carry roof water at least 5-10 feet from the foundation.",
-      "location": "Corner of the house"
-    },
-    {
       "title": "Apply waterproof sealant to foundation walls",
       "description": "Coat the exterior of the foundation with a waterproof sealant.",
       "location": "Exterior walls"
     },
     {
-      "title": "Reinforce the chimney with steel bracing",
+      "title": "Reinforce the chimney",
       "description": "Brace an unreinforced masonry chimney with steel to prevent it from collapsing.",
       "location": "Chimney"
-    },
-    {
-      "title": "Install gutter guards",
-      "description": "Install guards to prevent leaves and debris from clogging gutters.",
-      "location": "Gutters"
     },
     {
       "title": "Insulate exposed exterior pipes",
@@ -71,19 +66,9 @@
       "location": "Exterior"
     },
     {
-      "title": "Secure deck and porch railings",
-      "description": "Ensure handrails and guardrails are strong and securely attached.",
-      "location": "Proch"
-    },
-    {
-      "title": "Create a gravel or stone barrier around the foundation",
+      "title": "Create a non-flammable (e.g. gravel or stone) barrier around the foundation",
       "description": "Place a one- to two-foot-wide barrier of gravel or stone around the foundation.",
       "location": "Bottom of house"
-    },
-    {
-      "title": "Install Storm Shutters",
-      "description": "Install impact-resistant shutters to protect windows and glass.",
-      "location": "Windows"
     },
     {
       "title": "Reinforce Roof-to-Wall Connections",
