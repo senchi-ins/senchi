@@ -1,0 +1,255 @@
+{
+    "samples": {
+      "suburban_family_home": {
+        "stories": 2,
+        "hasGarage": true,
+        "roofType": "hip",
+        "roofColor": "#2F4F4F",
+        "wallColor": "#B87333",
+        "hasChimney": true,
+        "windowCount": 6,
+        "doorColor": "#654321",
+        "landscaping": "suburban",
+        "drivewayType": "concrete",
+        "trees": 5,
+        "cars": 2,
+        "architectureStyle": "colonial",
+        "yearBuilt": 1995,
+        "lotSize": "medium"
+      },
+  
+      "modern_urban_condo": {
+        "stories": 1,
+        "hasGarage": false,
+        "roofType": "flat",
+        "roofColor": "#708090",
+        "wallColor": "#F5DEB3",
+        "hasChimney": false,
+        "windowCount": 4,
+        "doorColor": "#2F4F4F",
+        "landscaping": "urban",
+        "drivewayType": "concrete",
+        "trees": 1,
+        "cars": 1,
+        "architectureStyle": "modern",
+        "yearBuilt": 2018,
+        "lotSize": "small"
+      },
+  
+      "luxury_executive_home": {
+        "stories": 2,
+        "hasGarage": true,
+        "roofType": "hip",
+        "roofColor": "#8B4513",
+        "wallColor": "#CD853F",
+        "hasChimney": true,
+        "windowCount": 8,
+        "doorColor": "#8B4513",
+        "landscaping": "suburban",
+        "drivewayType": "asphalt",
+        "trees": 7,
+        "cars": 3,
+        "architectureStyle": "craftsman",
+        "yearBuilt": 2010,
+        "lotSize": "large"
+      },
+  
+      "rural_cottage": {
+        "stories": 1,
+        "hasGarage": false,
+        "roofType": "gabled",
+        "roofColor": "#2F4F4F",
+        "wallColor": "#DEB887",
+        "hasChimney": true,
+        "windowCount": 3,
+        "doorColor": "#654321",
+        "landscaping": "rural",
+        "drivewayType": "gravel",
+        "trees": 8,
+        "cars": 1,
+        "architectureStyle": "ranch",
+        "yearBuilt": 1975,
+        "lotSize": "large"
+      },
+  
+      "downtown_apartment": {
+        "stories": 1,
+        "hasGarage": false,
+        "roofType": "flat",
+        "roofColor": "#696969",
+        "wallColor": "#F0F0F0",
+        "hasChimney": false,
+        "windowCount": 2,
+        "doorColor": "#2F4F4F",
+        "landscaping": "urban",
+        "drivewayType": "concrete",
+        "trees": 0,
+        "cars": 0,
+        "architectureStyle": "modern",
+        "yearBuilt": 2020,
+        "lotSize": "small"
+      },
+  
+      "victorian_heritage": {
+        "stories": 2,
+        "hasGarage": true,
+        "roofType": "gabled",
+        "roofColor": "#2F4F4F",
+        "wallColor": "#DDA0DD",
+        "hasChimney": true,
+        "windowCount": 7,
+        "doorColor": "#800080",
+        "landscaping": "suburban",
+        "drivewayType": "concrete",
+        "trees": 4,
+        "cars": 2,
+        "architectureStyle": "victorian",
+        "yearBuilt": 1920,
+        "lotSize": "medium"
+      },
+  
+      "new_construction": {
+        "stories": 2,
+        "hasGarage": true,
+        "roofType": "hip",
+        "roofColor": "#36454F",
+        "wallColor": "#E6E6FA",
+        "hasChimney": false,
+        "windowCount": 6,
+        "doorColor": "#2F4F4F",
+        "landscaping": "suburban",
+        "drivewayType": "concrete",
+        "trees": 3,
+        "cars": 2,
+        "architectureStyle": "modern",
+        "yearBuilt": 2024,
+        "lotSize": "medium"
+      },
+  
+      "starter_home": {
+        "stories": 1,
+        "hasGarage": true,
+        "roofType": "gabled",
+        "roofColor": "#2F4F4F",
+        "wallColor": "#F5F5DC",
+        "hasChimney": true,
+        "windowCount": 4,
+        "doorColor": "#654321",
+        "landscaping": "suburban",
+        "drivewayType": "asphalt",
+        "trees": 3,
+        "cars": 1,
+        "architectureStyle": "ranch",
+        "yearBuilt": 1985,
+        "lotSize": "small"
+      }
+    },
+  
+    "schema": {
+      "stories": {
+        "type": "number",
+        "min": 1,
+        "max": 3,
+        "description": "Number of floors in the house"
+      },
+      "hasGarage": {
+        "type": "boolean",
+        "description": "Whether the house has an attached garage"
+      },
+      "roofType": {
+        "type": "string",
+        "enum": ["gabled", "hip", "flat"],
+        "description": "Style of roof - gabled (triangular), hip (pyramid), flat"
+      },
+      "roofColor": {
+        "type": "string",
+        "format": "hex-color",
+        "description": "Hex color code for the roof material"
+      },
+      "wallColor": {
+        "type": "string",
+        "format": "hex-color",
+        "description": "Hex color code for the exterior walls"
+      },
+      "hasChimney": {
+        "type": "boolean",
+        "description": "Whether the house has a chimney"
+      },
+      "windowCount": {
+        "type": "number",
+        "min": 2,
+        "max": 8,
+        "description": "Total number of visible windows"
+      },
+      "doorColor": {
+        "type": "string",
+        "format": "hex-color",
+        "description": "Hex color code for the front door"
+      },
+      "landscaping": {
+        "type": "string",
+        "enum": ["suburban", "urban", "rural"],
+        "description": "Type of landscaping and environment"
+      },
+      "drivewayType": {
+        "type": "string",
+        "enum": ["concrete", "asphalt", "gravel"],
+        "description": "Material of the driveway"
+      },
+      "trees": {
+        "type": "number",
+        "min": 0,
+        "max": 8,
+        "description": "Number of trees around the property"
+      },
+      "cars": {
+        "type": "number",
+        "min": 0,
+        "max": 3,
+        "description": "Number of cars in the driveway"
+      },
+      "architectureStyle": {
+        "type": "string",
+        "enum": ["colonial", "modern", "ranch", "victorian", "craftsman"],
+        "description": "Architectural style (for future enhancements)"
+      },
+      "yearBuilt": {
+        "type": "number",
+        "min": 1800,
+        "max": 2024,
+        "description": "Estimated year the house was built"
+      },
+      "lotSize": {
+        "type": "string",
+        "enum": ["small", "medium", "large"],
+        "description": "Relative size of the property lot"
+      }
+    },
+  
+    "colorPalettes": {
+      "traditional": {
+        "roofColors": ["#2F4F4F", "#8B4513", "#696969"],
+        "wallColors": ["#B87333", "#F5DEB3", "#CD853F"],
+        "doorColors": ["#654321", "#8B4513", "#2F4F4F"]
+      },
+      "modern": {
+        "roofColors": ["#708090", "#36454F", "#2F2F2F"],
+        "wallColors": ["#F0F0F0", "#E6E6FA", "#F5F5F5"],
+        "doorColors": ["#2F4F4F", "#000000", "#36454F"]
+      },
+      "colorful": {
+        "roofColors": ["#8B0000", "#000080", "#006400"],
+        "wallColors": ["#FFE4E1", "#E0FFFF", "#F0FFF0"],
+        "doorColors": ["#FF0000", "#0000FF", "#008000"]
+      }
+    },
+  
+    "addressExamples": {
+      "123_main_st_toronto": "suburban_family_home",
+      "456_king_st_downtown_toronto": "downtown_apartment",
+      "789_elm_ave_mississauga": "new_construction",
+      "321_rural_route_1_ontario": "rural_cottage",
+      "654_heritage_lane_ottawa": "victorian_heritage",
+      "987_condo_way_vancouver": "modern_urban_condo"
+    }
+  }
