@@ -30,7 +30,7 @@ const riskPoints: RiskInfo[] = [
     title: 'Roof Vulnerability',
     description: 'This area is susceptible to hail damage and wind uplift. Consider reinforcing with impact-resistant materials.',
     severity: 'high',
-    position: { x: 0.5, y: 1.5, z: 0 }
+    position: { x: -0.2, y: 0.7, z: 0 }
   },
   {
     id: 'foundation',
@@ -51,8 +51,11 @@ const MODEL_CONFIG = {
 // TODO: Re-route to s3 bucket for secure storage
 export default function BespokeHouse({ imageURL }: BespokeHouseProps) {
   const [selectedRisk, setSelectedRisk] = useState<RiskInfo | null>(null);
+
+  // NOTE: Uncomment below when running the actual pipeline
   const proxy = process.env.NEXT_PUBLIC_PROXY_URL;
   const renderURL = proxy + encodeURIComponent(imageURL);
+  // const renderURL = imageURL;
 
   function GLBModel({ url }: { url: string }) {
     const { scene } = useGLTF(url)
