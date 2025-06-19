@@ -24,7 +24,7 @@ const colors = {
         },
     },
     baseAccent: {
-        bg: "bg-senchi-main",
+        bg: "bg-senchi-main/85",
         bgHover: "hover:bg-senchi-main",
         badge: "bg-senchi-accent-light",
     },
