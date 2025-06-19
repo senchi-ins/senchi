@@ -19,14 +19,8 @@ class Settings(BaseSettings):
     API_PREFIX: str = "/api/v1"
     
     # CORS Configuration
-    ALLOWED_ORIGINS: List[AnyHttpUrl] = [
-        "http://localhost:8000",
-        "https://localhost:8000",
-        "https://api.senchi.ca",
-        "http://localhost:3000",
-        "https://localhost:3000",
-    ]
-    ALLOWED_CREDENTIALS: bool = os.environ.get("ALLOWED_CREDENTIALS", "true") == "true"
+    ALLOWED_ORIGINS: List[str] = ["*"]  # Temporarily allow all origins for testing
+    ALLOWED_CREDENTIALS: bool = False  # Must be False when using "*"
     ALLOWED_HEADERS: List[str] = ["*"]
     ALLOWED_METHODS: List[str] = ["*"]
     
