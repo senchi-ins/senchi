@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union, Tuple
 from openai import OpenAI
 import base64
 from dotenv import load_dotenv
@@ -17,9 +17,39 @@ async def load_improvements() -> List[Dict[str, str]]:
     Returns:
         List[Dict[str, str]]: List of home improvement dictionaries
     """
-    with open('core/mgen/improvement.txt', 'r') as f:
+    with open('improvement.json', 'r') as f:
         data = json.load(f)
     return data['home_improvements']
+
+async def load_rubrics() -> List[Dict]:
+    """
+    Load the rubrics for scoring home improvements.
+    
+    Returns:
+        List[Dict]: List of rubric dictionaries
+    """
+    with open('improvement_rubric.json', 'r') as f:
+        data = json.load(f)
+    return data['rubrics']
+
+def calculate_house_score(scores: List[str]) -> float:
+    """
+    Calculate the final house score based on individual category scores.
+    
+    Args:
+        scores (List[str]): List of scores ('low', 'medium', 'high')
+        
+    Returns:
+        float: Final house score out of 100
+    """
+    score_values = {
+        'high': 6.666,
+        'medium': 4,
+        'low': 1
+    }
+    
+    total_score = sum(score_values[score] for score in scores)
+    return round(total_score)
 
 async def encode_image_to_base64(image_input: Union[str, bytes]) -> str:
     """
@@ -39,93 +69,148 @@ async def encode_image_to_base64(image_input: Union[str, bytes]) -> str:
         # Handle raw image content
         return base64.b64encode(image_input).decode('utf-8')
 
-async def analyze_house_image(image_input: Union[str, bytes], client: OpenAI) -> Optional[Dict]:
+async def analyze_house_images(image_inputs: List[Union[str, bytes]], client: OpenAI) -> Optional[Dict]:
     """
-    Analyze a house image using OpenAI's Vision API and return improvement recommendations.
+    Analyze multiple views of a house using OpenAI's Vision API and return a comprehensive assessment.
     
     Args:
-        image_input (Union[str, bytes]): Either a file path (str) or raw image content (bytes)
+        image_inputs (List[Union[str, bytes]]): List of image paths or raw image content
         client (OpenAI): OpenAI client instance
         
     Returns:
-        Optional[Dict]: JSON response containing recommendations or None if failed
-        
-    Raises:
-        Exception: If analysis fails
+        Optional[Dict]: JSON response containing scores, recommendations and final score, or None if failed
     """
-    improvements = await load_improvements()
-    
-    # Create a comprehensive list of improvements for the prompt
-    improvements_text = "\n".join([
-        f"- {imp['title']}: {imp['description']} (Location: {imp['location']})"
-        for imp in improvements
-    ])
+    try:
+        improvements = await load_improvements()
+        rubrics = await load_rubrics()
+        
+        # Create list of improvements with full details
+        improvements_text = "\n".join([
+            f"Improvement {i+1}:\n" +
+            f"- Title: {imp['title']}\n" +
+            f"- Description: {imp['description']}\n" +
+            f"- Location: {imp['location']}"
+            for i, imp in enumerate(improvements)
+        ])
+        
+        # Create scoring criteria list
+        scoring_text = "\n".join([
+            f"Category {i+1}: {rubric['title']}\n" +
+            f"Location: {rubric['location']}\n" +
+            f"Scoring Criteria:\n" +
+            f"- Low: {rubric['rubric']['low'] if isinstance(rubric['rubric']['low'], str) else ', '.join(rubric['rubric']['low'])}\n" +
+            f"- Medium: {rubric['rubric']['medium'] if isinstance(rubric['rubric']['medium'], str) else ', '.join(rubric['rubric']['medium'])}\n" +
+            f"- High: {rubric['rubric']['high'] if isinstance(rubric['rubric']['high'], str) else ', '.join(rubric['rubric']['high'])}"
+            for i, rubric in enumerate(rubrics)
+        ])
 
-    # Craft the prompt for the vision model
-    prompt = f"""You are a home safety and disaster preparedness expert. Analyze this house image and recommend exactly 3 specific improvements from the following list that would best protect this house from natural disasters and catastrophic events. Focus on the most visible and critical areas that need attention.
+        prompt = f"""You are a home safety and disaster preparedness expert. You will be provided with one or more views of a house. Using ALL provided views to make your assessment:
 
-Available improvements:
+1. From this list of available improvements, understand what suggested improvements you are able to recommend.
 {improvements_text}
 
-For each recommendation, select from the exact improvements listed above and provide:
-1. The exact title as listed
-2. The exact description as listed
-3. The exact location as listed
-4. A brief explanation of why this improvement is needed based on what you see in the image
+2. Score each category as either 'low', 'medium', or 'high' based on the following criteria:
+
+{scoring_text}
+
+3. From this list of available improvements, identify the three most critical ones needed (those scored as 'low'):
+
+{improvements_text}
+
+4. For the three improvements that you identified as most critical, provide the x, y coordinate of where the improvement is located on the image.
+
+Use all provided views of the house to make your assessment. If certain aspects aren't visible in any view, mention this in your explanations.
 
 Format your response as a valid JSON string with this exact structure:
 {{
+    "category_scores": [
+        {{
+            "title": "Category title",
+            "score": "low/medium/high"
+        }},
+        // for all 15 categories
+    ],
     "recommendations": [
         {{
             "title": "Exact title from list",
             "description": "Exact description from list",
             "location": "Exact location from list",
-            "explanation": "Your specific explanation based on the image"
+            "explanation": "Your specific explanation based on all provided views",
+            "x": "x coordinate of the improvement",
+            "y": "y coordinate of the improvement"
         }},
-        // two more similar objects
-    ]
-}}"""
+        // for the three most critical improvements (scored as low)
+    ],
+    "final_score": "Final house score out of 100"
+}}
+The output format must be the JSON string as shown above. No other text or formatting.
+"""
 
-    try:
-        # Encode the image
-        base64_image = await encode_image_to_base64(image_input)
+        try:
+            # Encode all images
+            image_contents = []
+            for img_input in image_inputs:
+                base64_image = await encode_image_to_base64(img_input)
+                image_contents.append({
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/jpeg;base64,{base64_image}"
+                    }
+                })
 
-        # Call the OpenAI Vision API
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {
+            # Construct message content with text and all images
+            message_content = [{"type": "text", "text": prompt}] + image_contents
+
+            # Call the OpenAI Vision API
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{
                     "role": "user",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": prompt
-                        },
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/jpeg;base64,{base64_image}"
-                            }
-                        }
-                    ]
-                }
-            ],
-            max_tokens=1000,
-            response_format={ "type": "json_object" }
-        )
-        
-        return json.loads(response.choices[0].message.content)
+                    "content": message_content
+                }],
+                max_tokens=1500,
+                response_format={ "type": "json_object" }
+            )
+            
+            # Parse the response
+            result = json.loads(response.choices[0].message.content)
+            
+            # Calculate the final house score
+            scores = [item['score'].lower() for item in result['category_scores']]
+            final_score = calculate_house_score(scores)
+            
+            # Add the final score to the result
+            result['final_score'] = final_score
+            
+            # Save the result to a JSON file
+            output_filename = 'house_analysis_result.json'
+            with open(output_filename, 'w') as f:
+                json.dump(result, f, indent=2)
+            
+            return result
+            
+        except Exception as e:
+            print(f"Error analyzing images: {str(e)}")
+            return None
     except Exception as e:
-        print(f"Error analyzing image: {str(e)}")
+        print(f"Error analyzing images: {str(e)}")
         return None
 
-async def label_house(image_input: Union[str, bytes]):
-    """Main function to process an image and get recommendations."""
+async def label_house(image_inputs: List[Union[str, bytes]]) -> Optional[Dict]:
+    """
+    Main function to process one or more views of a house and get a comprehensive assessment.
+    
+    Args:
+        image_inputs (List[Union[str, bytes]]): List of image paths or image content
+        
+    Returns:
+        Optional[Dict]: Dictionary containing category scores, recommendations, and final score
+    """
     client = OpenAI()
     
     try:
-        recommendations = await analyze_house_image(image_input, client)
-        return recommendations
+        result = await analyze_house_images(image_inputs, client)
+        return result
     except Exception as e:
         print(f"Error in main: {str(e)}")
         return None
