@@ -20,11 +20,11 @@ class Settings(BaseSettings):
     
     # CORS Configuration
     ALLOWED_ORIGINS: List[AnyHttpUrl] = [
-        "http://localhost:8000/*",
-        "https://localhost:8000/*",
-        "https://api.senchi.ca/*",
-        "http://localhost:3000/*",
-        "https://localhost:3000/*",
+        "http://localhost:8000",
+        "https://localhost:8000",
+        "https://api.senchi.ca",
+        "http://localhost:3000",
+        "https://localhost:3000",
     ]
     ALLOWED_CREDENTIALS: bool = os.environ.get("ALLOWED_CREDENTIALS", "true") == "true"
     ALLOWED_HEADERS: List[str] = ["*"]
