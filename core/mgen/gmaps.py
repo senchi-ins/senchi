@@ -42,7 +42,7 @@ def get_streetview_image(coord: str, heading: int, zoom: int = 21):
 
 if __name__ == "__main__":
     x = get_streetview_image("383 Wettlaufer Terrace, Milton, ON, L9T 7N4", 120)
-    with open("images/sv_response.png", "wb") as f:
+    with open("mgen/images/sv_response.png", "wb") as f:
         f.write(x["sv_response"])
-    with open("images/arial_response.png", "wb") as f:
+    with open("mgen/images/arial_response.png", "wb") as f:
         f.write(x["arial_response"])

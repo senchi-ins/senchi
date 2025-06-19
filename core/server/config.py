@@ -42,6 +42,7 @@ class Settings(BaseSettings):
     AWS_REGION: str = os.environ.get("AWS_REGION", "")
     AWS_S3_SIGNATURE_VERSION: str = os.environ.get("AWS_S3_SIGNATURE_VERSION", "s3v4")
     AWS_S3_REGION_NAME: str = os.environ.get("AWS_S3_REGION_NAME", 'us-east-2')
+    OPEN_METEO_API: str = os.environ.get("OPEN_METEO_API", "")
     
     class Config:
         env_file = ".env"
