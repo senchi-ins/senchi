@@ -68,18 +68,16 @@ export default function BespokeHouse({ imageURL, labellingResponse }: BespokeHou
     });
   }, [labellingResponse]);
 
-  // NOTE: Uncomment below when running the actual pipeline
-  const proxy = process.env.NEXT_PUBLIC_PROXY_URL;
-  const renderURL = proxy + encodeURIComponent(imageURL);
-  // console.log(imageURL)
-  // const renderURL = imageURL;
+  // Construct the full, absolute URL to our own backend proxy
+  const backendUrl = process.env.NEXT_PUBLIC_SENCHI_API_URL || 'http://localhost:8000';
+  const proxyURL = `${backendUrl}/api/v1/proxy?url=${encodeURIComponent(imageURL)}`;
 
   function GLBModel({ url }: { url: string }) {
     const { scene } = useGLTF(url)
     return <primitive object={scene} scale={MODEL_CONFIG.scale} />
   }
 
-  useGLTF.preload(renderURL)
+  useGLTF.preload(proxyURL)
 
   const RiskDot = ({ risk, position }: { risk: RiskInfo, position: { x: number, y: number, z: number } }) => {
     // Apply global offset and scale to position
@@ -136,7 +134,7 @@ export default function BespokeHouse({ imageURL, labellingResponse }: BespokeHou
         <directionalLight position={[5, 10, 7]} intensity={0.7} castShadow />
         <Suspense fallback={null}>
           <group position={[0, -0.7, 0]}>
-            <GLBModel url={renderURL} />
+            <GLBModel url={proxyURL} />
             {riskPoints.map((risk) => (
               <RiskDot key={risk.id} risk={risk} position={risk.position} />
             ))}
