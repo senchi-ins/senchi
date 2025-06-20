@@ -2,9 +2,12 @@ import httpx
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
+TAG = "Proxy"
+PREFIX = "/proxy"
+
 router = APIRouter()
 
-@router.get("")
+@router.get("/")
 async def proxy(url: str):
     """
     Proxies a GET request to the given URL and streams the response.

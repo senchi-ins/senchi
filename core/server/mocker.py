@@ -7,7 +7,7 @@ address = "383 Wettlaufer Terrace, Milton, ON, L9T 7N4"
 # prod_api_url = "https://api.senchi.ca/api/v1/risk/upload-file"
 # dev_api_url_base = "http://localhost:8000/api/v1/risk"
 dev_api_url_base = "http://localhost:8000/api/v1/labelling"
-# prod_api_url_base = "https://api.senchi.ca/api/v1/labelling"
+prod_api_url_base = "https://api.senchi.ca/api/v1/labelling"
 
 # health_check = dev_api_url_base + "/"
 # response = requests.get(health_check)
@@ -47,7 +47,7 @@ dev_api_url_base = "http://localhost:8000/api/v1/labelling"
 # print(response.json())
 
 response = requests.post(
-    dev_api_url_base + "/analyze-house",
+    prod_api_url_base + "/analyze-house",
     params={"address": address, "heading": 120}
 )
 

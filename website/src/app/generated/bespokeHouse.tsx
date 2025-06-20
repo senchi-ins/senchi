@@ -69,8 +69,8 @@ export default function BespokeHouse({ imageURL, labellingResponse }: BespokeHou
   }, [labellingResponse]);
 
   // Construct the full, absolute URL to our own backend proxy
-  const backendUrl = process.env.NEXT_PUBLIC_SENCHI_API_URL || 'http://localhost:8000';
-  const proxyURL = `${backendUrl}/api/v1/proxy?url=${encodeURIComponent(imageURL)}`;
+  const backendUrl = process.env.NEXT_PUBLIC_SENCHI_API_URL || 'http://localhost:8000/api/v1';
+  const proxyURL = `${backendUrl}/proxy?url=${encodeURIComponent(imageURL)}`;
 
   function GLBModel({ url }: { url: string }) {
     const { scene } = useGLTF(url)
