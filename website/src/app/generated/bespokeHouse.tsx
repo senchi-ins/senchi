@@ -71,6 +71,7 @@ export default function BespokeHouse({ imageURL, labellingResponse }: BespokeHou
   // NOTE: Uncomment below when running the actual pipeline
   const proxy = process.env.NEXT_PUBLIC_PROXY_URL;
   const renderURL = proxy + encodeURIComponent(imageURL);
+  // console.log(imageURL)
   // const renderURL = imageURL;
 
   function GLBModel({ url }: { url: string }) {

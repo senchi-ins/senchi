@@ -7,7 +7,7 @@ interface AssessmentScoreProps {
 
 export default function AssessmentScore({ labellingResponse }: AssessmentScoreProps) {
   const score = labellingResponse.final_score;
-  console.log(labellingResponse);
+  // console.log(labellingResponse);
   const maxScore = 100;
   const percent = Math.round((score / maxScore) * 100);
   const circumference = 2 * Math.PI * 45;
