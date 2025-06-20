@@ -71,35 +71,53 @@ async def upload_file_to_tripo(file_input: Union[str, bytes], format: str):
     Raises:
         ValueError: If the format is not one of the accepted types (webp, jpeg, png)
     """
-    ACCEPTED_FORMATS = {'webp', 'jpeg', 'png'}
-    format = format.lower()
-    
-    if format not in ACCEPTED_FORMATS:
-        raise ValueError(f"Format must be one of {ACCEPTED_FORMATS}. Got: {format}")
-    
-    url = "https://api.tripo3d.ai/v2/openapi/upload/sts"
-    headers = {
-        "Authorization": f"Bearer {API_KEY}"
-    }
-    
-    if isinstance(file_input, str):
-        if file_input.startswith(('http://', 'https://')):
-            # Handle URL - download the content first
-            response = requests.get(file_input)
-            response.raise_for_status()
-            file_content = response.content
-            files = {'file': (f'image.{format}', file_content, f'image/{format}')}
+    try:
+        ACCEPTED_FORMATS = {'webp', 'jpeg', 'png'}
+        format = format.lower()
+        
+        if format not in ACCEPTED_FORMATS:
+            raise ValueError(f"Format must be one of {ACCEPTED_FORMATS}. Got: {format}")
+        
+        url = "https://api.tripo3d.ai/v2/openapi/upload/sts"
+        headers = {
+            "Authorization": f"Bearer {API_KEY}"
+        }
+        
+        print(f"Uploading file to Tripo: {file_input}")
+        
+        if isinstance(file_input, str):
+            if file_input.startswith(('http://', 'https://')):
+                # Handle URL - download the content first
+                print("Downloading file from URL...")
+                response = requests.get(file_input, timeout=30)
+                response.raise_for_status()
+                file_content = response.content
+                files = {'file': (f'image.{format}', file_content, f'image/{format}')}
+            else:
+                # Handle file path
+                with open(file_input, "rb") as f:
+                    print("file found:", file_input)
+                    files = {'file': (file_input, f, f'image/{format}')}
         else:
-            # Handle file path
-            with open(file_input, "rb") as f:
-                print("file found:", file_input)
-                files = {'file': (file_input, f, f'image/{format}')}
-    else:
-        # Handle raw image content
-        files = {'file': (f'image.{format}', file_input, f'image/{format}')}
-    
-    response = requests.post(url, headers=headers, files=files)
-    return response.json()
+            # Handle raw image content
+            files = {'file': (f'image.{format}', file_input, f'image/{format}')}
+        
+        print("Making request to Tripo API...")
+        response = requests.post(url, headers=headers, files=files, timeout=60)
+        response.raise_for_status()
+        
+        result = response.json()
+        print(f"Tripo API response: {result}")
+        return result
+        
+    except requests.exceptions.RequestException as e:
+        print(f"Request error in upload_file_to_tripo: {str(e)}")
+        raise
+    except Exception as e:
+        print(f"Unexpected error in upload_file_to_tripo: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise
 
 async def generate_model(
         file: dict,
@@ -108,11 +126,21 @@ async def generate_model(
     ):
     url = "https://api.tripo3d.ai/v2/openapi/task"
 
+    # Handle both old and new file structures
+    if "data" in file and "image_token" in file["data"]:
+        # Old structure: {'code': 0, 'data': {'image_token': '...'}}
+        file_token = file["data"]["image_token"]
+    elif "file_token" in file:
+        # New structure: {'type': 'png', 'file_token': '...'}
+        file_token = file["file_token"]
+    else:
+        raise ValueError(f"Invalid file structure. Expected either upload response or file data with file_token. Got: {file}")
+
     data = {
         "type": model_type,
         "file": {
             "type": file_type,
-            "file_token": file["data"]["image_token"]
+            "file_token": file_token
         },
         # "model_version": model_version,
         # "model_seed": model_seed,

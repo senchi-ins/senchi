@@ -2,10 +2,19 @@ import { AnalyzeHouseResponse } from '@/utils/api';
 import React from 'react'
 
 interface RecommendationProps {
-  labellingResponse: AnalyzeHouseResponse;
+  labellingResponse?: AnalyzeHouseResponse;
 }
 
 export default function Recommendation({ labellingResponse }: RecommendationProps) {
+  // Gracefully handle cases where data is not yet available
+  if (!labellingResponse || !labellingResponse.recommendations || !labellingResponse.category_scores) {
+    return (
+      <div className="bg-white rounded-2xl shadow p-8 w-full max-w-md mx-auto flex items-center justify-center h-full">
+        <div className="text-gray-500">Loading recommendations...</div>
+      </div>
+    );
+  }
+
   const recommendations = labellingResponse.recommendations;
   const categoryScores = labellingResponse.category_scores;
   
@@ -18,13 +27,13 @@ export default function Recommendation({ labellingResponse }: RecommendationProp
     <div className="bg-white rounded-2xl shadow p-8 w-full max-w-md mx-auto">
       <div className="text-lg font-semibold text-gray-900 mb-6">Top AI Recommendations</div>
       <div className="flex flex-col gap-6 mb-6">
-        {recommendations.map((rec, index) => {
+        {recommendations.map((rec) => {
           const score = getScoreForTitle(rec.title);
           const scoreColor = score === 'high' ? '#F87171' : score === 'medium' ? '#F59E0B' : '#10B981';
           const scoreBgColor = score === 'high' ? '#F87171/10' : score === 'medium' ? '#F59E0B/10' : '#10B981/10';
           
           return (
-            <div key={index} className="flex gap-4 items-stretch">
+            <div key={rec.title} className="flex gap-4 items-stretch">
               {/* Left vertical line */}
               <div className="w-1 rounded bg-[#BFA6F6]" />
               {/* Content */}

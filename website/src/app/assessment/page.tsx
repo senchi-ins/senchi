@@ -14,15 +14,15 @@ import Recommendation from './recommendation'
 // const url = "https://tripo-data.rg1.data.tripo3d.com/tcli_452312b4252d418cbd41cff1e5c98d35/20250618/21a6930a-143f-44c3-9e2f-db343792298c/tripo_pbr_model_21a6930a-143f-44c3-9e2f-db343792298c.glb?Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfNDUyMzEyYjQyNTJkNDE4Y2JkNDFjZmYxZTVjOThkMzUvMjAyNTA2MTgvMjFhNjkzMGEtMTQzZi00NGMzLTllMmYtZGIzNDM3OTIyOThjL3RyaXBvX3Bicl9tb2RlbF8yMWE2OTMwYS0xNDNmLTQ0YzMtOWUyZi1kYjM0Mzc5MjI5OGMuZ2xiIiwiQ29uZGl0aW9uIjp7IkRhdGVMZXNzVGhhbiI6eyJBV1M6RXBvY2hUaW1lIjoxNzUwMjkxMjAwfX19XX0_&Signature=iWrhXBjsfvFwt~~ZXi3U3SuR1kcUdVUBXBofBYJvzfcJcKMfwylRj1Iefok9tsrNUABSVAeHms5LCGJICFG62p8E3jloxR-fviw6gt09yKIv56nJ803dDOSF1lUht5UWrez1MOHKqLkbNadLN1~xhROYQMlFKU9~z9t8YwhquD8O7seI8Umn31sPXcPS~OW3E~UdpcqvunMSoUlR5c2HLhTDtWpGhzYAcwOhHQuw9OhC~w4WRzKHkWIGib8VkbdV1G1-RGDcYt-NtXhSUX6tdncG9zaXkpu-k0zHJkW8buqN5dbUbj9qOdo-nJ9Fa9WulG7yT-LD96nIue97oivORQ__&Key-Pair-Id=K1676C64NMVM2J"
 
 // const url = "tripo_convert_4c0f25aa-21f5-46a2-9111-28feef8fd803.glb"
-const url = "./3D/sample_house.glb"
+// const url = "./3D/sample_house.glb"
 
 export default function Assessment() {
   const [input, setInput] = useState("");
-  const [imageURL, setImageURL] = useState(url);
+  const [imageURL, setImageURL] = useState(""); // Start empty, wait for API response
   const [modelLoading, setModelLoading] = useState(false);
   const [analysisLoading, setAnalysisLoading] = useState(false);
   const [enterPressed, setEnterPressed] = useState(false);
-  const [labellingResponse, setLabellingResponse] = useState<AnalyzeHouseResponse | null>(null);
+  const [labellingResponse, setLabellingResponse] = useState<AnalyzeHouseResponse | undefined>(undefined);
 
   useEffect(() => {
     if (!enterPressed) return;
@@ -33,10 +33,37 @@ export default function Assessment() {
         // Upload the address to the API
         const upload_response = await uploadFile(input);
 
-        // console.log(`upload_response: ${upload_response.data.image_token}`);
-        // Generate the model
-        const task = await generateModel(upload_response, "png", "image_to_model");
-        // console.log(`task: ${task.data}`);
+        console.log('Full upload_response:', upload_response);
+        console.log('upload_response type:', typeof upload_response);
+        console.log('upload_response keys:', Object.keys(upload_response));
+        
+        // Check if the response has the expected structure
+        if (!upload_response || typeof upload_response !== 'object') {
+          throw new Error('Invalid upload response format');
+        }
+        
+        // Try to extract the image token from the response
+        let imageToken;
+        if ('data' in upload_response && upload_response.data && typeof upload_response.data === 'object' && 'image_token' in upload_response.data) {
+          imageToken = upload_response.data.image_token;
+        } else if ('image_token' in upload_response) {
+          imageToken = upload_response.image_token;
+        } else {
+          console.error('Could not find image_token in response:', upload_response);
+          throw new Error('No image_token found in upload response');
+        }
+        
+        console.log(`imageToken: ${imageToken}`);
+        
+        // Generate the model - pass the correct file structure
+        const fileData = {
+            type: "png",
+            file_token: imageToken  // Use the extracted imageToken string, not the full object
+        };
+        console.log('Calling generateModel with fileData:', fileData);
+        const task = await generateModel(fileData, "png", "image_to_model");
+        console.log('generateModel response:', task);
+        console.log(`task.data: ${task.data}`);
         // Use type guards to safely access task_id and result
         const taskId = (task && typeof task === 'object' && 'data' in task && task.data && typeof task.data === 'object' && 'task_id' in task.data) ? (task.data as { task_id?: string }).task_id : undefined;
         if (!taskId) throw new Error('No task_id returned from generateModel');
@@ -179,7 +206,7 @@ export default function Assessment() {
               ) : (
                 <div className="grid grid-cols-2 md:grid-cols-2 gap-5">
                   <div className="flex flex-col items-center justify-center bg-white rounded-2xl shadow min-h-[500px] w-full max-w-md">
-                    {labellingResponse && <BespokeHouse imageURL={imageURL} labellingResponse={labellingResponse} />}
+                    {imageURL && <BespokeHouse imageURL={imageURL} labellingResponse={labellingResponse} />}
                   </div>
                   <div className="flex flex-col items-center justify-center bg-white rounded-2xl shadow min-h-[500px] w-full max-w-md">
                     {labellingResponse && <AssessmentScore labellingResponse={labellingResponse} />}

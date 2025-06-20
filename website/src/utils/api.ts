@@ -1,5 +1,7 @@
 export const apiBase = process.env.NEXT_PUBLIC_SENCHI_API_URL;
 
+console.log('API Base URL:', apiBase);
+
 export const test_api = async () => {
     const response = await fetch(`${apiBase}/api/v1/quote`, {
         method: "GET",
@@ -25,12 +27,25 @@ export const uploadFile = async (
     heading: number = 120,
     bucket: string = "senchi-gen-dev"
 ): Promise<UploadFileResponse> => {
-    const response = await fetch(`${apiBase}/risk/upload-file?address=${encodeURIComponent(address)}&heading=${heading}&bucket=${bucket}`,
-        {
+    const url = `${apiBase}/risk/upload-file?address=${encodeURIComponent(address)}&heading=${heading}&bucket=${bucket}`;
+    console.log('Calling uploadFile with URL:', url);
+    
+    try {
+        const response = await fetch(url, {
             method: "POST",
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
-    );
-    return response.json();
+        
+        const data = await response.json();
+        console.log('uploadFile response:', data);
+        return data;
+    } catch (error) {
+        console.error('uploadFile error:', error);
+        throw error;
+    }
 };
 
 
@@ -44,6 +59,7 @@ export const generateModel = async (
     fileType: string = "png",
     modelType: string = "image_to_model"
 ): Promise<GenerateModelResponse> => {
+    console.log('Calling generateModel with file:', file);
     const response = await fetch(`${apiBase}/risk/generate-model`, {
         method: "POST",
         headers: {
