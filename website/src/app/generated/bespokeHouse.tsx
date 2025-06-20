@@ -50,6 +50,10 @@ export default function BespokeHouse({ imageURL, labellingResponse = defaultLabe
     ? `${backendUrl}/proxy/?url=${encodeURIComponent(imageURL)}`
     : imageURL;
 
+  console.log('BespokeHouse renderURL:', renderURL);
+  console.log('Original imageURL:', imageURL);
+  console.log('Backend URL:', backendUrl);
+
   const riskPoints = useMemo(() => {
     if (!labellingResponse || !labellingResponse.recommendations || !labellingResponse.category_scores) {
       return [];
@@ -141,7 +145,12 @@ export default function BespokeHouse({ imageURL, labellingResponse = defaultLabe
       <Canvas camera={{ position: [2, 2, 4], fov: 60 }} shadows>
         <ambientLight intensity={0.7} />
         <directionalLight position={[5, 10, 7]} intensity={0.7} castShadow />
-        <Suspense fallback={null}>
+        <Suspense fallback={
+          <mesh>
+            <boxGeometry args={[1, 1, 1]} />
+            <meshStandardMaterial color="#cccccc" />
+          </mesh>
+        }>
           <group position={[0, -0.7, 0]}>
             <GLBModel url={renderURL} />
             {riskPoints.map((risk) => (
