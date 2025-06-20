@@ -117,7 +117,7 @@ async def analyze_house_images(image_inputs: List[Union[str, bytes]], client: Op
 
 {improvements_text}
 
-4. For the three improvements that you identified as most critical, provide the x, y coordinate of where the improvement is located on the image.
+4. For the three improvements that you identified as most critical, provide the x, y coordinate of where the improvement is located on the image. You must provide a valid number for the x and y coordinates for each improvement. 
 
 Use all provided views of the house to make your assessment. If certain aspects aren't visible in any view, mention this in your explanations.
 
@@ -136,8 +136,8 @@ Format your response as a valid JSON string with this exact structure:
             "description": "Exact description from list",
             "location": "Exact location from list",
             "explanation": "Your specific explanation based on all provided views",
-            "x": "x coordinate of the improvement",
-            "y": "y coordinate of the improvement"
+            "x": "x coordinate of the improvement (must be a valid number)",
+            "y": "y coordinate of the improvement (must be a valid number)"
         }},
         // for the three most critical improvements (scored as low)
     ],
