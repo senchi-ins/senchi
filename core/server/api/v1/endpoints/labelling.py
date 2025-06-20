@@ -34,32 +34,32 @@ async def analyze_house(
         try:
             print("starting upload-file")
             # Get Street View image
-            images = get_streetview_image(address, heading, zoom)
-            object_name = address + "_" + str(heading)
+            image = get_streetview_image(address, heading, zoom)
+            # object_name = address + "_" + str(heading)
 
-            # Hash the object name to avoid leaking sensitive information
-            object_name = hashlib.sha256(object_name.encode()).hexdigest()
-            # object_name = "house_testing"
-            sv_success = upload_file_from_bytes(
-                stream=images["sv_response"],
-                bucket=bucket,
-                object_name=f"{object_name}.png"
-            )
+            # # Hash the object name to avoid leaking sensitive information
+            # object_name = hashlib.sha256(object_name.encode()).hexdigest()
+            # # object_name = "house_testing"
+            # sv_success = upload_file_from_bytes(
+            #     stream=images["sv_response"],
+            #     bucket=bucket,
+            #     object_name=f"{object_name}.png"
+            # )
 
-            if sv_success:
-                print(f"Uploaded streetview image to S3: {object_name}.png")
-                file_url = get_file_url(bucket, f"{object_name}.png")
-            else:
-                raise HTTPException(
-                    status_code=500,
-                    detail="Failed to upload file to S3"
-                )
+            # if sv_success:
+            #     print(f"Uploaded streetview image to S3: {object_name}.png")
+            #     file_url = get_file_url(bucket, f"{object_name}.png")
+            # else:
+            #     raise HTTPException(
+            #         status_code=500,
+            #         detail="Failed to upload file to S3"
+            #     )
         
             # Analyze the house using the streetview image
-            result = await label_house([images["sv_response"]])
+            result = await label_house([image["sv_response"]])
             
             if not result:
-                return images
+                return image
                 raise HTTPException(
                     status_code=500,
                     detail="Failed to analyze house image"

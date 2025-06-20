@@ -17,7 +17,7 @@ async def load_improvements() -> List[Dict[str, str]]:
     Returns:
         List[Dict[str, str]]: List of home improvement dictionaries
     """
-    with open('improvement.json', 'r') as f:
+    with open('mgen/improvement.json', 'r') as f:
         data = json.load(f)
     return data['home_improvements']
 
@@ -28,7 +28,7 @@ async def load_rubrics() -> List[Dict]:
     Returns:
         List[Dict]: List of rubric dictionaries
     """
-    with open('improvement_rubric.json', 'r') as f:
+    with open('mgen/improvement_rubric.json', 'r') as f:
         data = json.load(f)
     return data['rubrics']
 
