@@ -28,14 +28,13 @@ export default function Assessment() {
     if (!enterPressed) return;
 
     const fetchModel = async () => {
+      console.log('=== Starting fetchModel pipeline ===');
       setModelLoading(true);
       try {
         // Upload the address to the API
+        console.log('Step 1: Calling uploadFile...');
         const upload_response = await uploadFile(input);
-
-        console.log('Full upload_response:', upload_response);
-        console.log('upload_response type:', typeof upload_response);
-        console.log('upload_response keys:', Object.keys(upload_response));
+        console.log('Step 1 complete - Full upload_response:', upload_response);
         
         // Check if the response has the expected structure
         if (!upload_response || typeof upload_response !== 'object') {
@@ -53,92 +52,211 @@ export default function Assessment() {
           throw new Error('No image_token found in upload response');
         }
         
-        console.log(`imageToken: ${imageToken}`);
+        console.log(`Step 1 complete - imageToken extracted: ${imageToken}`);
         
         // Generate the model - pass the correct file structure
+        console.log('Step 2: Calling generateModel...');
         const fileData = {
             type: "png",
             file_token: imageToken  // Use the extracted imageToken string, not the full object
         };
-        console.log('Calling generateModel with fileData:', fileData);
-        const task = await generateModel(fileData, "png", "image_to_model");
-        console.log('generateModel response:', task);
-        console.log(`task.data: ${task.data}`);
+        console.log('Step 2 - Calling generateModel with fileData:', fileData);
+        
+        // Add retry logic for generateModel
+        let generateSuccess = false;
+        let generateRetryCount = 0;
+        const maxGenerateRetries = 3;
+        let task: unknown = null;
+        
+        while (!generateSuccess && generateRetryCount < maxGenerateRetries) {
+          try {
+            task = await generateModel(fileData, "png", "image_to_model");
+            console.log('Step 2 complete - generateModel response:', task);
+            generateSuccess = true;
+          } catch (error) {
+            generateRetryCount++;
+            console.log(`Step 2 - generateModel failed (retry ${generateRetryCount}/${maxGenerateRetries}):`, error);
+            
+            if (generateRetryCount >= maxGenerateRetries) {
+              console.error('Step 2 - All generateModel retries failed');
+              throw error;
+            }
+            
+            // Wait before retry
+            await new Promise(res => setTimeout(res, 1000));
+          }
+        }
+        
         // Use type guards to safely access task_id and result
         const taskId = (task && typeof task === 'object' && 'data' in task && task.data && typeof task.data === 'object' && 'task_id' in task.data) ? (task.data as { task_id?: string }).task_id : undefined;
-        if (!taskId) throw new Error('No task_id returned from generateModel');
+        if (!taskId) {
+          console.error('No task_id found in generateModel response:', task);
+          throw new Error('No task_id returned from generateModel');
+        }
+        console.log(`Step 2 complete - taskId extracted: ${taskId}`);
 
-        // Poll for model output until it's ready
+        // Wait for model output - single request that waits for completion
+        console.log('Step 3: Waiting for model generation to complete...');
+        
+        // Add retry logic for getModelOutput
+        let pollSuccess = false;
+        let retryCount = 0;
+        const maxRetries = 3;
         let model_output: unknown = null;
-        let attempts = 0;
-        const maxAttempts = 20;
-        const delay = 1500; // ms
-
-        while (attempts < maxAttempts) {
-          model_output = await getModelOutput(taskId);
-          let result: unknown = undefined;
-          if (model_output && typeof model_output === 'object' && 'data' in model_output) {
-            const data = (model_output as { data?: unknown }).data;
-            if (data && typeof data === 'object' && 'result' in data) {
-              result = (data as { result?: unknown }).result;
+        
+        while (!pollSuccess && retryCount < maxRetries) {
+          try {
+            console.log(`Step 3 - Attempt ${retryCount + 1}/${maxRetries} to get model output...`);
+            model_output = await getModelOutput(taskId);
+            console.log(`Step 3 - Model output received:`, model_output);
+            
+            // Check if the response indicates an error
+            if (model_output && typeof model_output === 'object' && 'error' in model_output) {
+              console.log(`Step 3 - Backend returned error: ${model_output.error}`);
+              retryCount++;
+              if (retryCount >= maxRetries) {
+                console.error(`Step 3 - All retries failed`);
+                throw new Error(`Backend error: ${model_output.error}`);
+              }
+              // Wait before retry
+              await new Promise(res => setTimeout(res, 2000));
+              continue;
             }
-          }
-          let hasUrl = false;
-          if (result && typeof result === 'object' && 'pbr_model' in result) {
-            const pbr_model = (result as { pbr_model?: unknown }).pbr_model;
-            if (pbr_model && typeof pbr_model === 'object' && 'url' in pbr_model) {
-              hasUrl = typeof (pbr_model as { url?: unknown }).url === 'string';
+            
+            // Check if we have a successful response with the expected structure
+            if (model_output && typeof model_output === 'object') {
+              // Check for either the new structure (pbr_model_url) or the old structure (data.result.pbr_model.url)
+              const hasNewStructure = 'pbr_model_url' in model_output;
+              const hasOldStructure = 'data' in model_output && 
+                                    model_output.data && 
+                                    typeof model_output.data === 'object' && 
+                                    'result' in model_output.data &&
+                                    model_output.data.result &&
+                                    typeof model_output.data.result === 'object' &&
+                                    'pbr_model' in model_output.data.result;
+              
+              if (hasNewStructure || hasOldStructure) {
+                console.log(`Step 3 - Success! Model output has valid structure`);
+                pollSuccess = true;
+                break;
+              } else {
+                console.log(`Step 3 - Response doesn't have expected structure:`, model_output);
+                retryCount++;
+                if (retryCount >= maxRetries) {
+                  console.error(`Step 3 - All retries failed - invalid response structure`);
+                  throw new Error(`Invalid response structure from backend`);
+                }
+                // Wait before retry
+                await new Promise(res => setTimeout(res, 2000));
+                continue;
+              }
+            } else {
+              console.log(`Step 3 - Invalid response format:`, model_output);
+              retryCount++;
+              if (retryCount >= maxRetries) {
+                console.error(`Step 3 - All retries failed - invalid response format`);
+                throw new Error(`Invalid response format from backend`);
+              }
+              // Wait before retry
+              await new Promise(res => setTimeout(res, 2000));
+              continue;
             }
+          } catch (error) {
+            retryCount++;
+            console.log(`Step 3 - Attempt ${retryCount}/${maxRetries} failed:`, error);
+            
+            if (retryCount >= maxRetries) {
+              console.error(`Step 3 - All retries failed`);
+              throw error; // Re-throw to be caught by outer try-catch
+            }
+            
+            // Wait before retry
+            await new Promise(res => setTimeout(res, 2000));
           }
-          if (hasUrl) break;
-          await new Promise(res => setTimeout(res, delay));
-          attempts++;
         }
 
-        // Safely extract the model_url as a string
+        // Extract the model URL from the response
+        console.log('Step 4: Extracting model URL...');
         let model_url: string | undefined = undefined;
-        if (model_output && typeof model_output === 'object' && 'data' in model_output) {
-          const data = (model_output as { data?: unknown }).data;
-          if (data && typeof data === 'object' && 'result' in data) {
-            const result = (data as { result?: unknown }).result;
-            if (result && typeof result === 'object' && 'pbr_model' in result) {
-              const pbr_model = (result as { pbr_model?: unknown }).pbr_model;
-              if (pbr_model && typeof pbr_model === 'object' && 'url' in pbr_model) {
-                const url = (pbr_model as { url?: unknown }).url;
-                if (typeof url === 'string') {
-                  model_url = url;
+        
+        if (model_output && typeof model_output === 'object') {
+          // Try the new structure first (pbr_model_url)
+          if ('pbr_model_url' in model_output && typeof model_output.pbr_model_url === 'string') {
+            model_url = model_output.pbr_model_url;
+            console.log(`Step 4 - Found model URL using new structure: ${model_url}`);
+          }
+          // Try the old structure (data.result.pbr_model.url)
+          else if ('data' in model_output && model_output.data && typeof model_output.data === 'object' && 'result' in model_output.data) {
+            const data = (model_output as { data?: unknown }).data;
+            if (data && typeof data === 'object' && 'result' in data) {
+              const result = (data as { result?: unknown }).result;
+              if (result && typeof result === 'object' && 'pbr_model' in result) {
+                const pbr_model = (result as { pbr_model?: unknown }).pbr_model;
+                if (pbr_model && typeof pbr_model === 'object' && 'url' in pbr_model) {
+                  const url = (pbr_model as { url?: unknown }).url;
+                  if (typeof url === 'string') {
+                    model_url = url;
+                    console.log(`Step 4 - Found model URL using old structure: ${model_url}`);
+                  }
                 }
               }
             }
           }
         }
-        if (model_url) setImageURL(model_url);
+        
+        if (model_url) {
+          console.log(`Step 4 complete - Model URL set: ${model_url}`);
+          setImageURL(model_url);
+        } else {
+          console.error('Step 4 failed - Could not extract model URL from response');
+          console.error('Response structure:', model_output);
+          throw new Error('Could not extract model URL from response');
+        }
+        
+        console.log('=== fetchModel pipeline completed successfully ===');
       } catch (error) {
-        // Optionally handle error
-        console.error(error);
+        console.error('=== fetchModel pipeline failed ===');
+        console.error('Error details:', error);
+        // Optionally handle error in UI
       } finally {
         setModelLoading(false);
       }
     };
 
     const performHouseAnalysis = async () => {
+      console.log('=== Starting performHouseAnalysis ===');
       setAnalysisLoading(true);
       try {
         // Simulate a network delay for robust testing
         await new Promise(resolve => setTimeout(resolve, 1000));
+        console.log('Calling analyzeHouse...');
         const response = await analyzeHouse(input);
+        console.log('analyzeHouse response:', response);
         setLabellingResponse(response);
+        console.log('=== performHouseAnalysis completed successfully ===');
       } catch (error) {
+        console.error("=== performHouseAnalysis failed ===");
         console.error("Failed to analyze house:", error);
         // Optionally, handle the error in the UI
       } finally {
         setAnalysisLoading(false);
       }
     }
-    // Conduct the analysis of the home
-    performHouseAnalysis();
-    // TODO: Uncomment below when running the actual pipeline
-    fetchModel();
+
+    // Run the pipeline sequentially to avoid race conditions
+    const runPipeline = async () => {
+      console.log('=== Starting full pipeline ===');
+      try {
+        await fetchModel();
+        await performHouseAnalysis();
+        console.log('=== Full pipeline completed ===');
+      } catch (error) {
+        console.error('=== Full pipeline failed ===');
+        console.error('Pipeline error:', error);
+      }
+    };
+
+    runPipeline();
   }, [enterPressed]);
 
   return (

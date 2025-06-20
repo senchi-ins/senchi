@@ -60,18 +60,33 @@ export const generateModel = async (
     modelType: string = "image_to_model"
 ): Promise<GenerateModelResponse> => {
     console.log('Calling generateModel with file:', file);
-    const response = await fetch(`${apiBase}/risk/generate-model`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            file,
-            file_type: fileType,
-            model_type: modelType,
-        }),
-    });
-    return response.json();
+    const url = `${apiBase}/risk/generate-model`;
+    console.log('Calling generateModel with URL:', url);
+    
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                file,
+                file_type: fileType,
+                model_type: modelType,
+            }),
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('generateModel response:', data);
+        return data;
+    } catch (error) {
+        console.error('generateModel error:', error);
+        throw error;
+    }
 };
 
 
@@ -83,10 +98,24 @@ export const getModelOutput = async (
     taskId: string
 ): Promise<GetModelOutputResponse> => {
     const url = `${apiBase}/risk/get-model-output?task_id=${encodeURIComponent(taskId)}`;
-    const response = await fetch(url, {
-        method: "GET",
-    });
-    return response.json();
+    console.log('Calling getModelOutput with URL:', url);
+    
+    try {
+        const response = await fetch(url, {
+            method: "GET",
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('getModelOutput response:', data);
+        return data;
+    } catch (error) {
+        console.error('getModelOutput error:', error);
+        throw error;
+    }
 };
 
 export interface AnalyzeHouseResponse {

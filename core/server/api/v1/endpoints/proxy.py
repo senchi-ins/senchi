@@ -2,6 +2,7 @@ import httpx
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse, Response
 import logging
+import asyncio
 
 TAG = "Proxy"
 PREFIX = "/proxy"
@@ -58,9 +59,21 @@ async def proxy(url: str):
                                 print(f"Streamed {chunk_count} chunks, {total_bytes} bytes")
                             yield chunk
                         print(f"Completed streaming: {chunk_count} chunks, {total_bytes} bytes")
+                    except httpx.StreamClosed:
+                        print(f"Client disconnected during streaming after {chunk_count} chunks, {total_bytes} bytes")
+                        # Client disconnected, this is normal - don't raise an exception
+                        # Just return without yielding anything more
+                        return
+                    except asyncio.TimeoutError:
+                        print(f"Streaming timeout after {chunk_count} chunks, {total_bytes} bytes")
+                        return
                     except Exception as e:
                         print(f"Error during streaming: {e}")
-                        raise
+                        # Only raise if it's not a client disconnection
+                        if not isinstance(e, (httpx.StreamClosed, asyncio.TimeoutError)):
+                            raise
+                        # For client disconnections, just return gracefully
+                        return
                 
                 headers = {
                     'Content-Type': content_type,
@@ -73,11 +86,33 @@ async def proxy(url: str):
                 if content_length:
                     headers['Content-Length'] = content_length
                 
-                return StreamingResponse(
-                    stream_content(),
-                    headers=headers,
-                    media_type=content_type
-                )
+                try:
+                    return StreamingResponse(
+                        stream_content(),
+                        headers=headers,
+                        media_type=content_type
+                    )
+                except httpx.StreamClosed:
+                    print(f"Stream closed during response creation for {url}")
+                    return Response(
+                        status_code=499,
+                        content="Client closed request",
+                        headers={'Access-Control-Allow-Origin': '*'}
+                    )
+                except Exception as e:
+                    print(f"Error creating streaming response for {url}: {e}")
+                    # If it's a StreamClosed or similar client disconnection, return 499
+                    if "StreamClosed" in str(e) or "stream" in str(e).lower():
+                        return Response(
+                            status_code=499,
+                            content="Client closed request",
+                            headers={'Access-Control-Allow-Origin': '*'}
+                        )
+                    # Otherwise, re-raise as a proper HTTP exception
+                    raise HTTPException(
+                        status_code=500,
+                        detail=f"Error creating streaming response: {str(e)}"
+                    )
                 
         except httpx.RequestError as exc:
             logging.error(f"Request error while proxying {url}: {exc}")
@@ -93,7 +128,26 @@ async def proxy(url: str):
                 status_code=exc.response.status_code,
                 detail=f"Resource returned error {exc.response.status_code}"
             )
+        except httpx.StreamClosed as exc:
+            logging.info(f"Client disconnected during streaming of {url}: {exc}")
+            print(f"Client disconnected during streaming of {url}: {exc}")
+            # Client disconnected - this is normal, return a 499 status (Client Closed Request)
+            return Response(
+                status_code=499,
+                content="Client closed request",
+                headers={'Access-Control-Allow-Origin': '*'}
+            )
         except Exception as exc:
+            # Check if this is a StreamClosed exception that wasn't caught earlier
+            if "StreamClosed" in str(exc) or "stream" in str(exc).lower():
+                logging.info(f"Client disconnected during streaming of {url} (caught in general exception): {exc}")
+                print(f"Client disconnected during streaming of {url} (caught in general exception): {exc}")
+                return Response(
+                    status_code=499,
+                    content="Client closed request",
+                    headers={'Access-Control-Allow-Origin': '*'}
+                )
+            
             logging.error(f"Unexpected error while proxying {url}: {exc}")
             print(f"Unexpected error while proxying {url}: {exc}")
             import traceback
