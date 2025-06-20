@@ -5,10 +5,11 @@ import Header from '../components/header'
 import Search from './search'
 import BespokeHouse from '../generated/bespokeHouse'
 
-import { uploadFile, generateModel, getModelOutput } from '@/utils/api'
+import { uploadFile, generateModel, getModelOutput, analyzeHouse, AnalyzeHouseResponse } from '@/utils/api'
 import AssessmentScore from './score'
 import MapView from './mapView'
 import Recommendation from './recommendation'
+// import sampleReturn from '@/utils/sampleReturn.json'
 
 // const url = "https://tripo-data.rg1.data.tripo3d.com/tcli_452312b4252d418cbd41cff1e5c98d35/20250618/21a6930a-143f-44c3-9e2f-db343792298c/tripo_pbr_model_21a6930a-143f-44c3-9e2f-db343792298c.glb?Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfNDUyMzEyYjQyNTJkNDE4Y2JkNDFjZmYxZTVjOThkMzUvMjAyNTA2MTgvMjFhNjkzMGEtMTQzZi00NGMzLTllMmYtZGIzNDM3OTIyOThjL3RyaXBvX3Bicl9tb2RlbF8yMWE2OTMwYS0xNDNmLTQ0YzMtOWUyZi1kYjM0Mzc5MjI5OGMuZ2xiIiwiQ29uZGl0aW9uIjp7IkRhdGVMZXNzVGhhbiI6eyJBV1M6RXBvY2hUaW1lIjoxNzUwMjkxMjAwfX19XX0_&Signature=iWrhXBjsfvFwt~~ZXi3U3SuR1kcUdVUBXBofBYJvzfcJcKMfwylRj1Iefok9tsrNUABSVAeHms5LCGJICFG62p8E3jloxR-fviw6gt09yKIv56nJ803dDOSF1lUht5UWrez1MOHKqLkbNadLN1~xhROYQMlFKU9~z9t8YwhquD8O7seI8Umn31sPXcPS~OW3E~UdpcqvunMSoUlR5c2HLhTDtWpGhzYAcwOhHQuw9OhC~w4WRzKHkWIGib8VkbdV1G1-RGDcYt-NtXhSUX6tdncG9zaXkpu-k0zHJkW8buqN5dbUbj9qOdo-nJ9Fa9WulG7yT-LD96nIue97oivORQ__&Key-Pair-Id=K1676C64NMVM2J"
 
@@ -18,14 +19,16 @@ const url = "./3D/sample_house.glb"
 export default function Assessment() {
   const [input, setInput] = useState("");
   const [imageURL, setImageURL] = useState(url);
-  const [loading, setLoading] = useState(false);
+  const [modelLoading, setModelLoading] = useState(false);
+  const [analysisLoading, setAnalysisLoading] = useState(false);
   const [enterPressed, setEnterPressed] = useState(false);
+  const [labellingResponse, setLabellingResponse] = useState<AnalyzeHouseResponse | null>(null);
 
   useEffect(() => {
     if (!enterPressed) return;
 
     const fetchModel = async () => {
-      setLoading(true);
+      setModelLoading(true);
       try {
         // Upload the address to the API
         const upload_response = await uploadFile(input);
@@ -87,13 +90,28 @@ export default function Assessment() {
         // Optionally handle error
         console.error(error);
       } finally {
-        setLoading(false);
+        setModelLoading(false);
       }
     };
 
+    const performHouseAnalysis = async () => {
+      setAnalysisLoading(true);
+      try {
+        // Simulate a network delay for robust testing
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const response = await analyzeHouse(input);
+        setLabellingResponse(response);
+      } catch (error) {
+        console.error("Failed to analyze house:", error);
+        // Optionally, handle the error in the UI
+      } finally {
+        setAnalysisLoading(false);
+      }
+    }
+    // Conduct the analysis of the home
+    performHouseAnalysis();
     // TODO: Uncomment below when running the actual pipeline
     fetchModel();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enterPressed]);
 
   return (
@@ -110,7 +128,7 @@ export default function Assessment() {
                 {`AI-powered home evaluation and risk analysis for ${input}`}
               </h4>
               <div className="text-sm text-gray-500 text-left w-full italic rounded py-1">
-                Note: This dashboard is for demo purposes only. The full dashboard will be available soon.
+                Note: This dashboard is for demo purposes only. We&apos;re continuing to refine our models and the full dashboard will be available soon.
               </div>
             </div>
           )}
@@ -118,7 +136,7 @@ export default function Assessment() {
             {!enterPressed ? (
               <Search setInput={setInput} input={input} setEnterPressed={setEnterPressed} />
             ) : (
-              loading ? (
+              (modelLoading || analysisLoading) ? (
                 <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: 80 }}>
                   <svg
                     width="48"
@@ -161,16 +179,16 @@ export default function Assessment() {
               ) : (
                 <div className="grid grid-cols-2 md:grid-cols-2 gap-5">
                   <div className="flex flex-col items-center justify-center bg-white rounded-2xl shadow min-h-[500px] w-full max-w-md">
-                    <BespokeHouse imageURL={imageURL} />
+                    {labellingResponse && <BespokeHouse imageURL={imageURL} labellingResponse={labellingResponse} />}
                   </div>
                   <div className="flex flex-col items-center justify-center bg-white rounded-2xl shadow min-h-[500px] w-full max-w-md">
-                    <AssessmentScore />
+                    {labellingResponse && <AssessmentScore labellingResponse={labellingResponse} />}
                   </div>
                   <div className="flex flex-col items-center justify-center bg-white rounded-2xl shadow min-h-[500px] w-full max-w-md">
                     <MapView />
                   </div>
                   <div className="flex flex-col items-center justify-center bg-white rounded-2xl shadow min-h-[500px] w-full max-w-md">
-                    <Recommendation />
+                    {labellingResponse && <Recommendation labellingResponse={labellingResponse} />}
                   </div>
                 </div>
               )

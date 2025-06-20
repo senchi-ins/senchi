@@ -1,15 +1,17 @@
 "use client"
 
-import React, { Suspense, useState } from 'react'
+import React, { Suspense, useState, useMemo } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls, useGLTF, Html } from '@react-three/drei'
 import { motion, AnimatePresence } from 'framer-motion'
 import dotenv from 'dotenv'
+import { AnalyzeHouseResponse } from '@/utils/api'
 
 dotenv.config()
 
 type BespokeHouseProps = {
   imageURL: string;
+  labellingResponse: AnalyzeHouseResponse;
 }
 
 type RiskInfo = {
@@ -24,33 +26,47 @@ type RiskInfo = {
   };
 }
 
-const riskPoints: RiskInfo[] = [
-  {
-    id: 'roof',
-    title: 'Roof Vulnerability',
-    description: 'This area is susceptible to hail damage and wind uplift. Consider reinforcing with impact-resistant materials.',
-    severity: 'high',
-    position: { x: -0.2, y: 0.7, z: 0 }
-  },
-  {
-    id: 'foundation',
-    title: 'Foundation Risk',
-    description: 'Located in a flood-prone zone. Consider installing proper drainage and waterproofing measures.',
-    severity: 'medium',
-    position: { x: 1, y: -0.5, z: -0.5 }
-  }
-]
-
 // Configuration for the 3D model and risk points
 const MODEL_CONFIG = {
-  scale: 1.5,
+  scale: 1.8,
   riskPointScale: 1, // Adjust this to make risk points larger or smaller
   riskPointOffset: { x: 0, y: 0, z: 0 }, // Global offset for all risk points
 }
 
 // TODO: Re-route to s3 bucket for secure storage
-export default function BespokeHouse({ imageURL }: BespokeHouseProps) {
+export default function BespokeHouse({ imageURL, labellingResponse }: BespokeHouseProps) {
   const [selectedRisk, setSelectedRisk] = useState<RiskInfo | null>(null);
+
+  const riskPoints = useMemo(() => {
+    if (!labellingResponse || !labellingResponse.recommendations || !labellingResponse.category_scores) {
+      return [];
+    }
+
+    const { recommendations, category_scores } = labellingResponse;
+    const imageWidth = 640;
+    const imageHeight = 640;
+
+    return recommendations.map((rec, index) => {
+      const scoreCategory = category_scores.find(cat => cat.title === rec.title);
+      const severity = (scoreCategory?.score as 'low' | 'medium' | 'high') || 'medium';
+
+      // Normalize 2D image coordinates to 3D model space [-1, 1]
+      const x = (parseInt(rec.x, 10) - imageWidth / 2) / (imageWidth / 2);
+      const y = (imageHeight / 2 - parseInt(rec.y, 10)) / (imageHeight / 2);
+
+      return {
+        id: rec.title || `risk-${index}`,
+        title: rec.title,
+        description: rec.explanation || rec.description,
+        severity,
+        position: {
+          x,
+          y,
+          z: -0.5,
+        },
+      };
+    });
+  }, [labellingResponse]);
 
   // NOTE: Uncomment below when running the actual pipeline
   const proxy = process.env.NEXT_PUBLIC_PROXY_URL;
@@ -118,25 +134,27 @@ export default function BespokeHouse({ imageURL }: BespokeHouseProps) {
         <ambientLight intensity={0.7} />
         <directionalLight position={[5, 10, 7]} intensity={0.7} castShadow />
         <Suspense fallback={null}>
-          <GLBModel url={renderURL} />
-          {riskPoints.map((risk) => (
-            <RiskDot key={risk.id} risk={risk} position={risk.position} />
-          ))}
+          <group position={[0, -0.7, 0]}>
+            <GLBModel url={renderURL} />
+            {riskPoints.map((risk) => (
+              <RiskDot key={risk.id} risk={risk} position={risk.position} />
+            ))}
+          </group>
         </Suspense>
         <OrbitControls enablePan enableZoom enableRotate />
       </Canvas>
       <AnimatePresence>
         {selectedRisk && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            initial={{ opacity: 0, scale: 0.9, y: -20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            exit={{ opacity: 0, scale: 0.9, y: -20 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             style={{
               position: 'absolute',
-              left: '65%',
-              bottom: 100,
-              transform: 'translateX(40%, )',
+              top: 20,
+              left: '10%',
+              transform: 'translateX(-30%)',
               width: 320,
               background: 'white',
               borderRadius: 12,

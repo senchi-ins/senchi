@@ -8,7 +8,7 @@ const content = {
     
     We use AI to streamline quotes, automate claims processing, and detect fraud to help you save time and money. Then, we take any remaining profit and donate it to charity so you can feel good about your purchase.
 
-    We've spent the last 2 years builing pricing models and developing GenAI workflows at McKinsey to help some of the world's largest companies. Now, we're helping Canadians get the best deals on insurance.
+    We've spent the last 2 years building pricing models and developing GenAI workflows at McKinsey to help some of the world's largest companies. Now, we're helping Canadians get the best deals on insurance.
     `,
 }
 

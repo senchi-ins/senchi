@@ -72,3 +72,30 @@ export const getModelOutput = async (
     });
     return response.json();
 };
+
+export interface AnalyzeHouseResponse {
+    category_scores: Array<{[key: string]: string }>;
+    recommendations: Array<{[key: string]: string }>;
+    final_score: number;
+}
+
+export const analyzeHouse = async (
+    address: string,
+    heading: number = 120,
+    bucket: string = "senchi-gen-dev",
+    zoom: number = 21,
+    file_type: string = "png"
+): Promise<AnalyzeHouseResponse> => {
+    const params = new URLSearchParams({
+        address: address,
+        heading: heading.toString(),
+        bucket: bucket,
+        zoom: zoom.toString(),
+        file_type: file_type
+    });
+    
+    const response = await fetch(`${apiBase}/labelling/analyze-house?${params}`, {
+        method: "POST",
+    });
+    return response.json();
+};
