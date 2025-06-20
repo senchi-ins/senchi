@@ -55,9 +55,15 @@ export default function Assessment() {
         
         console.log(`imageToken: ${imageToken}`);
         
-        // Generate the model
-        const task = await generateModel(upload_response, "png", "image_to_model");
-        console.log(`task: ${task.data}`);
+        // Generate the model - pass the correct file structure
+        const fileData = {
+            type: "png",
+            file_token: imageToken  // Use the extracted imageToken string, not the full object
+        };
+        console.log('Calling generateModel with fileData:', fileData);
+        const task = await generateModel(fileData, "png", "image_to_model");
+        console.log('generateModel response:', task);
+        console.log(`task.data: ${task.data}`);
         // Use type guards to safely access task_id and result
         const taskId = (task && typeof task === 'object' && 'data' in task && task.data && typeof task.data === 'object' && 'task_id' in task.data) ? (task.data as { task_id?: string }).task_id : undefined;
         if (!taskId) throw new Error('No task_id returned from generateModel');

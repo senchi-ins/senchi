@@ -126,11 +126,21 @@ async def generate_model(
     ):
     url = "https://api.tripo3d.ai/v2/openapi/task"
 
+    # Handle both old and new file structures
+    if "data" in file and "image_token" in file["data"]:
+        # Old structure: {'code': 0, 'data': {'image_token': '...'}}
+        file_token = file["data"]["image_token"]
+    elif "file_token" in file:
+        # New structure: {'type': 'png', 'file_token': '...'}
+        file_token = file["file_token"]
+    else:
+        raise ValueError(f"Invalid file structure. Expected either upload response or file data with file_token. Got: {file}")
+
     data = {
         "type": model_type,
         "file": {
             "type": file_type,
-            "file_token": file["data"]["image_token"]
+            "file_token": file_token
         },
         # "model_version": model_version,
         # "model_seed": model_seed,
