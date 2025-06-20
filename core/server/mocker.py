@@ -1,7 +1,11 @@
 import requests
+from dotenv import load_dotenv
+
+load_dotenv()
 
 address = "383 Wettlaufer Terrace, Milton, ON, L9T 7N4"
 # prod_api_url = "https://api.senchi.ca/api/v1/risk/upload-file"
+# dev_api_url_base = "http://localhost:8000/api/v1/risk"
 dev_api_url_base = "http://localhost:8000/api/v1/labelling"
 
 health_check = dev_api_url_base + "/"
@@ -11,6 +15,8 @@ response = requests.get(health_check)
 #     dev_api_url_base + "/upload-file",
 #     params={"address": address, "heading": 120, "bucket": "senchi-gen-dev"}
 # )
+
+# print(response.json())
 
 # response = {'code': 0, 'data': {'image_token': '6ae37d34-0462-41b8-8f4d-2bad3cc3e5f6'}}
 
@@ -41,7 +47,7 @@ response = requests.get(health_check)
 
 response = requests.post(
     dev_api_url_base + "/analyze-house",
-    params={"address": address, "heading": 120, "bucket": "senchi-gen-dev"}
+    params={"address": address, "heading": 120}
 )
 
 print(response.json())
