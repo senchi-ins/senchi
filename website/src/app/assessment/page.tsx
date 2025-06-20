@@ -128,7 +128,7 @@ export default function Assessment() {
                 {`AI-powered home evaluation and risk analysis for ${input}`}
               </h4>
               <div className="text-sm text-gray-500 text-left w-full italic rounded py-1">
-                Note: This dashboard is for demo purposes only. The full dashboard will be available soon.
+                Note: This dashboard is for demo purposes only. We're continuing to refine our models and the full dashboard will be available soon.
               </div>
             </div>
           )}
