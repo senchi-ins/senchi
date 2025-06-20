@@ -18,11 +18,11 @@ import Recommendation from './recommendation'
 
 export default function Assessment() {
   const [input, setInput] = useState("");
-  const [imageURL, setImageURL] = useState("");
+  const [imageURL, setImageURL] = useState(""); // Start empty, wait for API response
   const [modelLoading, setModelLoading] = useState(false);
   const [analysisLoading, setAnalysisLoading] = useState(false);
   const [enterPressed, setEnterPressed] = useState(false);
-  const [labellingResponse, setLabellingResponse] = useState<AnalyzeHouseResponse | null>(null);
+  const [labellingResponse, setLabellingResponse] = useState<AnalyzeHouseResponse | undefined>(undefined);
 
   useEffect(() => {
     if (!enterPressed) return;
@@ -33,10 +33,31 @@ export default function Assessment() {
         // Upload the address to the API
         const upload_response = await uploadFile(input);
 
-        // console.log(`upload_response: ${upload_response.data.image_token}`);
+        console.log('Full upload_response:', upload_response);
+        console.log('upload_response type:', typeof upload_response);
+        console.log('upload_response keys:', Object.keys(upload_response));
+        
+        // Check if the response has the expected structure
+        if (!upload_response || typeof upload_response !== 'object') {
+          throw new Error('Invalid upload response format');
+        }
+        
+        // Try to extract the image token from the response
+        let imageToken;
+        if ('data' in upload_response && upload_response.data && typeof upload_response.data === 'object' && 'image_token' in upload_response.data) {
+          imageToken = upload_response.data.image_token;
+        } else if ('image_token' in upload_response) {
+          imageToken = upload_response.image_token;
+        } else {
+          console.error('Could not find image_token in response:', upload_response);
+          throw new Error('No image_token found in upload response');
+        }
+        
+        console.log(`imageToken: ${imageToken}`);
+        
         // Generate the model
         const task = await generateModel(upload_response, "png", "image_to_model");
-        // console.log(`task: ${task.data}`);
+        console.log(`task: ${task.data}`);
         // Use type guards to safely access task_id and result
         const taskId = (task && typeof task === 'object' && 'data' in task && task.data && typeof task.data === 'object' && 'task_id' in task.data) ? (task.data as { task_id?: string }).task_id : undefined;
         if (!taskId) throw new Error('No task_id returned from generateModel');
@@ -179,7 +200,7 @@ export default function Assessment() {
               ) : (
                 <div className="grid grid-cols-2 md:grid-cols-2 gap-5">
                   <div className="flex flex-col items-center justify-center bg-white rounded-2xl shadow min-h-[500px] w-full max-w-md">
-                    {labellingResponse && <BespokeHouse imageURL={imageURL} labellingResponse={labellingResponse} />}
+                    {imageURL && <BespokeHouse imageURL={imageURL} labellingResponse={labellingResponse} />}
                   </div>
                   <div className="flex flex-col items-center justify-center bg-white rounded-2xl shadow min-h-[500px] w-full max-w-md">
                     {labellingResponse && <AssessmentScore labellingResponse={labellingResponse} />}

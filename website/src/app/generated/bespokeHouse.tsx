@@ -11,7 +11,7 @@ dotenv.config()
 
 type BespokeHouseProps = {
   imageURL: string;
-  labellingResponse: AnalyzeHouseResponse;
+  labellingResponse?: AnalyzeHouseResponse;
 }
 
 type RiskInfo = {
@@ -33,9 +33,22 @@ const MODEL_CONFIG = {
   riskPointOffset: { x: 0, y: 0, z: 0 }, // Global offset for all risk points
 }
 
+const defaultLabellingResponse: AnalyzeHouseResponse = {
+  recommendations: [],
+  category_scores: [],
+  final_score: 0,
+};
+
 // TODO: Re-route to s3 bucket for secure storage
-export default function BespokeHouse({ imageURL, labellingResponse }: BespokeHouseProps) {
+export default function BespokeHouse({ imageURL, labellingResponse = defaultLabellingResponse }: BespokeHouseProps) {
   const [selectedRisk, setSelectedRisk] = useState<RiskInfo | null>(null);
+  
+  // Construct the full, absolute URL to our own backend proxy, ensuring a trailing slash
+  const isRemoteUrl = imageURL && imageURL.startsWith('http');
+  const backendUrl = (process.env.NEXT_PUBLIC_SENCHI_API_URL || 'http://localhost:8000/api/v1').replace(/\/$/, '');
+  const renderURL = isRemoteUrl 
+    ? `${backendUrl}/proxy/?url=${encodeURIComponent(imageURL)}`
+    : imageURL;
 
   const riskPoints = useMemo(() => {
     if (!labellingResponse || !labellingResponse.recommendations || !labellingResponse.category_scores) {
@@ -68,16 +81,12 @@ export default function BespokeHouse({ imageURL, labellingResponse }: BespokeHou
     });
   }, [labellingResponse]);
 
-  // Construct the full, absolute URL to our own backend proxy
-  const backendUrl = process.env.NEXT_PUBLIC_SENCHI_API_URL || 'http://localhost:8000/api/v1';
-  const proxyURL = `${backendUrl}/proxy?url=${encodeURIComponent(imageURL)}`;
-
   function GLBModel({ url }: { url: string }) {
     const { scene } = useGLTF(url)
     return <primitive object={scene} scale={MODEL_CONFIG.scale} />
   }
 
-  useGLTF.preload(proxyURL)
+  useGLTF.preload(renderURL)
 
   const RiskDot = ({ risk, position }: { risk: RiskInfo, position: { x: number, y: number, z: number } }) => {
     // Apply global offset and scale to position
@@ -134,7 +143,7 @@ export default function BespokeHouse({ imageURL, labellingResponse }: BespokeHou
         <directionalLight position={[5, 10, 7]} intensity={0.7} castShadow />
         <Suspense fallback={null}>
           <group position={[0, -0.7, 0]}>
-            <GLBModel url={proxyURL} />
+            <GLBModel url={renderURL} />
             {riskPoints.map((risk) => (
               <RiskDot key={risk.id} risk={risk} position={risk.position} />
             ))}
