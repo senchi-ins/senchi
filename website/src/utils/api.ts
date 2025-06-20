@@ -74,8 +74,8 @@ export const getModelOutput = async (
 };
 
 export interface AnalyzeHouseResponse {
-    category_scores: Array<{[key: string]: any}>;
-    recommendations: Array<{[key: string]: any}>;
+    category_scores: Array<{[key: string]: string }>;
+    recommendations: Array<{[key: string]: string }>;
     final_score: number;
 }
 
