@@ -43,7 +43,7 @@ def calculate_house_score(scores: List[str]) -> float:
         float: Final house score out of 100
     """
     score_values = {
-        'high': 4,
+        'high': 1,
         'medium': 4,
         'low': 6.666
     }
