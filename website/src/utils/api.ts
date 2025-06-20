@@ -1,7 +1,5 @@
 export const apiBase = process.env.NEXT_PUBLIC_SENCHI_API_URL;
 
-console.log('API Base URL:', apiBase);
-
 export const test_api = async () => {
     const response = await fetch(`${apiBase}/api/v1/quote`, {
         method: "GET",
@@ -28,7 +26,6 @@ export const uploadFile = async (
     bucket: string = "senchi-gen-dev"
 ): Promise<UploadFileResponse> => {
     const url = `${apiBase}/risk/upload-file?address=${encodeURIComponent(address)}&heading=${heading}&bucket=${bucket}`;
-    console.log('Calling uploadFile with URL:', url);
     
     try {
         const response = await fetch(url, {
@@ -40,7 +37,6 @@ export const uploadFile = async (
         }
         
         const data = await response.json();
-        console.log('uploadFile response:', data);
         return data;
     } catch (error) {
         console.error('uploadFile error:', error);
@@ -59,9 +55,7 @@ export const generateModel = async (
     fileType: string = "png",
     modelType: string = "image_to_model"
 ): Promise<GenerateModelResponse> => {
-    console.log('Calling generateModel with file:', file);
     const url = `${apiBase}/risk/generate-model`;
-    console.log('Calling generateModel with URL:', url);
     
     try {
         const response = await fetch(url, {
@@ -81,7 +75,6 @@ export const generateModel = async (
         }
         
         const data = await response.json();
-        console.log('generateModel response:', data);
         return data;
     } catch (error) {
         console.error('generateModel error:', error);
@@ -98,7 +91,6 @@ export const getModelOutput = async (
     taskId: string
 ): Promise<GetModelOutputResponse> => {
     const url = `${apiBase}/risk/get-model-output?task_id=${encodeURIComponent(taskId)}`;
-    console.log('Calling getModelOutput with URL:', url);
     
     try {
         const response = await fetch(url, {
@@ -110,7 +102,6 @@ export const getModelOutput = async (
         }
         
         const data = await response.json();
-        console.log('getModelOutput response:', data);
         return data;
     } catch (error) {
         console.error('getModelOutput error:', error);

@@ -14,11 +14,11 @@ import Recommendation from './recommendation'
 // const url = "https://tripo-data.rg1.data.tripo3d.com/tcli_452312b4252d418cbd41cff1e5c98d35/20250618/21a6930a-143f-44c3-9e2f-db343792298c/tripo_pbr_model_21a6930a-143f-44c3-9e2f-db343792298c.glb?Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfNDUyMzEyYjQyNTJkNDE4Y2JkNDFjZmYxZTVjOThkMzUvMjAyNTA2MTgvMjFhNjkzMGEtMTQzZi00NGMzLTllMmYtZGIzNDM3OTIyOThjL3RyaXBvX3Bicl9tb2RlbF8yMWE2OTMwYS0xNDNmLTQ0YzMtOWUyZi1kYjM0Mzc5MjI5OGMuZ2xiIiwiQ29uZGl0aW9uIjp7IkRhdGVMZXNzVGhhbiI6eyJBV1M6RXBvY2hUaW1lIjoxNzUwMjkxMjAwfX19XX0_&Signature=iWrhXBjsfvFwt~~ZXi3U3SuR1kcUdVUBXBofBYJvzfcJcKMfwylRj1Iefok9tsrNUABSVAeHms5LCGJICFG62p8E3jloxR-fviw6gt09yKIv56nJ803dDOSF1lUht5UWrez1MOHKqLkbNadLN1~xhROYQMlFKU9~z9t8YwhquD8O7seI8Umn31sPXcPS~OW3E~UdpcqvunMSoUlR5c2HLhTDtWpGhzYAcwOhHQuw9OhC~w4WRzKHkWIGib8VkbdV1G1-RGDcYt-NtXhSUX6tdncG9zaXkpu-k0zHJkW8buqN5dbUbj9qOdo-nJ9Fa9WulG7yT-LD96nIue97oivORQ__&Key-Pair-Id=K1676C64NMVM2J"
 
 // const url = "tripo_convert_4c0f25aa-21f5-46a2-9111-28feef8fd803.glb"
-// const url = "./3D/sample_house.glb"
+const url = "./3D/sample_house.glb"
 
 export default function Assessment() {
   const [input, setInput] = useState("");
-  const [imageURL, setImageURL] = useState(""); // Start empty, wait for API response
+  const [imageURL, setImageURL] = useState(url); // Start empty, wait for API response
   const [modelLoading, setModelLoading] = useState(false);
   const [analysisLoading, setAnalysisLoading] = useState(false);
   const [enterPressed, setEnterPressed] = useState(false);
@@ -28,13 +28,13 @@ export default function Assessment() {
     if (!enterPressed) return;
 
     const fetchModel = async () => {
-      console.log('=== Starting fetchModel pipeline ===');
+      // console.log('=== Starting fetchModel pipeline ===');
       setModelLoading(true);
       try {
         // Upload the address to the API
-        console.log('Step 1: Calling uploadFile...');
+        // console.log('Step 1: Calling uploadFile...');
         const upload_response = await uploadFile(input);
-        console.log('Step 1 complete - Full upload_response:', upload_response);
+        // console.log('Step 1 complete - Full upload_response:', upload_response);
         
         // Check if the response has the expected structure
         if (!upload_response || typeof upload_response !== 'object') {
@@ -52,15 +52,15 @@ export default function Assessment() {
           throw new Error('No image_token found in upload response');
         }
         
-        console.log(`Step 1 complete - imageToken extracted: ${imageToken}`);
+        // console.log(`Step 1 complete - imageToken extracted: ${imageToken}`);
         
         // Generate the model - pass the correct file structure
-        console.log('Step 2: Calling generateModel...');
+        // console.log('Step 2: Calling generateModel...');
         const fileData = {
             type: "png",
             file_token: imageToken  // Use the extracted imageToken string, not the full object
         };
-        console.log('Step 2 - Calling generateModel with fileData:', fileData);
+        // console.log('Step 2 - Calling generateModel with fileData:', fileData);
         
         // Add retry logic for generateModel
         let generateSuccess = false;
@@ -71,7 +71,7 @@ export default function Assessment() {
         while (!generateSuccess && generateRetryCount < maxGenerateRetries) {
           try {
             task = await generateModel(fileData, "png", "image_to_model");
-            console.log('Step 2 complete - generateModel response:', task);
+            // console.log('Step 2 complete - generateModel response:', task);
             generateSuccess = true;
           } catch (error) {
             generateRetryCount++;
@@ -93,10 +93,10 @@ export default function Assessment() {
           console.error('No task_id found in generateModel response:', task);
           throw new Error('No task_id returned from generateModel');
         }
-        console.log(`Step 2 complete - taskId extracted: ${taskId}`);
+        // console.log(`Step 2 complete - taskId extracted: ${taskId}`);
 
         // Wait for model output - single request that waits for completion
-        console.log('Step 3: Waiting for model generation to complete...');
+        // console.log('Step 3: Waiting for model generation to complete...');
         
         // Add retry logic for getModelOutput
         let pollSuccess = false;
@@ -108,7 +108,7 @@ export default function Assessment() {
           try {
             console.log(`Step 3 - Attempt ${retryCount + 1}/${maxRetries} to get model output...`);
             model_output = await getModelOutput(taskId);
-            console.log(`Step 3 - Model output received:`, model_output);
+            // console.log(`Step 3 - Model output received:`, model_output);
             
             // Check if the response indicates an error
             if (model_output && typeof model_output === 'object' && 'error' in model_output) {
@@ -136,7 +136,7 @@ export default function Assessment() {
                                     'pbr_model' in model_output.data.result;
               
               if (hasNewStructure || hasOldStructure) {
-                console.log(`Step 3 - Success! Model output has valid structure`);
+                // console.log(`Step 3 - Success! Model output has valid structure`);
                 pollSuccess = true;
                 break;
               } else {
@@ -176,14 +176,14 @@ export default function Assessment() {
         }
 
         // Extract the model URL from the response
-        console.log('Step 4: Extracting model URL...');
+        // console.log('Step 4: Extracting model URL...');
         let model_url: string | undefined = undefined;
         
         if (model_output && typeof model_output === 'object') {
           // Try the new structure first (pbr_model_url)
           if ('pbr_model_url' in model_output && typeof model_output.pbr_model_url === 'string') {
             model_url = model_output.pbr_model_url;
-            console.log(`Step 4 - Found model URL using new structure: ${model_url}`);
+            // console.log(`Step 4 - Found model URL using new structure: ${model_url}`);
           }
           // Try the old structure (data.result.pbr_model.url)
           else if ('data' in model_output && model_output.data && typeof model_output.data === 'object' && 'result' in model_output.data) {
@@ -196,7 +196,7 @@ export default function Assessment() {
                   const url = (pbr_model as { url?: unknown }).url;
                   if (typeof url === 'string') {
                     model_url = url;
-                    console.log(`Step 4 - Found model URL using old structure: ${model_url}`);
+                    // console.log(`Step 4 - Found model URL using old structure: ${model_url}`);
                   }
                 }
               }
@@ -205,7 +205,7 @@ export default function Assessment() {
         }
         
         if (model_url) {
-          console.log(`Step 4 complete - Model URL set: ${model_url}`);
+          // console.log(`Step 4 complete - Model URL set: ${model_url}`);
           setImageURL(model_url);
         } else {
           console.error('Step 4 failed - Could not extract model URL from response');
@@ -213,9 +213,9 @@ export default function Assessment() {
           throw new Error('Could not extract model URL from response');
         }
         
-        console.log('=== fetchModel pipeline completed successfully ===');
+        // console.log('=== fetchModel pipeline completed successfully ===');
       } catch (error) {
-        console.error('=== fetchModel pipeline failed ===');
+        // console.error('=== fetchModel pipeline failed ===');
         console.error('Error details:', error);
         // Optionally handle error in UI
       } finally {
@@ -224,16 +224,16 @@ export default function Assessment() {
     };
 
     const performHouseAnalysis = async () => {
-      console.log('=== Starting performHouseAnalysis ===');
+      // console.log('=== Starting performHouseAnalysis ===');
       setAnalysisLoading(true);
       try {
         // Simulate a network delay for robust testing
         await new Promise(resolve => setTimeout(resolve, 1000));
-        console.log('Calling analyzeHouse...');
+        // console.log('Calling analyzeHouse...');
         const response = await analyzeHouse(input);
-        console.log('analyzeHouse response:', response);
+        // console.log('analyzeHouse response:', response);
         setLabellingResponse(response);
-        console.log('=== performHouseAnalysis completed successfully ===');
+        // console.log('=== performHouseAnalysis completed successfully ===');
       } catch (error) {
         console.error("=== performHouseAnalysis failed ===");
         console.error("Failed to analyze house:", error);
@@ -245,13 +245,13 @@ export default function Assessment() {
 
     // Run the pipeline sequentially to avoid race conditions
     const runPipeline = async () => {
-      console.log('=== Starting full pipeline ===');
+      // console.log('=== Starting full pipeline ===');
       try {
         await fetchModel();
         await performHouseAnalysis();
-        console.log('=== Full pipeline completed ===');
+        // console.log('=== Full pipeline completed ===');
       } catch (error) {
-        console.error('=== Full pipeline failed ===');
+        // console.error('=== Full pipeline failed ===');
         console.error('Pipeline error:', error);
       }
     };

@@ -45,14 +45,11 @@ export default function BespokeHouse({ imageURL, labellingResponse = defaultLabe
   
   // Construct the full, absolute URL to our own backend proxy, ensuring a trailing slash
   const isRemoteUrl = imageURL && imageURL.startsWith('http');
-  const backendUrl = (process.env.NEXT_PUBLIC_SENCHI_API_URL || 'http://localhost:8000/api/v1').replace(/\/$/, '');
+  // const backendUrl = (process.env.NEXT_PUBLIC_SENCHI_API_URL || 'http://localhost:8000/api/v1').replace(/\/$/, '');
+  const simpleProxyURL = process.env.NEXT_PUBLIC_PROXY_URL + encodeURIComponent(imageURL);
   const renderURL = isRemoteUrl 
-    ? `${backendUrl}/proxy/?url=${encodeURIComponent(imageURL)}`
+    ? simpleProxyURL
     : imageURL;
-
-  console.log('BespokeHouse renderURL:', renderURL);
-  console.log('Original imageURL:', imageURL);
-  console.log('Backend URL:', backendUrl);
 
   const riskPoints = useMemo(() => {
     if (!labellingResponse || !labellingResponse.recommendations || !labellingResponse.category_scores) {
