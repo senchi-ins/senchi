@@ -1,0 +1,91 @@
+{
+    "category_scores": [
+      {
+        "title": "Clear roof and gutters of debris",
+        "score": "medium"
+      },
+      {
+        "title": "Install gutter guards",
+        "score": "low"
+      },
+      {
+        "title": "Extend gutter downspouts away from the house",
+        "score": "medium"
+      },
+      {
+        "title": "Install non-combustible siding",
+        "score": "medium"
+      },
+      {
+        "title": "Use Class A fire-rated or Class 4 impact-resistant roofing",
+        "score": "medium"
+      },
+      {
+        "title": "Use non-combustible fencing within five feet of the home",
+        "score": "medium"
+      },
+      {
+        "title": "Reinforce the garage door",
+        "score": "medium"
+      },
+      {
+        "title": "Trim tree branches and shrubs around the house",
+        "score": "high"
+      },
+      {
+        "title": "Seal exterior wall openings",
+        "score": "medium"
+      },
+      {
+        "title": "Grade the landscape to slope away from the foundation",
+        "score": "medium"
+      },
+      {
+        "title": "Apply waterproof sealant to foundation walls",
+        "score": "medium"
+      },
+      {
+        "title": "Reinforce the chimney",
+        "score": "medium"
+      },
+      {
+        "title": "Insulate exposed exterior pipes",
+        "score": "medium"
+      },
+      {
+        "title": "Create a non-flammable (e.g. gravel or stone) barrier around the foundation",
+        "score": "medium"
+      },
+      {
+        "title": "Reinforce Roof-to-Wall Connections",
+        "score": "medium"
+      }
+    ],
+    "recommendations": [
+      {
+        "title": "Install gutter guards",
+        "description": "Install guards to prevent leaves and debris from clogging gutters.",
+        "location": "Gutters",
+        "explanation": "No gutter guards are visible in the image, indicating a risk of debris buildup which can exacerbate water damage.",
+        "x": "150",
+        "y": "250"
+      },
+      {
+        "title": "Clear roof and gutters of debris",
+        "description": "Remove leaves, pine needles, and other flammable debris from the roof and gutters.",
+        "location": "Roof",
+        "explanation": "While some debris may be present on the roof, a thorough inspection and clearing are suggested to reduce fire hazards.",
+        "x": "450",
+        "y": "180"
+      },
+      {
+        "title": "Use non-combustible siding",
+        "description": "Use materials like fiber cement, brick, or stucco for siding.",
+        "location": "Exterior walls",
+        "explanation": "The siding material appears to be a mix that may include combustible materials, which could be a fire risk.",
+        "x": "320",
+        "y": "450"
+      }
+    ],
+    "final_score": 60
+  }

@@ -1,45 +1,57 @@
+import { AnalyzeHouseResponse } from '@/utils/api';
 import React from 'react'
 
 interface AssessmentScoreProps {
-  score?: number;
-  maxScore?: number;
+  labellingResponse: AnalyzeHouseResponse;
 }
 
-export default function AssessmentScore({ score = 73, maxScore = 100 }: AssessmentScoreProps) {
+export default function AssessmentScore({ labellingResponse }: AssessmentScoreProps) {
+  const score = labellingResponse.final_score;
+  console.log(labellingResponse);
+  const maxScore = 100;
   const percent = Math.round((score / maxScore) * 100);
-  const radius = 60;
-  const stroke = 8;
-  const normalizedRadius = radius - stroke / 2;
-  const circumference = 2 * Math.PI * normalizedRadius;
-  const progress = circumference - (percent / 100) * circumference;
+  const circumference = 2 * Math.PI * 45;
+  const offset = circumference - (percent / 100) * circumference;
+
+  const getColor = (score: number): string => {
+    if (score >= 80) return "#10B981"; // Green
+    if (score >= 60) return "#F59E0B"; // Orange
+    if (score >= 50) return "#F6C700"; // Yellow
+    return "#EF4444"; // Red
+  };
+
+  const strokeColor = getColor(score);
 
   return (
-    <div className="bg-white rounded-2xl shadow flex flex-col items-center w-full max-w-md mx-auto h-full justify-center">
-      <div className="relative flex items-center justify-center mb-4" style={{ width: 140, height: 140 }}>
-        <svg width={140} height={140}>
+    <div className="bg-white rounded-2xl p-8 w-full max-w-md mx-auto flex flex-col items-center justify-center">
+      <div className="relative w-32 h-32">
+        <svg className="w-full h-full" viewBox="0 0 100 100">
+          {/* Background circle */}
           <circle
-            cx={70}
-            cy={70}
-            r={normalizedRadius}
-            stroke="#E5E7EB"
-            strokeWidth={stroke}
-            fill="none"
+            className="text-gray-200"
+            strokeWidth="10"
+            stroke="currentColor"
+            fill="transparent"
+            r="45"
+            cx="50"
+            cy="50"
           />
+          {/* Progress circle */}
           <circle
-            cx={70}
-            cy={70}
-            r={normalizedRadius}
-            stroke="#F6C700"
-            strokeWidth={stroke}
-            fill="none"
+            className="transform -rotate-90 origin-center"
+            stroke={strokeColor}
+            strokeWidth="10"
             strokeDasharray={circumference}
-            strokeDashoffset={progress}
+            strokeDashoffset={offset}
             strokeLinecap="round"
-            style={{ transition: 'stroke-dashoffset 0.6s ease' }}
+            fill="transparent"
+            r="45"
+            cx="50"
+            cy="50"
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-3xl font-bold text-[#F6C700]">{percent}%</span>
+          <span className="text-3xl font-bold" style={{ color: strokeColor }}>{percent}%</span>
           <span className="text-gray-500 text-sm">{score}/{maxScore}</span>
         </div>
       </div>
