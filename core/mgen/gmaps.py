@@ -7,6 +7,9 @@ load_dotenv()
 
 def get_streetview_image(coord: str, heading: int, zoom: int = 21):
     API_KEY = os.getenv("GOOGLE_SV_API_KEY")
+    print(f"API_KEY: {API_KEY}")
+    if not API_KEY.startswith('"'):
+        API_KEY = API_KEY.strip('"')
     
     if not API_KEY:
         raise ValueError("Google Street View API key not found in environment variables")

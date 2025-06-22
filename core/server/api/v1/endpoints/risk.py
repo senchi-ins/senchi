@@ -34,7 +34,6 @@ async def upload_file_endpoint(
         file_type: str = "png",
     ):
         try:
-            print("starting upload-file")
             # Get Street View image
             response = get_streetview_image(address, heading, zoom)
             object_name = address + "_" + str(heading)
@@ -49,7 +48,6 @@ async def upload_file_endpoint(
             )
 
             if sv_success:
-                print(f"Uploaded streetview image to S3: {object_name}.png")
                 file_url = get_file_url(bucket, f"{object_name}.png")
             else:
                 raise HTTPException(
@@ -68,7 +66,6 @@ async def upload_file_endpoint(
             )
 
             if gen_success:
-                print(f"Uploaded vector image to S3: {object_name}_vector.png")
                 file_url = get_file_url(bucket, f"{object_name}_vector.png")
             else:
                 raise HTTPException(
@@ -77,12 +74,9 @@ async def upload_file_endpoint(
                 )
             
             try:
-                print("Uploading to Tripo...")
                 success = await upload_file_to_tripo(file_url, file_type)
-                print("Tripo upload successful:", success)
                 return success
             except Exception as e:
-                print(f"Tripo upload failed: {str(e)}")
                 raise HTTPException(
                     status_code=500,
                     detail=f"Failed to upload file to tripo: {str(e)}"
@@ -91,9 +85,6 @@ async def upload_file_endpoint(
             # Re-raise HTTP exceptions as-is
             raise
         except Exception as e:
-            print(f"Unexpected error in upload-file endpoint: {str(e)}")
-            import traceback
-            traceback.print_exc()
             raise HTTPException(
                 status_code=500,
                 detail=f"Internal server error: {str(e)}"
