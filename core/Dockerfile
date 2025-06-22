@@ -17,4 +17,6 @@ WORKDIR /app
 
 RUN uv sync --locked
 
-CMD ["uv", "run", "server/app.py", "--proxy-headers", "--forwarded-allow-ips", "*"]
+WORKDIR /app/server
+
+CMD ["uv", "run", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips", "*"]
