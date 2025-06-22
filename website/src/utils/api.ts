@@ -1,4 +1,13 @@
-export const apiBase = process.env.NEXT_PUBLIC_SENCHI_API_URL;
+let apiBase = process.env.NEXT_PUBLIC_SENCHI_API_URL;
+
+// If the site is loaded over HTTPS, we must use an HTTPS API endpoint.
+// This logic enforces HTTPS for the API URL on the client-side.
+if (typeof window !== 'undefined' && apiBase && window.location.protocol === 'https:') {
+  // Replace "http://" with "https://" at the beginning of the string.
+  apiBase = apiBase.replace(/^http:/, 'https:');
+}
+
+export { apiBase };
 
 export const test_api = async () => {
     const response = await fetch(`${apiBase}/api/v1/quote`, {
