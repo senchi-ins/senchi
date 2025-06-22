@@ -5,6 +5,8 @@ from openai import OpenAI
 import base64
 from dotenv import load_dotenv
 
+script_dir = os.path.dirname(os.path.abspath(__file__))
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -17,7 +19,8 @@ async def load_improvements() -> List[Dict[str, str]]:
     Returns:
         List[Dict[str, str]]: List of home improvement dictionaries
     """
-    with open('mgen/improvement.json', 'r') as f:
+    improvements_path = os.path.join(script_dir, 'improvement.json')
+    with open(improvements_path, 'r') as f:
         data = json.load(f)
     return data['home_improvements']
 
@@ -28,7 +31,8 @@ async def load_rubrics() -> List[Dict]:
     Returns:
         List[Dict]: List of rubric dictionaries
     """
-    with open('mgen/improvement_rubric.json', 'r') as f:
+    rubrics_path = os.path.join(script_dir, 'improvement_rubric.json')
+    with open(rubrics_path, 'r') as f:
         data = json.load(f)
     return data['rubrics']
 

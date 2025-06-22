@@ -49,19 +49,19 @@ dev_api_url_base = "http://localhost:8000/api/v1"
 
 # print(response.json())
 
-# response = requests.post(
-#     prod_api_url_base + "/analyze-house",
-#     params={"address": address, "heading": 120}
-# )
-
-# print(response.json())
-
-# GLB url
-url = "https://tripo-data.rg1.data.tripo3d.com/tcli_452312b4252d418cbd41cff1e5c98d35/20250622/3fcf4419-5b83-48e0-ba32-7141c2ccc37a/tripo_pbr_model_3fcf4419-5b83-48e0-ba32-7141c2ccc37a.glb?Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfNDUyMzEyYjQyNTJkNDE4Y2JkNDFjZmYxZTVjOThkMzUvMjAyNTA2MjIvM2ZjZjQ0MTktNWI4My00OGUwLWJhMzItNzE0MWMyY2NjMzdhL3RyaXBvX3Bicl9tb2RlbF8zZmNmNDQxOS01YjgzLTQ4ZTAtYmEzMi03MTQxYzJjY2MzN2EuZ2xiIiwiQ29uZGl0aW9uIjp7IkRhdGVMZXNzVGhhbiI6eyJBV1M6RXBvY2hUaW1lIjoxNzUwNjM2ODAwfX19XX0_&Signature=aiAMnltES1ah07EZN~z-E8GHXQvAEujhI9IuKoG4ABk1n4qVhpLmSEX1Xqu9715KfE0h9UTd0RKHWT6S467YMC6CZnr6KfYx5xgafBPk05ZJ0Q6WtAazVkRibi~eh5Cy3kt-BRn90n5OvntViEjumhozVm7WlAQT84QE1XzT3rZCrHKjjijUAFSdR6xsBZGRRlY82fJgM7Rhk9EIC~k-oz9Deg8CeQP5duglBbdbD37ceCpKhjUGGoh1j04jmfnbNh7FX461kv1GkHDACWeB6i4pEcIQAYNwEcIQny46bqd1-DEm-eyVXqxQbsdhtixjZFV2s79PCV-H97qsNrLz4A__&Key-Pair-Id=K1676C64NMVM2J"
-
-response = requests.get(
-    dev_api_url_base + "/proxy",
-    params={"url": url}
+response = requests.post(
+    dev_api_url_base + "/labelling/analyze-house",
+    params={"address": address, "heading": 120}
 )
 
-print(response.text)
+print(response.json())
+
+# GLB url
+# url = "https://tripo-data.rg1.data.tripo3d.com/tcli_452312b4252d418cbd41cff1e5c98d35/20250622/3fcf4419-5b83-48e0-ba32-7141c2ccc37a/tripo_pbr_model_3fcf4419-5b83-48e0-ba32-7141c2ccc37a.glb?Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmlwby1kYXRhLnJnMS5kYXRhLnRyaXBvM2QuY29tL3RjbGlfNDUyMzEyYjQyNTJkNDE4Y2JkNDFjZmYxZTVjOThkMzUvMjAyNTA2MjIvM2ZjZjQ0MTktNWI4My00OGUwLWJhMzItNzE0MWMyY2NjMzdhL3RyaXBvX3Bicl9tb2RlbF8zZmNmNDQxOS01YjgzLTQ4ZTAtYmEzMi03MTQxYzJjY2MzN2EuZ2xiIiwiQ29uZGl0aW9uIjp7IkRhdGVMZXNzVGhhbiI6eyJBV1M6RXBvY2hUaW1lIjoxNzUwNjM2ODAwfX19XX0_&Signature=aiAMnltES1ah07EZN~z-E8GHXQvAEujhI9IuKoG4ABk1n4qVhpLmSEX1Xqu9715KfE0h9UTd0RKHWT6S467YMC6CZnr6KfYx5xgafBPk05ZJ0Q6WtAazVkRibi~eh5Cy3kt-BRn90n5OvntViEjumhozVm7WlAQT84QE1XzT3rZCrHKjjijUAFSdR6xsBZGRRlY82fJgM7Rhk9EIC~k-oz9Deg8CeQP5duglBbdbD37ceCpKhjUGGoh1j04jmfnbNh7FX461kv1GkHDACWeB6i4pEcIQAYNwEcIQny46bqd1-DEm-eyVXqxQbsdhtixjZFV2s79PCV-H97qsNrLz4A__&Key-Pair-Id=K1676C64NMVM2J"
+
+# response = requests.get(
+#     dev_api_url_base + "/proxy",
+#     params={"url": url}
+# )
+
+# print(response.text)
