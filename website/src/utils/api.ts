@@ -135,3 +135,55 @@ export const analyzeHouse = async (
     });
     return response.json();
 };
+
+export const proxyGLB = async (url: string): Promise<string> => {
+    // console.log('proxyGLB called with URL:', url);
+    
+    const response = await fetch(`${apiBase}/proxy?url=${encodeURIComponent(url)}`, {
+        method: "GET",
+    });
+    
+    // console.log('Proxy response status:', response.status);
+    // console.log('Proxy response headers:', Object.fromEntries(response.headers.entries()));
+    
+    if (!response.ok) {
+        console.log(response);
+        throw new Error(`Failed to fetch GLB: ${response.status} ${response.statusText}`);
+    }
+    
+    // For binary files like GLB, we need to get the blob and create a blob URL
+    const blob = await response.blob();
+    // console.log('Blob size:', blob.size, 'bytes');
+    // console.log('Blob type:', blob.type);
+    
+    // Check if the blob contains valid GLB data
+    const arrayBuffer = await blob.arrayBuffer();
+    const uint8Array = new Uint8Array(arrayBuffer);
+    // const firstBytes = Array.from(uint8Array.slice(0, 8)).map(b => b.toString(16).padStart(2, '0')).join(' ');
+    // console.log('First 8 bytes (hex):', firstBytes);
+    
+    // GLB files start with "glTF" magic number
+    // const glbMagic = [0x67, 0x6C, 0x54, 0x46]; // "glTF" in ASCII
+
+    // Debugging code
+    // const isGLB = uint8Array.length >= 4 && 
+    //               uint8Array[0] === glbMagic[0] && 
+    //               uint8Array[1] === glbMagic[1] && 
+    //               uint8Array[2] === glbMagic[2] && 
+    //               uint8Array[3] === glbMagic[3];
+    
+    // console.log('Is valid GLB file:', isGLB);
+    
+    // Check if it's HTML (error page)
+    const textDecoder = new TextDecoder();
+    const firstChars = textDecoder.decode(uint8Array.slice(0, 20));
+    
+    if (firstChars.includes('<!DOCTYPE') || firstChars.includes('<html')) {
+        console.error('ERROR: Response contains HTML instead of GLB data.');
+        throw new Error('Proxy returned HTML error page instead of GLB file');
+    }
+    
+    const blobUrl = URL.createObjectURL(blob);
+    
+    return blobUrl;
+};

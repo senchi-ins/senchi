@@ -1,11 +1,12 @@
 "use client"
 
-import React, { Suspense, useState, useMemo } from 'react'
+import React, { Suspense, useState, useMemo, useEffect } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls, useGLTF, Html } from '@react-three/drei'
 import { motion, AnimatePresence } from 'framer-motion'
 import dotenv from 'dotenv'
-import { AnalyzeHouseResponse } from '@/utils/api'
+import { AnalyzeHouseResponse, proxyGLB } from '@/utils/api'
+import { fallback_url } from '@/utils/fallback'
 
 dotenv.config()
 
@@ -39,17 +40,51 @@ const defaultLabellingResponse: AnalyzeHouseResponse = {
   final_score: 0,
 };
 
-// TODO: Re-route to s3 bucket for secure storage
 export default function BespokeHouse({ imageURL, labellingResponse = defaultLabellingResponse }: BespokeHouseProps) {
   const [selectedRisk, setSelectedRisk] = useState<RiskInfo | null>(null);
+  const [renderURL, setRenderURL] = useState<string | null>(null);
   
-  // Construct the full, absolute URL to our own backend proxy, ensuring a trailing slash
-  const isRemoteUrl = imageURL && imageURL.startsWith('http');
-  // const backendUrl = (process.env.NEXT_PUBLIC_SENCHI_API_URL || 'http://localhost:8000/api/v1').replace(/\/$/, '');
-  const simpleProxyURL = process.env.NEXT_PUBLIC_PROXY_URL + encodeURIComponent(imageURL);
-  const renderURL = isRemoteUrl 
-    ? simpleProxyURL
-    : imageURL;
+  const getRenderURL = async () => {
+    if (imageURL !== fallback_url) {
+      try {
+        const simpleProxyURL = await proxyGLB(imageURL);
+        return simpleProxyURL;
+      } catch (error) {
+        console.warn('Failed to proxy GLB, using fallback:', error);
+        return fallback_url;
+      }
+    }
+    return imageURL;
+  }
+
+  useEffect(() => {
+    const fetchURL = async () => {
+      try {
+        const url = await getRenderURL();
+        setRenderURL(url);
+      } catch (error) {
+        console.error('Error fetching GLB URL:', error);
+        setRenderURL(fallback_url);
+      }
+    }
+    
+    fetchURL();
+    
+    return () => {
+      if (renderURL && renderURL.startsWith('blob:')) {
+        URL.revokeObjectURL(renderURL);
+      }
+    };
+  }, [imageURL]);
+
+  // Cleanup blob URLs when renderURL changes
+  useEffect(() => {
+    return () => {
+      if (renderURL && renderURL.startsWith('blob:')) {
+        URL.revokeObjectURL(renderURL);
+      }
+    };
+  }, [renderURL]);
 
   const riskPoints = useMemo(() => {
     if (!labellingResponse || !labellingResponse.recommendations || !labellingResponse.category_scores) {
@@ -87,7 +122,16 @@ export default function BespokeHouse({ imageURL, labellingResponse = defaultLabe
     return <primitive object={scene} scale={MODEL_CONFIG.scale} />
   }
 
-  useGLTF.preload(renderURL)
+  // Only preload when renderURL is available and valid
+  useEffect(() => {
+    if (renderURL && renderURL.trim() !== '' && renderURL.startsWith('blob:')) {
+      try {
+        useGLTF.preload(renderURL);
+      } catch (error) {
+        console.warn('Failed to preload GLB:', error);
+      }
+    }
+  }, [renderURL]);
 
   const RiskDot = ({ risk, position }: { risk: RiskInfo, position: { x: number, y: number, z: number } }) => {
     // Apply global offset and scale to position
@@ -149,7 +193,12 @@ export default function BespokeHouse({ imageURL, labellingResponse = defaultLabe
           </mesh>
         }>
           <group position={[0, -0.7, 0]}>
-            <GLBModel url={renderURL} />
+            {renderURL && renderURL.startsWith('blob:') ? (
+              <GLBModel url={renderURL} />
+            ) : (
+              // Placeholder when proxy fails or URL is invalid
+              <GLBModel url={fallback_url} />
+            )}
             {riskPoints.map((risk) => (
               <RiskDot key={risk.id} risk={risk} position={risk.position} />
             ))}
