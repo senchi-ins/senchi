@@ -2,23 +2,11 @@ import React, { useState, useRef, useEffect } from 'react'
 
 const mapOptions = [
   {
-    label: 'Satellite View',
-    subtitle: 'High-resolution aerial imagery',
-  },
-  {
-    label: 'Terrain Map',
-    subtitle: 'Topographical features',
-  },
-  {
-    label: 'Street View',
-    subtitle: 'Road-level perspective',
-  },
-  {
-    label: 'Flood Risk Map',
+    label: 'Flood Risk Forecast',
     subtitle: 'Water damage assessment',
   },
   {
-    label: 'Forest Fire Map',
+    label: 'Forest Fire Forecast',
     subtitle: 'Fire hazard zones',
   },
 ];
@@ -47,7 +35,7 @@ export default function MapView() {
 
   return (
     <div className="bg-white rounded-2xl shadow flex flex-col w-full max-w-md mx-auto h-full justify-center p-8">
-      <div className="text-lg font-semibold text-gray-900 mb-6">Map Views</div>
+      <div className="text-lg font-semibold text-gray-900 mb-6">Predictive forecasts</div>
       {/* Dropdown */}
       <div className="mb-6" ref={dropdownRef}>
         <div className="relative">
