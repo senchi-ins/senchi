@@ -47,9 +47,9 @@ def calculate_house_score(scores: List[str]) -> float:
         float: Final house score out of 100
     """
     score_values = {
-        'high': 6.666,
+        'high': 1,
         'medium': 4,
-        'low': 1
+        'low': 6.666
     }
     
     total_score = sum(score_values[score] for score in scores)
@@ -117,7 +117,7 @@ async def analyze_house_images(image_inputs: List[Union[str, bytes]], client: Op
 
 {scoring_text}
 
-3. From this list of available improvements, identify the three most critical ones needed (those scored as 'low'):
+3. From this list of available improvements, identify the three most critical ones needed (those scored as 'high'):
 
 {improvements_text}
 
@@ -143,7 +143,7 @@ Format your response as a valid JSON string with this exact structure:
             "x": "x coordinate of the improvement (must be a valid number)",
             "y": "y coordinate of the improvement (must be a valid number)"
         }},
-        // for the three most critical improvements (scored as low)
+        // for the three most critical improvements (scored as high)
     ],
     "final_score": "Final house score out of 100"
 }}

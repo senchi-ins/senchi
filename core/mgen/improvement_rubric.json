@@ -4,36 +4,36 @@
         "title": "Clear roof and gutters of debris",
         "location": "Roof",
         "rubric": {
-          "low": "Lots of debris present on the roof or in the gutters",
+          "low": "No debris present on the roof or in the gutters",
           "medium": "Some debris present on the roof or in the gutters",
-          "high": "No debris present on the roof or in the gutters"
+          "high": "Lots of debris present on the roof or in the gutters"
         }
       },
       {
         "title": "Install gutter guards",
         "location": "Gutters",
         "rubric": {
-          "low": "No gutter guards visible",
+          "low": "All gutters have guards installed",
           "medium": "Some gutter guards installed (or unclear if guards are installed)",
-          "high": "All gutters have guards installed"
+          "high": "No gutter guards visible"
         }
       },
       {
         "title": "Extend gutter downspouts away from the house",
         "location": "Corner of the house",
         "rubric": {
-          "low": "Downspouts discharge near to the foundation",
+          "low": "Downspouts extend 5-10 feet from the foundation",
           "medium": "Downspouts extend 2-4 feet from the foundation",
-          "high": "Downspouts extend 5-10 feet from the foundation"
+          "high": "Downspouts discharge near to the foundation"
         }
       },
       {
         "title": "Install non-combustible siding",
         "location": "Exterior walls",
         "rubric": {
-          "low": "Combustible siding material (wood, vinyl, etc.)",
+          "low": "Fully non-combustible siding installed (fiber cement, brick, stucco, etc.)",
           "medium": "Mixed materials or partial non-combustible siding (fiber cement, brick, stucco, etc.)",
-          "high": "Fully non-combustible siding installed (fiber cement, brick, stucco, etc.)"
+          "high": "Combustible siding material (wood, vinyl, etc.)"
         }
       },
       {
@@ -41,8 +41,9 @@
           "location": "Roof",
           "rubric": {
             "low": [
-              "Wood Shingles",
-              "Green Roofs (Vegetative)"
+              "Metal Roofing",
+              "Concrete Tile",
+              "Slate Tile"
             ],
             "medium": [
               "Asphalt Shingles",
@@ -52,9 +53,8 @@
               "Built-Up Roofing (BUR)"
             ],
             "high": [
-              "Metal Roofing",
-              "Concrete Tile",
-              "Slate Tile"
+              "Wood Shingles",
+              "Green Roofs (Vegetative)"
             ]
           }
         },
@@ -62,90 +62,90 @@
         "title": "Use non-combustible fencing within five feet of the home",
         "location": "Yard, perimeter of the property",
         "rubric": {
-          "low": "Combustible fencing within 2-3 feet of the house",
+          "low": "No fencing or non-combustible fencing within 5 feet of the house",
           "medium": "Mixed fencing materials within 3-5 feet of the house",
-          "high": "No fencing or non-combustible fencing within 5 feet of the house"
+          "high": "Combustible fencing within 2-3 feet of the house"
         }
       },
       {
         "title": "Reinforce the garage door",
         "location": "Garage door",
         "rubric": {
-          "low": "Garage door appears to be unreinforced or in poor condition",
+          "low": "Garage door appears to be fully reinforced and in excellent condition",
           "medium": "Garage door appears to be partially reinforced (or unclear) and in good condition",
-          "high": "Garage door appears to be fully reinforced and in excellent condition"
+          "high": "Garage door appears to be unreinforced or in poor condition"
         }
       },
       {
         "title": "Trim tree branches and shrubs around the house",
         "location": "Yard",
         "rubric": {
-          "low": "Overhanging or dead branches and/or shrubs close to the house",
+          "low": "Close to no branches or shrubs within 5 feet of the house",
           "medium": "Most branches and shrubs are trimmed or removed",
-          "high": "Close to no branches or shrubs within 5 feet of the house"
+          "high": "Overhanging or dead branches and/or shrubs close to the house"
         }
       },
       {
         "title": "Seal exterior wall openings",
         "location": "Exterior walls",
         "rubric": {
-          "low": "Apparent gaps around multiple openings (windows, doors, etc.)",
+          "low": "All openings appear to be sealed",
           "medium": "Most openings appear to be sealed",
-          "high": "All openings appear to be sealed"
+          "high": "Apparent gaps around multiple openings (windows, doors, etc.)"
         }
       },
       {
         "title": "Grade the landscape to slope away from the foundation",
         "location": "Bottom of the house",
         "rubric": {
-          "low": "Ground slopes toward the foundation",
+          "low": "Ground slopes away from the foundation and has a 6-inch drop over 10 feet",
           "medium": "Ground slopes away from the foundation",
-          "high": "Ground slopes away from the foundation and has a 6-inch drop over 10 feet"
+          "high": "Ground slopes toward the foundation"
         }
       },
       {
         "title": "Apply waterproof sealant to foundation walls",
         "location": "Exterior walls",
         "rubric": {
-          "low": "No waterproof sealant applied or deteriorated covering",
+          "low": "Complete coverage with high-quality waterproof sealant and proper drainage",
           "medium": "Partial application or aging sealant showing wear",
-          "high": "Complete coverage with high-quality waterproof sealant and proper drainage"
+          "high": "No waterproof sealant applied or deteriorated covering"
         }
       },
       {
         "title": "Reinforce the chimney",
         "location": "Chimney",
         "rubric": {
-          "low": "Chimney appears to be unreinforced or in poor condition",
+          "low": "Chimney appears to be fully reinforced (or no chiminey is present) and in excellent condition",
           "medium": "Chimney appears to be partially reinforced (or unclear) and in good condition",
-          "high": "Chimney appears to be fully reinforced (or no chiminey is present) and in excellent condition"
+          "high": "Chimney appears to be unreinforced or in poor condition"
         }
       },
       {
         "title": "Insulate exposed exterior pipes",
         "location": "Exterior",
         "rubric": {
-          "low": "Exposed pipes with no insulation or deteriorated covering",
+          "low": "All exterior pipes properly insulated with weather-resistant materials",
           "medium": "Basic foam covers on some pipes but incomplete coverage",
-          "high": "All exterior pipes properly insulated with weather-resistant materials"
+          "high": "Exposed pipes with no insulation or deteriorated covering"
         }
       },
       {
         "title": "Create a non-flammable (e.g. gravel or stone) barrier around the foundation",
         "location": "Bottom of house",
         "rubric": {
-          "low": "No gravel or stone barrier around the foundation",
+          "low": "Complete 18-24 inch wide barrier of non-flammable material",
           "medium": "Partial barrier or inadequate width (less than 18-24 inches)",
-          "high": "Complete 18-24 inch wide barrier of non-flammable material"
+          "high": "No gravel or stone barrier around the foundation"
         }
       },
       {
         "title": "Reinforce Roof-to-Wall Connections",
         "location": "Exterior walls",
         "rubric": {
-          "low": "Roof-to-wall connections are not reinforced or in poor condition",
+          "low": "Roof-to-wall connections are fully reinforced and in excellent condition",
           "medium": "Roof-to-wall connections are partially reinforced (or unclear) and in good condition",
-          "high": "Roof-to-wall connections are fully reinforced and in excellent condition"
+          "high": "Roof-to-wall connections are not reinforced or in poor condition"
         }
       }
     ]
