@@ -1,10 +1,11 @@
 import { style } from '@/config'
 import React from 'react'
+import Image from 'next/image'
 
 const content = {
     title: "Do Good",
     header: "Protecting what matters.",
-    description: `We believe that insurance should make you feel good, not just be a necessary evil. To achieve this, we operate under a capped profit structure - we take a flat 20% fee, cover costs, and donate the rest to a charity of your choosing.
+    description: `We believe that insurance should make you feel good, not just be a necessary evil. To achieve this, we operate under a capped profit structure - we take a flat fee, cover costs, and donate the rest to a charity of your choosing.
 
     For you, this means that when you buy insurance from us, you're protecting the things that matter to you regardless of if you ever make a claim.
 
@@ -42,6 +43,17 @@ export default function hero() {
                       </React.Fragment>
                 ))}
             </p>
+        </div>
+        <div className="hidden md:flex flex-col justify-center items-center flex-1 h-full">
+            <Image
+            src="/images/do_good_visual.png"
+            alt="Senchi's fee structure visualization"
+            width={500}
+            height={500}
+            sizes="(max-width: 1024px) 300px, 400px"
+            style={{ height: 'auto', maxWidth: '100%' }}
+            priority
+            />
         </div>
     </section>
   )
