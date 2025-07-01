@@ -94,8 +94,8 @@ class ViewController: UIViewController {
         scanButton.backgroundColor = .systemRed
         statusLabel.text = "Scanning for devices..."
         
-        // Auto-stop scan after 10 seconds
-        DispatchQueue.main.asyncAfter(deadline: .now() + 10) { [weak self] in
+        // Auto-stop scan after 20 seconds
+        DispatchQueue.main.asyncAfter(deadline: .now() + 20) { [weak self] in
             self?.stopScan()
         }
     }

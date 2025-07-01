@@ -55,7 +55,8 @@ class BluetoothManager: NSObject {
         }
         discoveredDevices.removeAll()
         // Scan for the specific service UUID
-        centralManager.scanForPeripherals(withServices: [targetServiceUUID], options: [CBCentralManagerScanOptionAllowDuplicatesKey: false])
+//        centralManager.scanForPeripherals(withServices: [targetServiceUUID], options: [CBCentralManagerScanOptionAllowDuplicatesKey: false])
+        centralManager.scanForPeripherals(withServices: nil, options: [CBCentralManagerScanOptionAllowDuplicatesKey: false])
         log("Started scanning for Bluetooth devices (filtered by service UUID)...")
     }
     
