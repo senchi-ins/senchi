@@ -112,9 +112,7 @@ def delete_webhook(
     response = requests.post(url, headers=headers, json=data)
     return response.json()
 
-def configure_webhook_with_ngrok(
-        inital_webhook_url: str,
-    ):
+def configure_webhook_with_ngrok():
     """
     Configure the webhook with a new URL using ngrok. Ngrok free tier
     creates a new URL every time the server is restarted, so this will help
@@ -126,6 +124,11 @@ def configure_webhook_with_ngrok(
     3. Query the webhook config
     4. Return the current webhook config
     """
+    # Read the current webhook config from a file
+    with open("webhook_config.json", "r") as f:
+        current_config = json.load(f)
+    inital_webhook_url = current_config['body'][0]['url']
+
     # Find the current ngrok URL
     headers = {
         "Authorization": f"Bearer {os.getenv('NGROK_API_KEY')}",
@@ -152,43 +155,17 @@ def configure_webhook_with_ngrok(
     
     # # Query webhook config
     current_config = query_webhook_config(wh_url=new_webhook_url)
-    return current_config
-    
-
-if __name__ == "__main__":
-    print("=== SwitchBot Webhook Testing ===")
-    # print(get_device_list())
-
-    # Current webhook config:
-    """
-    {
-        'statusCode': 100, 'body': [
-            {
-                'deviceList': 'ALL', 
-                'createTime': 1751405658077, 
-                'url': 'https://00f2-142-126-181-39.ngrok-free.app', 
-                'enable': True, 'lastUpdateTime': 1751405658077
-            }
-        ], 
-        'message': 'success'
-    }
-    """
-
-    print(
-        json.dumps(
-            configure_webhook_with_ngrok(
-                inital_webhook_url="https://539e-142-126-181-39.ngrok-free.app",
-            ), 
-            indent=2
-        )
-    )
 
     # Write the current webhook config to a file for reference
     with open("webhook_config.json", "w") as f:
         json.dump(
-            configure_webhook_with_ngrok(
-                inital_webhook_url="https://539e-142-126-181-39.ngrok-free.app",
-            ), 
+            current_config, 
             f,
             indent=2
         )
+    return current_config
+    
+
+if __name__ == "__main__":
+    # print(get_device_list())
+    configure_webhook_with_ngrok()

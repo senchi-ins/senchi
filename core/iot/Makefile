@@ -6,12 +6,11 @@ start-ngrok:
 	fi
 
 start-server:
-	uvicorn core.iot.simple_webhook:app --reload --port $(PORT)
+	uvicorn simple_webhook:app --reload --port $(PORT)
 
 update-webhook:
-	python switchbot.py
+	uv run switchbot.py
 
 start-monitoring:
-	@make start-ngrok & \
-	@make start-server
+	@echo "Updating webhook to begin monitoring..."
 	@make update-webhook

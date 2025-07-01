@@ -5,6 +5,12 @@ forward the requests to our local server. This is a bit of a pain, so everthing 
 compiled into a single makefile
 
 ```bash
+make start-ngrok
+
+# Mew terminal
+make start-server
+
+# New terminal
 make start-monitoring
 ```
 
