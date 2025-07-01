@@ -34,4 +34,4 @@ dependencies = [
 ]
 
 [tool.uv.workspace]
-members = ["server"]
+members = ["server", "iot"]
