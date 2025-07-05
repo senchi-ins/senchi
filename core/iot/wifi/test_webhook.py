@@ -1,6 +1,6 @@
 import requests
 import json
-from switchbot import query_webhook_config, set_up_webhook, delete_webhook
+from core.iot.wifi.switchbot import query_webhook_config, set_up_webhook, delete_webhook
 
 def test_webhook_setup():
     """Test the complete webhook setup and configuration"""

@@ -1,0 +1,521 @@
+<!-- To be deleted -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home Automation - Real-time</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .status {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .status.connected {
+            border-left: 4px solid #4CAF50;
+        }
+        
+        .status.disconnected {
+            border-left: 4px solid #f44336;
+        }
+        
+        .device {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .device.alert {
+            border-left: 4px solid #f44336;
+            background: #ffebee;
+        }
+        
+        .device.normal {
+            border-left: 4px solid #4CAF50;
+        }
+        
+        .device-name {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .device-status {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .status-item {
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .status-item.safe {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+        
+        .status-item.alert {
+            background: #ffebee;
+            color: #c62828;
+            animation: pulse 1s infinite;
+        }
+        
+        .status-item.warning {
+            background: #fff3e0;
+            color: #ef6c00;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .notifications {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        
+        .notification {
+            background: #f44336;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            max-width: 300px;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .notification.success {
+            background: #4CAF50;
+        }
+        
+        .notification.info {
+            background: #2196F3;
+        }
+        
+        .logs {
+            background: #1a1a1a;
+            color: #00ff00;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            background: #2196F3;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        
+        .btn:hover {
+            background: #1976D2;
+        }
+        
+        .btn.danger {
+            background: #f44336;
+        }
+        
+        .btn.danger:hover {
+            background: #d32f2f;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="status" id="connectionStatus">
+            <h2>🏠 Home Automation System</h2>
+            <p id="statusText">Connecting...</p>
+            <p><strong>API:</strong> <span id="apiStatus">Checking...</span></p>
+            <p><strong>WebSocket:</strong> <span id="wsStatus">Connecting...</span></p>
+        </div>
+        
+        <div class="controls">
+            <button class="btn" onclick="enablePairing()">Add Device</button>
+            <button class="btn" onclick="testNotification()">Test Alert</button>
+            <button class="btn danger" onclick="clearLogs()">Clear Logs</button>
+        </div>
+        
+        <div id="deviceList">
+            <p>Loading devices...</p>
+        </div>
+        
+        <div class="logs" id="logs">
+            <div>📡 WebSocket connection starting...</div>
+        </div>
+    </div>
+    
+    <div class="notifications" id="notifications"></div>
+    
+    <script>
+        class HomeAutomationApp {
+            constructor() {
+                this.ws = null;
+                this.devices = new Map();
+                this.reconnectAttempts = 0;
+                this.maxReconnectAttempts = 5;
+                
+                this.connectWebSocket();
+                this.checkApiHealth();
+                
+                // Request notification permission
+                if ('Notification' in window) {
+                    Notification.requestPermission();
+                }
+            }
+            
+            connectWebSocket() {
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const wsUrl = `${protocol}//${window.location.host}/ws`;
+                
+                this.log(`🔌 Connecting to WebSocket: ${wsUrl}`);
+                
+                try {
+                    this.ws = new WebSocket(wsUrl);
+                    
+                    this.ws.onopen = () => {
+                        this.log('✅ WebSocket connected');
+                        this.updateConnectionStatus(true);
+                        this.reconnectAttempts = 0;
+                    };
+                    
+                    this.ws.onmessage = (event) => {
+                        const message = JSON.parse(event.data);
+                        this.handleMessage(message);
+                    };
+                    
+                    this.ws.onclose = () => {
+                        this.log('❌ WebSocket disconnected');
+                        this.updateConnectionStatus(false);
+                        this.attemptReconnect();
+                    };
+                    
+                    this.ws.onerror = (error) => {
+                        this.log(`🔥 WebSocket error: ${error}`);
+                    };
+                    
+                } catch (error) {
+                    this.log(`❌ WebSocket connection failed: ${error}`);
+                    this.attemptReconnect();
+                }
+            }
+            
+            attemptReconnect() {
+                if (this.reconnectAttempts < this.maxReconnectAttempts) {
+                    this.reconnectAttempts++;
+                    const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
+                    
+                    this.log(`🔄 Reconnecting in ${delay/1000}s (attempt ${this.reconnectAttempts})`);
+                    
+                    setTimeout(() => {
+                        this.connectWebSocket();
+                    }, delay);
+                } else {
+                    this.log('❌ Max reconnection attempts reached');
+                    this.showNotification('Connection lost - please refresh page', 'error');
+                }
+            }
+            
+            handleMessage(message) {
+                this.log(`📨 Message: ${JSON.stringify(message)}`);
+                
+                switch (message.type) {
+                    case 'device_update':
+                        this.handleDeviceUpdate(message);
+                        break;
+                    case 'device_list_update':
+                        this.handleDeviceListUpdate(message);
+                        break;
+                    default:
+                        this.log(`❓ Unknown message type: ${message.type}`);
+                }
+            }
+            
+            handleDeviceUpdate(message) {
+                const { device_id, data } = message;
+                
+                // Update device in memory
+                const existingDevice = this.devices.get(device_id) || {};
+                const device = {
+                    ...existingDevice,
+                    id: device_id,
+                    status: data,
+                    last_seen: new Date(message.timestamp)
+                };
+                
+                this.devices.set(device_id, device);
+                
+                // Check for alerts
+                this.checkForAlerts(device_id, data);
+                
+                // Update UI
+                this.renderDevices();
+                
+                this.log(`📱 Device updated: ${device_id}`);
+            }
+            
+            handleDeviceListUpdate(message) {
+                this.log('📋 Device list updated');
+                
+                // Update all devices
+                message.devices.forEach(device => {
+                    this.devices.set(device.id, device);
+                });
+                
+                this.renderDevices();
+            }
+            
+            checkForAlerts(deviceId, data) {
+                const device = this.devices.get(deviceId);
+                const deviceName = device?.name || deviceId;
+                
+                // Water leak alert
+                if (data.water_leak === true) {
+                    this.showNotification(
+                        `🚨 WATER LEAK DETECTED!\n${deviceName}`, 
+                        'error'
+                    );
+                    
+                    // Browser notification
+                    if ('Notification' in window && Notification.permission === 'granted') {
+                        new Notification('🚨 Water Leak Alert!', {
+                            body: `${deviceName} detected water leak`,
+                            icon: '/static/icon-192.png',
+                            requireInteraction: true
+                        });
+                    }
+                    
+                    this.log(`🚨 LEAK ALERT: ${deviceName}`);
+                }
+                
+                // Low battery alert
+                if (data.battery_low === true || (data.battery && data.battery < 20)) {
+                    this.showNotification(
+                        `🔋 Low battery: ${deviceName} (${data.battery || '?'}%)`, 
+                        'warning'
+                    );
+                    
+                    this.log(`🔋 LOW BATTERY: ${deviceName}`);
+                }
+                
+                // Device came back online
+                if (data.linkquality && data.linkquality > 0) {
+                    const lastSeen = device?.last_seen;
+                    if (lastSeen && (Date.now() - lastSeen.getTime()) > 3600000) { // 1 hour
+                        this.showNotification(
+                            `📡 Device back online: ${deviceName}`, 
+                            'success'
+                        );
+                    }
+                }
+            }
+            
+            renderDevices() {
+                const deviceList = document.getElementById('deviceList');
+                
+                if (this.devices.size === 0) {
+                    deviceList.innerHTML = '<p>No devices found</p>';
+                    return;
+                }
+                
+                let html = '';
+                for (const [deviceId, device] of this.devices) {
+                    html += this.renderDevice(device);
+                }
+                
+                deviceList.innerHTML = html;
+            }
+            
+            renderDevice(device) {
+                const data = device.status || {};
+                const isAlert = data.water_leak === true;
+                const isLowBattery = data.battery_low === true || (data.battery && data.battery < 20);
+                
+                let statusItems = '';
+                
+                // Water leak status
+                if (data.water_leak !== undefined) {
+                    statusItems += `<span class="status-item ${isAlert ? 'alert' : 'safe'}">
+                        ${isAlert ? '💧 LEAK DETECTED' : '✅ No Leak'}
+                    </span>`;
+                }
+                
+                // Battery status
+                if (data.battery !== undefined) {
+                    statusItems += `<span class="status-item ${isLowBattery ? 'warning' : 'safe'}">
+                        🔋 ${data.battery}%
+                    </span>`;
+                }
+                
+                // Signal quality
+                if (data.linkquality !== undefined) {
+                    const signalStrength = data.linkquality > 100 ? 'good' : data.linkquality > 50 ? 'fair' : 'poor';
+                    statusItems += `<span class="status-item safe">
+                        📶 ${data.linkquality} (${signalStrength})
+                    </span>`;
+                }
+                
+                // Temperature
+                if (data.device_temperature !== undefined) {
+                    statusItems += `<span class="status-item safe">
+                        🌡️ ${data.device_temperature}°C
+                    </span>`;
+                }
+                
+                return `
+                    <div class="device ${isAlert ? 'alert' : 'normal'}">
+                        <div class="device-name">${device.name || device.id}</div>
+                        <div class="device-status">
+                            ${statusItems}
+                        </div>
+                        <small>Last seen: ${device.last_seen ? new Date(device.last_seen).toLocaleString() : 'Never'}</small>
+                    </div>
+                `;
+            }
+            
+            showNotification(message, type = 'info') {
+                const notification = document.createElement('div');
+                notification.className = `notification ${type}`;
+                notification.textContent = message;
+                
+                const container = document.getElementById('notifications');
+                container.appendChild(notification);
+                
+                // Show notification
+                setTimeout(() => {
+                    notification.classList.add('show');
+                }, 100);
+                
+                // Auto-hide after 5 seconds (unless it's an error)
+                if (type !== 'error') {
+                    setTimeout(() => {
+                        notification.classList.remove('show');
+                        setTimeout(() => {
+                            container.removeChild(notification);
+                        }, 300);
+                    }, 5000);
+                }
+            }
+            
+            updateConnectionStatus(connected) {
+                const statusDiv = document.getElementById('connectionStatus');
+                const statusText = document.getElementById('statusText');
+                const wsStatus = document.getElementById('wsStatus');
+                
+                if (connected) {
+                    statusDiv.className = 'status connected';
+                    statusText.textContent = 'System Online';
+                    wsStatus.textContent = 'Connected';
+                } else {
+                    statusDiv.className = 'status disconnected';
+                    statusText.textContent = 'System Offline';
+                    wsStatus.textContent = 'Disconnected';
+                }
+            }
+            
+            async checkApiHealth() {
+                try {
+                    const response = await fetch('/health');
+                    const health = await response.json();
+                    
+                    document.getElementById('apiStatus').textContent = 
+                        health.status === 'healthy' ? 'Online' : 'Issues';
+                    
+                    this.log(`💓 API Health: ${health.status}`);
+                } catch (error) {
+                    document.getElementById('apiStatus').textContent = 'Offline';
+                    this.log(`❌ API Health check failed: ${error}`);
+                }
+            }
+            
+            log(message) {
+                const logs = document.getElementById('logs');
+                const timestamp = new Date().toLocaleTimeString();
+                logs.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+                logs.scrollTop = logs.scrollHeight;
+            }
+        }
+        
+        // Global functions for buttons
+        async function enablePairing() {
+            try {
+                const response = await fetch('/zigbee/permit-join', { method: 'POST' });
+                const result = await response.json();
+                
+                app.showNotification('Pairing mode enabled - add your device now!', 'success');
+                app.log('🔄 Pairing mode enabled');
+            } catch (error) {
+                app.showNotification('Failed to enable pairing mode', 'error');
+                app.log(`❌ Pairing failed: ${error}`);
+            }
+        }
+        
+        function testNotification() {
+            app.showNotification('🧪 Test notification - system is working!', 'info');
+            
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification('Test Alert', {
+                    body: 'This is a test notification from your home automation system',
+                    icon: '/static/icon-192.png'
+                });
+            }
+        }
+        
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+        }
+        
+        // Initialize app
+        const app = new HomeAutomationApp();
+        
+        // Periodic health checks
+        setInterval(() => {
+            app.checkApiHealth();
+        }, 30000); // Every 30 seconds
+    </script>
+</body>
+</html>

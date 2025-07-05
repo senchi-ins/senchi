@@ -6,7 +6,7 @@ start-ngrok:
 	fi
 
 start-server:
-	uvicorn simple_webhook:app --reload --port $(PORT)
+	uvicorn wifi.simple_webhook:app --reload --port $(PORT)
 
 update-webhook:
 	uv run switchbot.py

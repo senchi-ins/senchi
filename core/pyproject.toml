@@ -31,6 +31,7 @@ dependencies = [
     "nbformat>=4.2.0",
     "ipython>=8.0.0",
     "kaleido>=0.2.1",
+    "paho-mqtt>=2.1.0",
 ]
 
 [tool.uv.workspace]

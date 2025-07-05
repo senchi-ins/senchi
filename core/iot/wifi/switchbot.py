@@ -44,6 +44,12 @@ def get_device_list():
     response = requests.get(url, headers=headers)
     return response.json()
 
+def get_device_status(device_id):
+    url = f"{api_url}/v1.1/devices/{device_id}/status"
+    headers = generate_signed_header()
+    response = requests.get(url, headers=headers)
+    return response.json()
+
 def send_command(device_id, command):
     url = f"{api_url}/v1.1/devices/{device_id}/commands"
     headers = generate_signed_header()
@@ -145,7 +151,8 @@ def configure_webhook_with_ngrok():
     success = delete_webhook(wh_url=inital_webhook_url)
     if success['statusCode'] != 100:
         print(f"Failed to delete webhook from {inital_webhook_url}")
-        return False
+        # No early return since this can indicate that the webhook is already deleted
+        # return False
     
     # # Set up webhook with ngrok URL
     success = set_up_webhook(wh_url=new_webhook_url)
@@ -168,4 +175,7 @@ def configure_webhook_with_ngrok():
 
 if __name__ == "__main__":
     # print(get_device_list())
-    configure_webhook_with_ngrok()
+    # configure_webhook_with_ngrok()
+    device_id = "CE2A83C62F6C"
+    print(get_device_status(device_id))
+
