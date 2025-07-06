@@ -14,14 +14,12 @@ start-zigbee:
 		cd ~/zigbee2mqtt; \
 		npm install; \
 	fi
-
-	@SERIAL_PORT=$$(ls /dev/cu.usbserial-* 2>/dev/null | head -1); \
-	if [ -z "$$SERIAL_PORT" ]; then \
+	@ZIGBEE2MQTT_CONFIG_SERIAL_PORT=$$(ls /dev/cu.usbserial-* 2>/dev/null | head -1); \
+	if [ -z "$$ZIGBEE2MQTT_CONFIG_SERIAL_PORT" ]; then \
 		echo "Warning: No USB serial port found. Please check your device connection."; \
-		SERIAL_PORT="/dev/cu.usbserial-XXXXXX"; \
-	fi
-
-	@cd ~/zigbee2mqtt && npm start
+		ZIGBEE2MQTT_CONFIG_SERIAL_PORT="/dev/cu.usbserial-XXXXXX"; \
+	fi; \
+	cd ~/zigbee2mqtt && ZIGBEE2MQTT_CONFIG_SERIAL_PORT=$$ZIGBEE2MQTT_CONFIG_SERIAL_PORT npm start
 
 listen:
 	make start-server

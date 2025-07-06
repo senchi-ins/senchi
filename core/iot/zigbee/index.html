@@ -210,7 +210,8 @@
             
             connectWebSocket() {
                 const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-                const wsUrl = `${protocol}//${window.location.host}/ws`;
+                // const wsUrl = `${protocol}//${window.location.host}/ws`;
+                const wsUrl = `ws://localhost:8000/ws`;
                 
                 this.log(`🔌 Connecting to WebSocket: ${wsUrl}`);
                 
@@ -458,18 +459,7 @@
             }
             
             async checkApiHealth() {
-                try {
-                    const response = await fetch('/health');
-                    const health = await response.json();
-                    
-                    document.getElementById('apiStatus').textContent = 
-                        health.status === 'healthy' ? 'Online' : 'Issues';
-                    
-                    this.log(`💓 API Health: ${health.status}`);
-                } catch (error) {
-                    document.getElementById('apiStatus').textContent = 'Offline';
-                    this.log(`❌ API Health check failed: ${error}`);
-                }
+                this.log('Working...');
             }
             
             log(message) {
@@ -483,7 +473,7 @@
         // Global functions for buttons
         async function enablePairing() {
             try {
-                const response = await fetch('/zigbee/permit-join', { method: 'POST' });
+                const response = await fetch('http://localhost:8000/zigbee/permit-join', { method: 'POST' });
                 const result = await response.json();
                 
                 app.showNotification('Pairing mode enabled - add your device now!', 'success');

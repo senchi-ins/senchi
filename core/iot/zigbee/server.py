@@ -92,6 +92,8 @@ async def root():
 @app.get("/devices")
 async def get_devices():
     """Get all devices"""
+    for device in app_state["devices"].values():
+        print(device.ieee_address)
     return list(app_state["devices"].values())
 
 
@@ -114,17 +116,15 @@ async def websocket_endpoint(websocket: WebSocket):
     app_state["websocket_connections"].append(websocket)
     
     try:
-        # Send current state
         for device_id, device in app_state["devices"].items():
             message = {
                 "type": "device_update",
                 "device_id": device_id,
-                "data": device.get("status", {}),
+                "data": device.status,
                 "timestamp": datetime.now().isoformat()
             }
             await websocket.send_text(json.dumps(message))
         
-        # Keep connection alive
         while True:
             await websocket.receive_text()
             
