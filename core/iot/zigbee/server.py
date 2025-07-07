@@ -21,7 +21,7 @@ from monitor.models import (
     LeakSensorResponse,
     NOTIFICATION_TYPES,
 )
-from monitor.monitor import Monitor
+from monitor.zbm import Monitor
 from monitor.utils import get_all_model_fields
 
 logger = logging.getLogger(__name__)

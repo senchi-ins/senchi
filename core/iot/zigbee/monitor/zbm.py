@@ -12,8 +12,8 @@ from fastapi import WebSocket
 import paho.mqtt.client as mqtt
 import pandas as pd
 
-from lib.config import settings
-from lib.models import Device, LandlordNotification
+from monitor.config import settings
+from monitor.models import Device, LandlordNotification
 
 
 logger = logging.getLogger(__name__)
