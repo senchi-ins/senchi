@@ -13,16 +13,16 @@ from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-from lib.config import settings
-from lib.models import (
+from monitor.config import settings
+from monitor.models import (
     Device,
     DeviceType,
     NotificationResponse,
     LeakSensorResponse,
     NOTIFICATION_TYPES,
 )
-from lib.monitor import Monitor
-from lib.utils import get_all_model_fields
+from monitor.monitor import Monitor
+from monitor.utils import get_all_model_fields
 
 logger = logging.getLogger(__name__)
 
