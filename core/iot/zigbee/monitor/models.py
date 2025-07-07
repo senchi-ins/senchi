@@ -113,6 +113,18 @@ class NotificationConfig(BaseModel):
     email_password: Optional[str] = None
     enabled: bool = True
 
+# Configuring new users
+class LocationSetupRequest(BaseModel):
+    location_name: str
+    contact_info: Optional[str] = None
+    
+class SetupResponse(BaseModel):
+    location_id: str
+    location_name: str
+    qr_code_base64: str
+    mqtt_config: dict
+    setup_instructions: str
+
 # Exports for server.py, add new notification types here
 # This will automatically update the database columns
 NOTIFICATION_TYPES = [

@@ -43,6 +43,8 @@ class Settings(BaseSettings):
     # MQTT Configuration
     MQTT_BROKER: str = os.environ.get("MQTT_BROKER", "localhost")
     MQTT_PORT: int = int(os.environ.get("MQTT_PORT", 1883))
+    MQTT_USERNAME: str = os.environ.get("MQTT_USERNAME", "")
+    MQTT_PASSWORD: str = os.environ.get("MQTT_PASSWORD", "")
     EXTERNAL_MQTT: bool = os.environ.get("EXTERNAL_MQTT_BROKER", "true") == "true"
 
     

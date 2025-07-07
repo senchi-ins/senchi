@@ -152,6 +152,7 @@ class Monitor:
         logger.info(f'Device: {device}')
         device.status = payload
         device.last_seen = datetime.now()
+        print(f"Payload: {payload}")
         
         try:
             # Store event in database
@@ -248,6 +249,9 @@ class Monitor:
     def start(self):
 
         try:
+            if hasattr(settings, 'MQTT_USERNAME') and hasattr(settings, 'MQTT_PASSWORD'):
+                self.client.username_pw_set(settings.MQTT_USERNAME, settings.MQTT_PASSWORD)
+
             logging.debug(f"Attempting to connect to MQTT broker: {settings.MQTT_BROKER}:{settings.MQTT_PORT}")
             
             # Start the network loop in a background thread

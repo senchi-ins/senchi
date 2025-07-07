@@ -1,11 +1,17 @@
 from contextlib import asynccontextmanager
 import os
+import secrets
 import sys
 import json
 import asyncio
 import logging
 from typing import Union
 from datetime import datetime
+import uuid
+import io
+import base64
+import qrcode
+import subprocess
 
 import uvicorn
 import pandas as pd
@@ -20,6 +26,8 @@ from monitor.models import (
     NotificationResponse,
     LeakSensorResponse,
     NOTIFICATION_TYPES,
+    LocationSetupRequest,
+    SetupResponse,
 )
 from monitor.zbm import Monitor
 from monitor.utils import get_all_model_fields
@@ -138,6 +146,143 @@ async def health_check():
         "active_leaks": len(app_state["active_leaks"]),
         "websocket_connections": len(app_state["websocket_connections"])
     }
+
+# Adding new users
+# TODO: Test e2e flow with rpi once set up
+@app.post("/api/setup/generate", response_model=SetupResponse)
+async def generate_location_setup(request: LocationSetupRequest):
+    """Generate QR code and credentials for new location"""
+    try:
+        location_id = f"home_{uuid.uuid4().hex[:8]}"
+        mqtt_password = secrets.token_urlsafe(16)
+        
+        await create_mqtt_user(location_id, mqtt_password)
+        
+        mqtt_config = {
+            "location_id": location_id,
+            "location_name": request.location_name,
+            "mqtt": {
+                "server": f"mqtt://{settings.MQTT_DOMAIN}:1883",
+                "user": location_id,
+                "password": mqtt_password,
+                "base_topic": f"zigbee2mqtt/{location_id}",
+                "client_id": f"{location_id}_zigbee2mqtt"
+            },
+            "api_endpoint": f"https://{settings.API_DOMAIN}",
+            "setup_version": "1.0"
+        }
+        
+        qr_code_base64 = generate_qr_code(mqtt_config)
+        
+        app_state["locations"][location_id] = {
+            "name": request.location_name,
+            "contact_info": request.contact_info,
+            "created_at": datetime.now().isoformat(),
+            "status": "pending_setup",
+            "devices": {}
+        }
+        
+        setup_instructions = f"""
+Setup Instructions for {request.location_name}:
+
+1. Power on the Senchi Home device
+2. Connect it to WiFi using the device's hotspot
+3. Scan this QR code with the device
+4. The device will automatically configure itself
+5. You'll see devices appear in your Senchi app within 5 minutes
+
+Location ID: {location_id}
+        """.strip()
+        
+        return SetupResponse(
+            location_id=location_id,
+            location_name=request.location_name,
+            qr_code_base64=qr_code_base64,
+            mqtt_config=mqtt_config,
+            setup_instructions=setup_instructions
+        )
+        
+    except Exception as e:
+        logger.error(f"Setup generation failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Setup generation failed: {str(e)}")
+
+async def create_mqtt_user(username: str, password: str):
+    """Add user to MQTT broker"""
+    try:
+        result = subprocess.run([
+            'mosquitto_passwd', '-b', 
+            '/mosquitto/config/passwd',
+            username, 
+            password
+        ], capture_output=True, text=True, check=True)
+        
+        subprocess.run(['pkill', '-HUP', 'mosquitto'], check=False)
+        
+        logger.info(f"Created MQTT user: {username}")
+        return True
+        
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Failed to create MQTT user {username}: {e}")
+        raise
+
+def generate_qr_code(config_data: dict) -> str:
+    """Generate QR code containing setup configuration"""
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    
+    config_json = json.dumps(config_data, separators=(',', ':'))
+    qr.add_data(config_json)
+    qr.make(fit=True)
+    
+    img = qr.make_image(fill_color="black", back_color="white")
+    
+    img_buffer = io.BytesIO()
+    img.save(img_buffer, format='PNG')
+    img_base64 = base64.b64encode(img_buffer.getvalue()).decode()
+    
+    return img_base64
+
+@app.get("/api/setup/locations")
+async def list_locations():
+    """List all configured locations"""
+    return {
+        "locations": app_state.get("locations", {}),
+        "total": len(app_state.get("locations", {}))
+    }
+
+@app.delete("/api/setup/locations/{location_id}")
+async def remove_location(location_id: str):
+    """Remove a location and clean up MQTT user"""
+    try:
+        subprocess.run([
+            'mosquitto_passwd', '-D',
+            '/mosquitto/config/passwd',
+            location_id
+        ], check=True)
+        
+        subprocess.run(['pkill', '-HUP', 'mosquitto'], check=False)
+        
+        if location_id in app_state.get("locations", {}):
+            del app_state["locations"][location_id]
+        
+        return {"status": "success", "message": f"Location {location_id} removed"}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to remove location: {str(e)}")
+
+@app.post("/api/setup/confirm/{location_id}")
+async def confirm_location_setup(location_id: str):
+    """Called by RPi when setup is complete"""
+    if location_id in app_state.get("locations", {}):
+        app_state["locations"][location_id]["status"] = "active"
+        app_state["locations"][location_id]["connected_at"] = datetime.now().isoformat()
+        return {"status": "confirmed", "location_id": location_id}
+    else:
+        raise HTTPException(status_code=404, detail="Location not found")
 
 if __name__ == "__main__":
 
