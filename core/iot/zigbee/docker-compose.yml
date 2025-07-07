@@ -1,34 +1,40 @@
 
-
-version: '3.8'
-
 services:
-  # Mosquitto MQTT server
-  mqtt:
-    image: eclipse-mosquitto:latest
-    ports:
-      - "1883:1883"
-    volumes:
-      - ./mosquitto.conf:/etc/mosquitto/mosquitto.conf
-    networks:
-      - zigbee2mqtt
-
-  zigbee2mqtt:
-    image: koenkk/zigbee2mqtt:latest
-    container_name: zigbee2mqtt
+  senchi-zigbee-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: senchi-zigbee-api
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "8000:8000"
+    environment:
+      # TODO: Add database configuration
+      # - DATABASE_URL=postgresql://homeuser:${DB_PASSWORD:-defaultpass}@postgres:5432/home_automation
+      
+      # MQTT Configuration (supports both local and containerized)
+      - MQTT_BROKER=${MQTT_BROKER:-host.docker.internal}
+      - MQTT_PORT=${MQTT_PORT:-1883}
+      - MQTT_USERNAME=${MQTT_USERNAME:-}
+      - MQTT_PASSWORD=${MQTT_PASSWORD:-}
+      
+      - PUSHOVER_TOKEN=${PUSHOVER_TOKEN:-}
+      - PUSHOVER_USER=${PUSHOVER_USER:-}
+      
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
+      - JWT_ALGORITHM=HS256
+      
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - TZ=America/Toronto
     volumes:
-      - ./zigbee2mqtt:/app/data
-    devices:
-      # USB serial port for the Zigbee2MQTT device
-      - ${ZIGBEE2MQTT_DEVICE}:/dev/ttyACM0
-    networks:
-      - zigbee2mqtt
-    depends_on:
-      - mqtt
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./configuration.yml:/app/configuration.yml:ro
 
-networks:
-  zigbee2mqtt:
-    driver: bridge
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

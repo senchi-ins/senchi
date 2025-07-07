@@ -92,8 +92,6 @@ async def root():
 @app.get("/devices")
 async def get_devices():
     """Get all devices"""
-    for device in app_state["devices"].values():
-        print(device.ieee_address)
     return list(app_state["devices"].values())
 
 

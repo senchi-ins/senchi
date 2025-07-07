@@ -25,9 +25,6 @@ listen:
 	make start-server
 	make start-zigbee
 
-subscribe:
-	mosquitto_sub -t "zigbee2mqtt/0x00158d008b91088e"
-
 list-devices:
 	@echo "Listing all devices..."; \
 	@mosquitto_sub -t "zigbee2mqtt/bridge/devices" -C 1 | jq -r '.[] | "\(.friendly_name // .name // "Unknown") - \(.ieee_address) - \(.model_id // "Unknown model")"'
@@ -35,3 +32,36 @@ list-devices:
 teardown:
 	@sudo brew services stop mosquitto
 	@killall -9 node
+
+# Deployment operations
+build:
+	@docker-compose build --no-cache
+
+up:
+	@mkdir -p data logs mosquitto/{config,data,log}
+	@docker-compose up
+
+build-up:
+	@make build
+	@make up
+
+build-up-local:
+	make build
+	make up-local
+
+up-local:
+	docker-compose --profile local up
+
+down:
+	docker-compose down
+
+open-test-website:
+	open http://localhost:5500/core/iot/zigbee/index.html
+
+clean:
+	docker-compose down -v --remove-orphans
+	docker system prune -f
+
+clean-all:
+	docker-compose down -v --remove-orphans --rmi all
+	docker system prune -af

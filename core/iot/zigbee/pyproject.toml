@@ -1,0 +1,17 @@
+[project]
+name = "zigbee"
+version = "0.1.0"
+description = "Zigbee2MQTT API"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "bleak>=1.0.0",
+    "dotenv>=0.9.9",
+    "fastapi>=0.115.13",
+    "pandas>=2.3.0",
+    "pydantic-settings>=2.10.1",
+    "pydantic>=2.11.7",
+    "uvicorn>=0.34.3",
+    "websockets>=11.0.3",
+    "paho-mqtt>=2.1.0",
+]
