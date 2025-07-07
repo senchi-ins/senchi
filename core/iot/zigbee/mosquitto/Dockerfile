@@ -1,11 +1,10 @@
 FROM eclipse-mosquitto:latest
 
 # TODO: Update to use uv
-RUN apt-get update && apt-get install -y \
+RUN apk add --no-cache \
     python3 \
-    python3-pip \
-    supervisor \
-    && rm -rf /var/lib/apt/lists/*
+    py3-pip \
+    supervisor
 
 RUN pip3 install fastapi uvicorn python-multipart
 
