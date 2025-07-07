@@ -248,33 +248,33 @@ class Monitor:
 
     def start(self):
 
-        try:
-            if hasattr(settings, 'MQTT_USERNAME') and hasattr(settings, 'MQTT_PASSWORD'):
-                self.client.username_pw_set(settings.MQTT_USERNAME, settings.MQTT_PASSWORD)
+        # try:
+        if hasattr(settings, 'MQTT_USERNAME') and hasattr(settings, 'MQTT_PASSWORD'):
+            self.client.username_pw_set(settings.MQTT_USERNAME, settings.MQTT_PASSWORD)
 
-            logging.debug(f"Attempting to connect to MQTT broker: {settings.MQTT_BROKER}:{settings.MQTT_PORT}")
-            
-            # Start the network loop in a background thread
-            self.client.loop_start()
-            
-            # Connect to broker
-            result = self.client.connect(
-                settings.MQTT_BROKER, 
-                settings.MQTT_PORT, 
-                60
-            )
-            time.sleep(2)
-            
-            if result != 0:
-                logging.error(f"Failed to connect to MQTT broker, result code: {result}")
-                self.client.loop_stop()
-                return
-                
-            logging.debug("MQTT Monitor started...")
-            
-        except Exception as e:
-            logging.error(f"MQTT monitor error: {e}")
+        logging.debug(f"Attempting to connect to MQTT broker: {settings.MQTT_BROKER}:{settings.MQTT_PORT}")
+        
+        # Start the network loop in a background thread
+        self.client.loop_start()
+        
+        # Connect to broker
+        result = self.client.connect(
+            settings.MQTT_BROKER, 
+            settings.MQTT_PORT, 
+            60
+        )
+        time.sleep(2)
+        
+        if result != 0:
+            logging.error(f"Failed to connect to MQTT broker, result code: {result}")
             self.client.loop_stop()
+            return
+            
+        logging.debug("MQTT Monitor started...")
+            
+        # except Exception as e:
+        #     logging.error(f"MQTT monitor error: {e}")
+        #     self.client.loop_stop()
     
     def stop(self):
         if self.client:
