@@ -3,7 +3,7 @@ import subprocess
 import os
 import logging
 from fastapi import FastAPI, HTTPException
-from models import AddUserRequest, RemoveUserRequest, UserResponse
+from pydantic import BaseModel
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -13,6 +13,17 @@ app = FastAPI(title="MQTT User Manager", version="1.0.0")
 
 PASSWD_FILE = "/mosquitto_passwd"
 
+
+class AddUserRequest(BaseModel):
+    username: str
+    password: str
+
+class RemoveUserRequest(BaseModel):
+    username: str
+
+class UserResponse(BaseModel):
+    username: str
+    status: str
 
 @app.get("/")
 async def root():
