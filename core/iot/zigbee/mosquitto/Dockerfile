@@ -6,7 +6,9 @@ RUN apk add --no-cache \
     py3-pip \
     supervisor
 
-RUN pip3 install fastapi uvicorn python-multipart
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+RUN pip install fastapi uvicorn python-multipart
 
 COPY mosquitto.conf /mosquitto/config/mosquitto.conf
 COPY mosquitto_passwd /mosquitto/config/passwd
