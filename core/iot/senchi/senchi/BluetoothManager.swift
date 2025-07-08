@@ -55,7 +55,7 @@ class BluetoothManager: NSObject {
     private var receivedData = Data()
     
     // MARK: - Configuration
-    var mode: BluetoothMode = .both
+//    var mode: BluetoothMode = .both
     
     // MARK: - Connection Maintenance
     private var keepAliveTimer: Timer?
@@ -154,16 +154,16 @@ class BluetoothManager: NSObject {
     }
     
     // MARK: Peripheral Mode Methods
-    func startAdvertising() {
-        guard peripheralManager.state == .poweredOn else {
-            log("Peripheral manager not ready")
-            return
-        }
-        
-        setupPeripheral()
-        peripheralManager.startAdvertising([CBAdvertisementDataServiceUUIDsKey: [TransferService.serviceUUID]])
-        log("Started advertising transfer service")
-    }
+//    func startAdvertising() {
+//        guard peripheralManager.state == .poweredOn else {
+//            log("Peripheral manager not ready")
+//            return
+//        }
+//        
+//        setupPeripheral()
+//        peripheralManager.startAdvertising([CBAdvertisementDataServiceUUIDsKey: [TransferService.serviceUUID]])
+//        log("Started advertising transfer service")
+//    }
     
     func stopAdvertising() {
         peripheralManager.stopAdvertising()
@@ -335,21 +335,21 @@ class BluetoothManager: NSObject {
         delegate?.bluetoothManager(self, didLog: message)
     }
     
-    private func discoverServices(for peripheral: CBPeripheral) {
-        log("Discovering services...")
-        peripheral.delegate = self
-        peripheral.discoverServices([targetServiceUUID, TransferService.serviceUUID])
-    }
-    
-    private func discoverCharacteristics(for service: CBService) {
-        log("Discovering characteristics for service: \(service.uuid)")
-        
-        if service.uuid == TransferService.serviceUUID {
-            service.peripheral?.discoverCharacteristics([TransferService.characteristicUUID], for: service)
-        } else {
-            service.peripheral?.discoverCharacteristics([notifyCharacteristicUUID, writeCharacteristicUUID], for: service)
-        }
-    }
+//    private func discoverServices(for peripheral: CBPeripheral) {
+//        log("Discovering services...")
+//        peripheral.delegate = self
+//        peripheral.discoverServices([targetServiceUUID, TransferService.serviceUUID])
+//    }
+//    
+//    private func discoverCharacteristics(for service: CBService) {
+//        log("Discovering characteristics for service: \(service.uuid)")
+//        
+//        if service.uuid == TransferService.serviceUUID {
+//            service.peripheral?.discoverCharacteristics([TransferService.characteristicUUID], for: service)
+//        } else {
+//            service.peripheral?.discoverCharacteristics([notifyCharacteristicUUID, writeCharacteristicUUID], for: service)
+//        }
+//    }
     
     private func interpretData(_ data: Data, for characteristic: CBCharacteristic) -> String {
         let hexString = data.map { String(format: "%02x", $0) }.joined()
@@ -414,21 +414,21 @@ class BluetoothManager: NSObject {
     }
     
     // MARK: - Transfer Service Methods
-    private func setupPeripheral() {
-        let transferCharacteristic = CBMutableCharacteristic(
-            type: TransferService.characteristicUUID,
-            properties: [.notify, .writeWithoutResponse],
-            value: nil,
-            permissions: [.readable, .writeable]
-        )
-        
-        let transferService = CBMutableService(type: TransferService.serviceUUID, primary: true)
-        transferService.characteristics = [transferCharacteristic]
-        
-        peripheralManager.add(transferService)
-        self.transferCharacteristic = transferCharacteristic
-        log("Transfer service setup complete")
-    }
+//    private func setupPeripheral() {
+//        let transferCharacteristic = CBMutableCharacteristic(
+//            type: TransferService.characteristicUUID,
+//            properties: [.notify, .writeWithoutResponse],
+//            value: nil,
+//            permissions: [.readable, .writeable]
+//        )
+//        
+//        let transferService = CBMutableService(type: TransferService.serviceUUID, primary: true)
+//        transferService.characteristics = [transferCharacteristic]
+//        
+//        peripheralManager.add(transferService)
+//        self.transferCharacteristic = transferCharacteristic
+//        log("Transfer service setup complete")
+//    }
     
     private func sendData() {
         guard let transferCharacteristic = transferCharacteristic else {
@@ -548,7 +548,7 @@ extension BluetoothManager: CBCentralManagerDelegate {
         startKeepAlive()
         
         delegate?.bluetoothManager(self, didConnect: peripheral)
-        discoverServices(for: peripheral)
+//        discoverServices(for: peripheral)
     }
     
     func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
@@ -622,105 +622,105 @@ extension BluetoothManager: CBPeripheralManagerDelegate {
 }
 
 // MARK: - CBPeripheralDelegate
-extension BluetoothManager: CBPeripheralDelegate {
-    func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
-        if let error = error {
-            log("Service discovery failed: \(error.localizedDescription)")
-            return
-        }
-        
-        guard let services = peripheral.services else { return }
-        
-        log("Discovered \(services.count) services")
-        
-        for service in services {
-            log("Service: \(service.uuid)")
-            discoverCharacteristics(for: service)
-        }
-    }
+//extension BluetoothManager: CBPeripheralDelegate {
+//    func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
+//        if let error = error {
+//            log("Service discovery failed: \(error.localizedDescription)")
+//            return
+//        }
+//        
+//        guard let services = peripheral.services else { return }
+//        
+//        log("Discovered \(services.count) services")
+//        
+//        for service in services {
+//            log("Service: \(service.uuid)")
+////            discoverCharacteristics(for: service)
+//        }
+//    }
     
-    func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
-        if let error = error {
-            log("Characteristic discovery failed: \(error.localizedDescription)")
-            return
-        }
-        
-        guard let characteristics = service.characteristics else { return }
-        
-        log("Discovered \(characteristics.count) characteristics for service \(service.uuid)")
-        
-        for characteristic in characteristics {
-            log("Characteristic: \(characteristic.uuid) - Properties: \(characteristic.properties)")
-            
-            // Handle transfer service characteristic
-            if characteristic.uuid == TransferService.characteristicUUID {
-                if characteristic.properties.contains(.notify) || characteristic.properties.contains(.indicate) {
-                    peripheral.setNotifyValue(true, for: characteristic)
-                    log("Subscribed to transfer service notifications")
-                }
-            } else {
-                // Handle legacy characteristics
-                if characteristic.properties.contains(.read) {
-                    peripheral.readValue(for: characteristic)
-                }
-                
-                if characteristic.properties.contains(.notify) || characteristic.properties.contains(.indicate) {
-                    peripheral.setNotifyValue(true, for: characteristic)
-                    log("Subscribed to notifications for \(characteristic.uuid)")
-                }
-            }
-        }
+//    func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
+//        if let error = error {
+//            log("Characteristic discovery failed: \(error.localizedDescription)")
+//            return
+//        }
+//        
+//        guard let characteristics = service.characteristics else { return }
+//        
+//        log("Discovered \(characteristics.count) characteristics for service \(service.uuid)")
+//        
+//        for characteristic in characteristics {
+//            log("Characteristic: \(characteristic.uuid) - Properties: \(characteristic.properties)")
+//            
+//            // Handle transfer service characteristic
+//            if characteristic.uuid == TransferService.characteristicUUID {
+//                if characteristic.properties.contains(.notify) || characteristic.properties.contains(.indicate) {
+//                    peripheral.setNotifyValue(true, for: characteristic)
+//                    log("Subscribed to transfer service notifications")
+//                }
+//            } else {
+//                // Handle legacy characteristics
+//                if characteristic.properties.contains(.read) {
+//                    peripheral.readValue(for: characteristic)
+//                }
+//                
+//                if characteristic.properties.contains(.notify) || characteristic.properties.contains(.indicate) {
+//                    peripheral.setNotifyValue(true, for: characteristic)
+//                    log("Subscribed to notifications for \(characteristic.uuid)")
+//                }
+//            }
+//        }
         
         // Save device profile after discovering all characteristics
-        saveDeviceProfile()
-    }
+//        saveDeviceProfile()
+//    }
     
-    func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
-        if let error = error {
-            log("Value update failed: \(error.localizedDescription)")
-            return
-        }
-        
-        guard let data = characteristic.value else { return }
-        
-        // Check if this is a handshake response first
-        if !handshakeCompleted && isValidHandshakeResponse(data) {
-            handleHandshakeResponse(data, from: characteristic)
-            return
-        }
-        
-        // Handle transfer service data
-        if characteristic.uuid == TransferService.characteristicUUID {
-            let stringFromData = String(data: data, encoding: .utf8)
-            log("Received transfer data: \(stringFromData ?? "unknown")")
-            
-            if stringFromData == "EOM" {
-                // End of message received
-                log("Received complete transfer data")
-                delegate?.bluetoothManager(self, didReceiveTransferData: receivedData)
-                receivedData.removeAll(keepingCapacity: false)
-            } else {
-                // Append data to received buffer
-                receivedData.append(data)
-            }
-        } else {
-            // Handle legacy data
-            let interpretation = interpretData(data, for: characteristic)
-            addNotification(data, characteristic: characteristic, interpretation: interpretation)
-            
-            log("📡 \(interpretation)")
-            delegate?.bluetoothManager(self, didReceiveData: data, from: characteristic, interpretation: interpretation)
-        }
-    }
+//    func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
+//        if let error = error {
+//            log("Value update failed: \(error.localizedDescription)")
+//            return
+//        }
+//        
+//        guard let data = characteristic.value else { return }
+//        
+//        // Check if this is a handshake response first
+//        if !handshakeCompleted && isValidHandshakeResponse(data) {
+//            handleHandshakeResponse(data, from: characteristic)
+//            return
+//        }
+//        
+//        // Handle transfer service data
+//        if characteristic.uuid == TransferService.characteristicUUID {
+//            let stringFromData = String(data: data, encoding: .utf8)
+//            log("Received transfer data: \(stringFromData ?? "unknown")")
+//            
+//            if stringFromData == "EOM" {
+//                // End of message received
+//                log("Received complete transfer data")
+//                delegate?.bluetoothManager(self, didReceiveTransferData: receivedData)
+//                receivedData.removeAll(keepingCapacity: false)
+//            } else {
+//                // Append data to received buffer
+//                receivedData.append(data)
+//            }
+//        } else {
+//            // Handle legacy data
+//            let interpretation = interpretData(data, for: characteristic)
+//            addNotification(data, characteristic: characteristic, interpretation: interpretation)
+//            
+//            log("📡 \(interpretation)")
+//            delegate?.bluetoothManager(self, didReceiveData: data, from: characteristic, interpretation: interpretation)
+//        }
+//    }
     
-    func peripheral(_ peripheral: CBPeripheral, didReadRSSI RSSI: NSNumber, error: Error?) {
-        if let error = error {
-            log("RSSI read failed: \(error.localizedDescription)")
-        } else {
-            log("RSSI: \(RSSI) dBm")
-        }
-    }
-}
+//    func peripheral(_ peripheral: CBPeripheral, didReadRSSI RSSI: NSNumber, error: Error?) {
+//        if let error = error {
+//            log("RSSI read failed: \(error.localizedDescription)")
+//        } else {
+//            log("RSSI: \(RSSI) dBm")
+//        }
+//    }
+//}
 
 // MARK: - Handshake and Pairing Methods
 extension BluetoothManager {
@@ -830,10 +830,10 @@ extension BluetoothManager {
     
     /// Requests device pairing with authentication
     func requestPairing() {
-        guard let peripheral = connectedPeripheral else {
-            log("❌ No device connected for pairing")
-            return
-        }
+//        guard let peripheral = connectedPeripheral else {
+//            log("❌ No device connected for pairing")
+//            return
+//        }
         
         log("🔐 Requesting device pairing...")
         

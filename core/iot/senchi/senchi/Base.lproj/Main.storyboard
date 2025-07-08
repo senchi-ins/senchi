@@ -15,145 +15,9 @@
                     <view key="view" contentMode="scaleToFill" id="8bC-Xf-vdC">
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <subviews>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Leak Detector" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="titleLabel">
-                                <rect key="frame" x="20" y="138" width="353" height="28.666666666666657"/>
-                                <fontDescription key="fontDescription" type="boldSystem" pointSize="24"/>
-                                <nil key="highlightedColor"/>
-                            </label>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Bluetooth Status: Unknown" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="statusLabel">
-                                <rect key="frame" x="20" y="186.66666666666666" width="353" height="20.333333333333343"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
-                                <color key="textColor" systemColor="secondaryLabelColor"/>
-                                <nil key="highlightedColor"/>
-                            </label>
-                            <stackView opaque="NO" contentMode="scaleToFill" distribution="fillEqually" spacing="10" translatesAutoresizingMaskIntoConstraints="NO" id="buttonStack">
-                                <rect key="frame" x="20" y="227" width="353" height="44"/>
-                                <subviews>
-                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="scanButton">
-                                        <rect key="frame" x="0.0" y="0.0" width="171.66666666666666" height="44"/>
-                                        <color key="backgroundColor" systemColor="systemBlueColor"/>
-                                        <constraints>
-                                            <constraint firstAttribute="height" constant="44" id="scanHeight"/>
-                                        </constraints>
-                                        <state key="normal" title="Start Scan">
-                                            <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                        </state>
-                                        <connections>
-                                            <action selector="scanButtonTapped:" destination="BYZ-38-t0r" eventType="touchUpInside" id="scanAction"/>
-                                        </connections>
-                                    </button>
-                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="connectButton">
-                                        <rect key="frame" x="181.66666666666663" y="0.0" width="171.33333333333337" height="44"/>
-                                        <color key="backgroundColor" systemColor="systemGreenColor"/>
-                                        <constraints>
-                                            <constraint firstAttribute="height" constant="44" id="connectHeight"/>
-                                        </constraints>
-                                        <state key="normal" title="Connect">
-                                            <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                        </state>
-                                        <connections>
-                                            <action selector="connectButtonTapped:" destination="BYZ-38-t0r" eventType="touchUpInside" id="connectAction"/>
-                                        </connections>
-                                    </button>
-                                </subviews>
-                            </stackView>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Discovered Devices:" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="devicesLabel">
-                                <rect key="frame" x="20" y="291" width="353" height="20.333333333333314"/>
-                                <fontDescription key="fontDescription" type="boldSystem" pointSize="17"/>
-                                <nil key="highlightedColor"/>
-                            </label>
-                            <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="deviceTableView">
-                                <rect key="frame" x="20" y="321.33333333333331" width="353" height="150"/>
-                                <color key="backgroundColor" systemColor="systemBackgroundColor"/>
-                                <prototypes>
-                                    <tableViewCell contentMode="scaleToFill" selectionStyle="default" indentationWidth="10" reuseIdentifier="DeviceCell" rowHeight="60" id="deviceCell">
-                                        <rect key="frame" x="0.0" y="50" width="353" height="60"/>
-                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                        <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" tableViewCell="deviceCell" id="deviceContentView">
-                                            <rect key="frame" x="0.0" y="0.0" width="353" height="60"/>
-                                            <autoresizingMask key="autoresizingMask"/>
-                                            <subviews>
-                                                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" ambiguous="YES" text="Device Name" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="deviceNameLabel">
-                                                    <rect key="frame" x="16" y="8" width="321" height="21"/>
-                                                    <fontDescription key="fontDescription" type="system" pointSize="17"/>
-                                                    <nil key="highlightedColor"/>
-                                                </label>
-                                                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" ambiguous="YES" text="Device ID" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="deviceIDLabel">
-                                                    <rect key="frame" x="16" y="31" width="321" height="21"/>
-                                                    <fontDescription key="fontDescription" type="system" pointSize="12"/>
-                                                    <color key="textColor" systemColor="secondaryLabelColor"/>
-                                                    <nil key="highlightedColor"/>
-                                                </label>
-                                            </subviews>
-                                            <constraints>
-                                                <constraint firstAttribute="bottom" secondItem="deviceIDLabel" secondAttribute="bottom" constant="8" id="idBottom"/>
-                                                <constraint firstItem="deviceIDLabel" firstAttribute="leading" secondItem="deviceContentView" secondAttribute="leading" constant="16" id="idLeading"/>
-                                                <constraint firstItem="deviceIDLabel" firstAttribute="top" secondItem="deviceNameLabel" secondAttribute="bottom" constant="2" id="idTop"/>
-                                                <constraint firstAttribute="trailing" secondItem="deviceIDLabel" secondAttribute="trailing" constant="16" id="idTrailing"/>
-                                                <constraint firstItem="deviceNameLabel" firstAttribute="leading" secondItem="deviceContentView" secondAttribute="leading" constant="16" id="nameLeading"/>
-                                                <constraint firstItem="deviceNameLabel" firstAttribute="top" secondItem="deviceContentView" secondAttribute="top" constant="8" id="nameTop"/>
-                                                <constraint firstAttribute="trailing" secondItem="deviceNameLabel" secondAttribute="trailing" constant="16" id="nameTrailing"/>
-                                            </constraints>
-                                        </tableViewCellContentView>
-                                        <connections>
-                                            <outlet property="detailTextLabel" destination="deviceIDLabel" id="detailOutlet"/>
-                                            <outlet property="textLabel" destination="deviceNameLabel" id="textOutlet"/>
-                                        </connections>
-                                    </tableViewCell>
-                                </prototypes>
-                                <connections>
-                                    <outlet property="dataSource" destination="BYZ-38-t0r" id="tableDataSource"/>
-                                    <outlet property="delegate" destination="BYZ-38-t0r" id="tableDelegate"/>
-                                </connections>
-                            </tableView>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Activity Log:" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="logLabel">
-                                <rect key="frame" x="20" y="491.33333333333331" width="353" height="20.333333333333314"/>
-                                <fontDescription key="fontDescription" type="boldSystem" pointSize="17"/>
-                                <nil key="highlightedColor"/>
-                            </label>
-                            <textView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" showsHorizontalScrollIndicator="NO" editable="NO" translatesAutoresizingMaskIntoConstraints="NO" id="logTextView">
-                                <rect key="frame" x="20" y="521.66666666666663" width="353" height="242.33333333333337"/>
-                                <color key="backgroundColor" systemColor="systemBackgroundColor"/>
-                                <fontDescription key="fontDescription" pointSize="12"/>
-                                <textInputTraits key="textInputTraits" autocapitalizationType="sentences"/>
-                            </textView>
-                        </subviews>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
-                        <constraints>
-                            <constraint firstItem="buttonStack" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="20" id="buttonLeading"/>
-                            <constraint firstItem="buttonStack" firstAttribute="top" secondItem="statusLabel" secondAttribute="bottom" constant="20" id="buttonTop"/>
-                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="buttonStack" secondAttribute="trailing" constant="20" id="buttonTrailing"/>
-                            <constraint firstItem="devicesLabel" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="20" id="devicesLeading"/>
-                            <constraint firstItem="devicesLabel" firstAttribute="top" secondItem="buttonStack" secondAttribute="bottom" constant="20" id="devicesTop"/>
-                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="devicesLabel" secondAttribute="trailing" constant="20" id="devicesTrailing"/>
-                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="bottom" secondItem="logTextView" secondAttribute="bottom" constant="20" id="logBottom"/>
-                            <constraint firstItem="logLabel" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="20" id="logLabelLeading"/>
-                            <constraint firstItem="logLabel" firstAttribute="top" secondItem="deviceTableView" secondAttribute="bottom" constant="20" id="logLabelTop"/>
-                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="logLabel" secondAttribute="trailing" constant="20" id="logLabelTrailing"/>
-                            <constraint firstItem="logTextView" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="20" id="logLeading"/>
-                            <constraint firstItem="logTextView" firstAttribute="top" secondItem="logLabel" secondAttribute="bottom" constant="10" id="logTop"/>
-                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="logTextView" secondAttribute="trailing" constant="20" id="logTrailing"/>
-                            <constraint firstItem="statusLabel" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="20" id="statusLeading"/>
-                            <constraint firstItem="statusLabel" firstAttribute="top" secondItem="titleLabel" secondAttribute="bottom" constant="20" id="statusTop"/>
-                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="statusLabel" secondAttribute="trailing" constant="20" id="statusTrailing"/>
-                            <constraint firstItem="deviceTableView" firstAttribute="height" constant="150" id="tableHeight"/>
-                            <constraint firstItem="deviceTableView" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="20" id="tableLeading"/>
-                            <constraint firstItem="deviceTableView" firstAttribute="top" secondItem="devicesLabel" secondAttribute="bottom" constant="10" id="tableTop"/>
-                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="deviceTableView" secondAttribute="trailing" constant="20" id="tableTrailing"/>
-                            <constraint firstItem="titleLabel" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="20" id="titleLeading"/>
-                            <constraint firstItem="titleLabel" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" constant="20" id="titleTop"/>
-                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="titleLabel" secondAttribute="trailing" constant="20" id="titleTrailing"/>
-                        </constraints>
                     </view>
-                    <connections>
-                        <outlet property="connectButton" destination="connectButton" id="connectOutlet"/>
-                        <outlet property="deviceTableView" destination="deviceTableView" id="tableOutlet"/>
-                        <outlet property="logTextView" destination="logTextView" id="logOutlet"/>
-                        <outlet property="scanButton" destination="scanButton" id="scanOutlet"/>
-                        <outlet property="statusLabel" destination="statusLabel" id="statusOutlet"/>
-                    </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
             </objects>
@@ -161,17 +25,8 @@
         </scene>
     </scenes>
     <resources>
-        <systemColor name="secondaryLabelColor">
-            <color red="0.23529411759999999" green="0.23529411759999999" blue="0.26274509800000001" alpha="0.59999999999999998" colorSpace="custom" customColorSpace="sRGB"/>
-        </systemColor>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-        </systemColor>
-        <systemColor name="systemBlueColor">
-            <color red="0.0" green="0.47843137250000001" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-        </systemColor>
-        <systemColor name="systemGreenColor">
-            <color red="0.20392156859999999" green="0.78039215689999997" blue="0.34901960780000002" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
     </resources>
 </document>

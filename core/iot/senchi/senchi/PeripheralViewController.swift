@@ -33,14 +33,14 @@ class PeripheralViewController: UIViewController {
         super.viewWillDisappear(animated)
     }
     
-    @IBAction func switchChanged(_ sender: Any) {
-        // All we advertise is our service's UUID.
-        if advertisingSwitch.isOn {
-            peripheralManager.startAdvertising([CBAdvertisementDataServiceUUIDsKey: [TransferService.serviceUUID]])
-        } else {
-            peripheralManager.stopAdvertising()
-        }
-    }
+//    @IBAction func switchChanged(_ sender: Any) {
+//        // All we advertise is our service's UUID.
+//        if advertisingSwitch.isOn {
+//            peripheralManager.startAdvertising([CBAdvertisementDataServiceUUIDsKey: [TransferService.serviceUUID]])
+//        } else {
+//            peripheralManager.stopAdvertising()
+//        }
+//    }
     
     static var sendingEOM = false
         
@@ -118,29 +118,29 @@ class PeripheralViewController: UIViewController {
             }
         }
     
-    private func setupPeripheral() {
-            
-            // Build our service.
-            
-            // Start with the CBMutableCharacteristic.
-            let transferCharacteristic = CBMutableCharacteristic(type: TransferService.characteristicUUID,
-                                                             properties: [.notify, .writeWithoutResponse],
-                                                             value: nil,
-                                                             permissions: [.readable, .writeable])
-            
-            // Create a service from the characteristic.
-            let transferService = CBMutableService(type: TransferService.serviceUUID, primary: true)
-            
-            // Add the characteristic to the service.
-            transferService.characteristics = [transferCharacteristic]
-            
-            // And add it to the peripheral manager.
-            peripheralManager.add(transferService)
-            
-            // Save the characteristic for later.
-            self.transferCharacteristic = transferCharacteristic
-
-        }
+//    private func setupPeripheral() {
+//            
+//            // Build our service.
+//            
+//            // Start with the CBMutableCharacteristic.
+//            let transferCharacteristic = CBMutableCharacteristic(type: TransferService.characteristicUUID,
+//                                                             properties: [.notify, .writeWithoutResponse],
+//                                                             value: nil,
+//                                                             permissions: [.readable, .writeable])
+//            
+//            // Create a service from the characteristic.
+//            let transferService = CBMutableService(type: TransferService.serviceUUID, primary: true)
+//            
+//            // Add the characteristic to the service.
+//            transferService.characteristics = [transferCharacteristic]
+//            
+//            // And add it to the peripheral manager.
+//            peripheralManager.add(transferService)
+//            
+//            // Save the characteristic for later.
+//            self.transferCharacteristic = transferCharacteristic
+//
+//        }
 }
 
 extension PeripheralViewController: CBPeripheralManagerDelegate {
@@ -153,7 +153,7 @@ extension PeripheralViewController: CBPeripheralManagerDelegate {
         case .poweredOn:
             // ... so start working with the peripheral
             os_log("CBManager is powered on")
-            setupPeripheral()
+//            setupPeripheral()
         case .poweredOff:
             os_log("CBManager is not powered on")
             // In a real app, you'd deal with all the states accordingly

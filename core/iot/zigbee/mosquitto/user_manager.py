@@ -5,13 +5,13 @@ import logging
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="MQTT User Manager", version="1.0.0")
-
 PASSWD_FILE = "/mosquitto_passwd"
+VERSION = "1.0.0"
+
+app = FastAPI(title="MQTT User Manager", version=VERSION)
 
 
 class AddUserRequest(BaseModel):
@@ -28,7 +28,7 @@ class UserResponse(BaseModel):
 @app.get("/")
 async def root():
     """Health check endpoint"""
-    return {"status": "MQTT User Manager is running", "version": "1.0.0"}
+    return {"status": "MQTT User Manager is running", "version": VERSION}
 
 @app.post("/users", response_model=UserResponse)
 async def add_user(request: AddUserRequest):

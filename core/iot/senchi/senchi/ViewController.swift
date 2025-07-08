@@ -2,315 +2,568 @@
 //  ViewController.swift
 //  senchi
 //
-//  Created by Michael Dawes on 2025-06-30.
+//  Created by Michael Dawes on 2025-01-27.
 //
 
 import UIKit
-import CoreBluetooth
+import Network
+import UserNotifications
+
+// MARK: - Device Model
+struct IoTDevice: Codable {
+    let id: String
+    let name: String?
+    var status: DeviceStatus
+    var lastSeen: Date
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case status
+        case lastSeen = "last_seen"
+    }
+    
+    init(id: String, name: String? = nil, status: DeviceStatus = DeviceStatus(), lastSeen: Date = Date()) {
+        self.id = id
+        self.name = name
+        self.status = status
+        self.lastSeen = lastSeen
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        name = try container.decodeIfPresent(String.self, forKey: .name)
+        status = try container.decode(DeviceStatus.self, forKey: .status)
+        
+        if let timestampString = try container.decodeIfPresent(String.self, forKey: .lastSeen) {
+            let formatter = ISO8601DateFormatter()
+            lastSeen = formatter.date(from: timestampString) ?? Date()
+        } else {
+            lastSeen = Date()
+        }
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encodeIfPresent(name, forKey: .name)
+        try container.encode(status, forKey: .status)
+        
+        let formatter = ISO8601DateFormatter()
+        try container.encode(formatter.string(from: lastSeen), forKey: .lastSeen)
+    }
+}
+
+struct DeviceStatus: Codable {
+    var waterLeak: Bool?
+    var battery: Int?
+    var batteryLow: Bool?
+    var linkQuality: Int?
+    var deviceTemperature: Double?
+    
+    enum CodingKeys: String, CodingKey {
+        case waterLeak = "water_leak"
+        case battery
+        case batteryLow = "battery_low"
+        case linkQuality = "linkquality"
+        case deviceTemperature = "device_temperature"
+    }
+}
+
+// MARK: - WebSocket Message Types
+struct WebSocketMessage: Codable {
+    let type: String
+    let timestamp: String?
+    let deviceId: String?
+    let data: DeviceStatus?
+    let devices: [IoTDevice]?
+    
+    enum CodingKeys: String, CodingKey {
+        case type
+        case timestamp
+        case deviceId = "device_id"
+        case data
+        case devices
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        type = try container.decode(String.self, forKey: .type)
+        timestamp = try container.decodeIfPresent(String.self, forKey: .timestamp)
+        deviceId = try container.decodeIfPresent(String.self, forKey: .deviceId)
+        data = try container.decodeIfPresent(DeviceStatus.self, forKey: .data)
+        devices = try container.decodeIfPresent([IoTDevice].self, forKey: .devices)
+    }
+}
 
 class ViewController: UIViewController {
     
     // MARK: - UI Elements
-    @IBOutlet weak var statusLabel: UILabel!
-    @IBOutlet weak var scanButton: UIButton!
-    @IBOutlet weak var connectButton: UIButton!
-    @IBOutlet weak var deviceTableView: UITableView!
-    @IBOutlet weak var logTextView: UITextView!
+    private var connectionStatusView: UIView!
+    private var statusTitleLabel: UILabel!
+    private var statusTextLabel: UILabel!
+    private var apiStatusLabel: UILabel!
+    private var wsStatusLabel: UILabel!
     
-    // New UI elements for transfer functionality
-    @IBOutlet weak var modeSegmentControl: UISegmentedControl!
-    @IBOutlet weak var advertiseButton: UIButton!
-    @IBOutlet weak var sendDataButton: UIButton!
-    @IBOutlet weak var dataTextField: UITextField!
-    @IBOutlet weak var receivedDataLabel: UILabel!
+    private var controlsStackView: UIStackView!
+    private var addDeviceButton: UIButton!
+    private var testAlertButton: UIButton!
+    private var clearLogsButton: UIButton!
     
-    // MARK: - Bluetooth Manager
-    private let bluetoothManager = BluetoothManager()
-    private var discoveredDevices: [CBPeripheral] = []
+    private var deviceTableView: UITableView!
+    private var logsTextView: UITextView!
     
+    // MARK: - Properties
+    private var webSocketTask: URLSessionWebSocketTask?
+    private var devices: [String: IoTDevice] = [:]
+    private var reconnectAttempts = 0
+    private let maxReconnectAttempts = 5
+    private var reconnectTimer: Timer?
+    
+    // Config
+    private var cfg = ApplicationConfig();
+    
+    // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
-        setupBluetoothManager()
         setupTableView()
+        setupNotifications()
+        connectWebSocket()
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        disconnectWebSocket()
     }
     
     // MARK: - UI Setup
     private func setupUI() {
-        statusLabel.text = "Bluetooth Status: Unknown"
-        scanButton.setTitle("Start Scan", for: .normal)
-        connectButton.setTitle("Connect", for: .normal)
-        connectButton.isEnabled = false
+        title = "🏠 Home Automation System"
         
-        // Setup mode segment control (with nil check)
-        if let modeSegmentControl = modeSegmentControl {
-            modeSegmentControl.removeAllSegments()
-            modeSegmentControl.insertSegment(withTitle: "Central", at: 0, animated: false)
-            modeSegmentControl.insertSegment(withTitle: "Peripheral", at: 1, animated: false)
-            modeSegmentControl.insertSegment(withTitle: "Both", at: 2, animated: false)
-            modeSegmentControl.selectedSegmentIndex = 2 // Default to both
-        }
+        // Create UI elements programmatically
+        createUIProgrammatically()
+    }
+    
+    private func createUIProgrammatically() {
+        view.backgroundColor = .systemBackground
         
-        // Setup advertise button (with nil check)
-        if let advertiseButton = advertiseButton {
-            advertiseButton.setTitle("Start Advertising", for: .normal)
-            advertiseButton.backgroundColor = .systemOrange
-            advertiseButton.setTitleColor(.white, for: .normal)
-            advertiseButton.layer.cornerRadius = 8
-            advertiseButton.isEnabled = false
-        }
+        // Connection status view
+        connectionStatusView = UIView()
+        connectionStatusView.translatesAutoresizingMaskIntoConstraints = false
+        connectionStatusView.layer.cornerRadius = 12
+        connectionStatusView.layer.shadowColor = UIColor.black.cgColor
+        connectionStatusView.layer.shadowOffset = CGSize(width: 0, height: 2)
+        connectionStatusView.layer.shadowOpacity = 0.1
+        connectionStatusView.layer.shadowRadius = 10
+        view.addSubview(connectionStatusView)
         
-        // Setup send data button (with nil check)
-        if let sendDataButton = sendDataButton {
-            sendDataButton.setTitle("Send Data", for: .normal)
-            sendDataButton.backgroundColor = .systemPurple
-            sendDataButton.setTitleColor(.white, for: .normal)
-            sendDataButton.layer.cornerRadius = 8
-            sendDataButton.isEnabled = false
-        }
+        // Status labels
+        statusTitleLabel = UILabel()
+        statusTitleLabel.text = "🏠 Home Automation System"
+        statusTitleLabel.font = UIFont.boldSystemFont(ofSize: 18)
+        statusTitleLabel.translatesAutoresizingMaskIntoConstraints = false
+        connectionStatusView.addSubview(statusTitleLabel)
         
-        // Setup data text field (with nil check)
-        if let dataTextField = dataTextField {
-            dataTextField.placeholder = "Enter data to send..."
-            dataTextField.borderStyle = .roundedRect
-        }
+        statusTextLabel = UILabel()
+        statusTextLabel.text = "Connecting..."
+        statusTextLabel.translatesAutoresizingMaskIntoConstraints = false
+        connectionStatusView.addSubview(statusTextLabel)
         
-        // Setup received data label (with nil check)
-        if let receivedDataLabel = receivedDataLabel {
-            receivedDataLabel.text = "Received: None"
-            receivedDataLabel.numberOfLines = 0
-        }
+        apiStatusLabel = UILabel()
+        apiStatusLabel.text = "API: Checking..."
+        apiStatusLabel.translatesAutoresizingMaskIntoConstraints = false
+        connectionStatusView.addSubview(apiStatusLabel)
         
-        // Style buttons
-        scanButton.backgroundColor = .systemBlue
-        scanButton.setTitleColor(.white, for: .normal)
-        scanButton.layer.cornerRadius = 8
+        wsStatusLabel = UILabel()
+        wsStatusLabel.text = "WebSocket: Connecting..."
+        wsStatusLabel.translatesAutoresizingMaskIntoConstraints = false
+        connectionStatusView.addSubview(wsStatusLabel)
         
-        connectButton.backgroundColor = .systemGreen
-        connectButton.setTitleColor(.white, for: .normal)
-        connectButton.layer.cornerRadius = 8
+        // Controls stack view
+        controlsStackView = UIStackView()
+        controlsStackView.axis = .horizontal
+        controlsStackView.distribution = .fillEqually
+        controlsStackView.spacing = 10
+        controlsStackView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(controlsStackView)
         
-        // Style log text view
-        logTextView.layer.borderColor = UIColor.systemGray.cgColor
-        logTextView.layer.borderWidth = 1
-        logTextView.layer.cornerRadius = 8
-        logTextView.font = UIFont.monospacedSystemFont(ofSize: 12, weight: .regular)
+        // Buttons
+        addDeviceButton = UIButton(type: .system)
+        addDeviceButton.setTitle("Add Device", for: .normal)
+        addDeviceButton.backgroundColor = .systemBlue
+        addDeviceButton.setTitleColor(.white, for: .normal)
+        addDeviceButton.layer.cornerRadius = 8
+        addDeviceButton.addTarget(self, action: #selector(addDeviceButtonTapped), for: .touchUpInside)
+        controlsStackView.addArrangedSubview(addDeviceButton)
         
-        updateUIForMode()
+        testAlertButton = UIButton(type: .system)
+        testAlertButton.setTitle("Test Alert", for: .normal)
+        testAlertButton.backgroundColor = .systemOrange
+        testAlertButton.setTitleColor(.white, for: .normal)
+        testAlertButton.layer.cornerRadius = 8
+        testAlertButton.addTarget(self, action: #selector(testAlertButtonTapped), for: .touchUpInside)
+        controlsStackView.addArrangedSubview(testAlertButton)
+        
+        clearLogsButton = UIButton(type: .system)
+        clearLogsButton.setTitle("Clear Logs", for: .normal)
+        clearLogsButton.backgroundColor = .systemRed
+        clearLogsButton.setTitleColor(.white, for: .normal)
+        clearLogsButton.layer.cornerRadius = 8
+        clearLogsButton.addTarget(self, action: #selector(clearLogsButtonTapped), for: .touchUpInside)
+        controlsStackView.addArrangedSubview(clearLogsButton)
+        
+        // Device table view
+        deviceTableView = UITableView()
+        deviceTableView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(deviceTableView)
+        
+        // Logs text view
+        logsTextView = UITextView()
+        logsTextView.translatesAutoresizingMaskIntoConstraints = false
+        logsTextView.layer.borderColor = UIColor.systemGray.cgColor
+        logsTextView.layer.borderWidth = 1
+        logsTextView.layer.cornerRadius = 8
+        logsTextView.font = UIFont.monospacedSystemFont(ofSize: 12, weight: .regular)
+        logsTextView.backgroundColor = UIColor.systemBackground
+        logsTextView.isEditable = false
+        view.addSubview(logsTextView)
+        
+        // Setup constraints
+        setupConstraints()
+    }
+    
+    private func setupConstraints() {
+        NSLayoutConstraint.activate([
+            // Connection status view
+            connectionStatusView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
+            connectionStatusView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            connectionStatusView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            
+            // Status title label
+            statusTitleLabel.topAnchor.constraint(equalTo: connectionStatusView.topAnchor, constant: 16),
+            statusTitleLabel.leadingAnchor.constraint(equalTo: connectionStatusView.leadingAnchor, constant: 16),
+            statusTitleLabel.trailingAnchor.constraint(equalTo: connectionStatusView.trailingAnchor, constant: -16),
+            
+            // Status text label
+            statusTextLabel.topAnchor.constraint(equalTo: statusTitleLabel.bottomAnchor, constant: 8),
+            statusTextLabel.leadingAnchor.constraint(equalTo: connectionStatusView.leadingAnchor, constant: 16),
+            statusTextLabel.trailingAnchor.constraint(equalTo: connectionStatusView.trailingAnchor, constant: -16),
+            
+            // API status label
+            apiStatusLabel.topAnchor.constraint(equalTo: statusTextLabel.bottomAnchor, constant: 4),
+            apiStatusLabel.leadingAnchor.constraint(equalTo: connectionStatusView.leadingAnchor, constant: 16),
+            apiStatusLabel.trailingAnchor.constraint(equalTo: connectionStatusView.trailingAnchor, constant: -16),
+            
+            // WebSocket status label
+            wsStatusLabel.topAnchor.constraint(equalTo: apiStatusLabel.bottomAnchor, constant: 4),
+            wsStatusLabel.leadingAnchor.constraint(equalTo: connectionStatusView.leadingAnchor, constant: 16),
+            wsStatusLabel.trailingAnchor.constraint(equalTo: connectionStatusView.trailingAnchor, constant: -16),
+            wsStatusLabel.bottomAnchor.constraint(equalTo: connectionStatusView.bottomAnchor, constant: -16),
+            
+            // Controls stack view
+            controlsStackView.topAnchor.constraint(equalTo: connectionStatusView.bottomAnchor, constant: 20),
+            controlsStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            controlsStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            controlsStackView.heightAnchor.constraint(equalToConstant: 44),
+            
+            // Device table view
+            deviceTableView.topAnchor.constraint(equalTo: controlsStackView.bottomAnchor, constant: 20),
+            deviceTableView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            deviceTableView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            deviceTableView.heightAnchor.constraint(equalToConstant: 200),
+            
+            // Logs text view
+            logsTextView.topAnchor.constraint(equalTo: deviceTableView.bottomAnchor, constant: 20),
+            logsTextView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            logsTextView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            logsTextView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20)
+        ])
     }
     
     private func setupTableView() {
         deviceTableView.delegate = self
         deviceTableView.dataSource = self
-        deviceTableView.register(UITableViewCell.self, forCellReuseIdentifier: "DeviceCell")
+        deviceTableView.register(DeviceTableViewCell.self, forCellReuseIdentifier: "DeviceCell")
+        deviceTableView.rowHeight = UITableView.automaticDimension
+        deviceTableView.estimatedRowHeight = 80
     }
     
-    private func setupBluetoothManager() {
-        bluetoothManager.delegate = self
+    private func setupNotifications() {
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+            if let error = error {
+                self.log("Notification permission error: \(error.localizedDescription)")
+            }
+        }
     }
     
-    private func updateUIForMode() {
-        guard let modeSegmentControl = modeSegmentControl else { return }
+    // MARK: - WebSocket Connection
+    private func connectWebSocket() {
+        let wsUrl = cfg.wsURL;
+        guard let url = URL(string: wsUrl) else {
+            log("Invalid WebSocket URL")
+            return
+        }
         
-        let mode = BluetoothMode(rawValue: modeSegmentControl.selectedSegmentIndex) ?? .both
+        log("Connecting to WebSocket: \(wsUrl)")
         
-        switch mode {
-        case .central:
-            scanButton.isEnabled = true
-            advertiseButton?.isEnabled = false
-            sendDataButton?.isEnabled = false
-        case .peripheral:
-            scanButton.isEnabled = false
-            advertiseButton?.isEnabled = true
-            sendDataButton?.isEnabled = true
-        case .both:
-            scanButton.isEnabled = true
-            advertiseButton?.isEnabled = true
-            sendDataButton?.isEnabled = true
+        let session = URLSession(configuration: .default)
+        webSocketTask = session.webSocketTask(with: url)
+        webSocketTask?.resume()
+        
+        receiveMessage()
+        
+        // Set up ping to keep connection alive
+        schedulePing()
+    }
+    
+    private func disconnectWebSocket() {
+        webSocketTask?.cancel()
+        webSocketTask = nil
+        reconnectTimer?.invalidate()
+        reconnectTimer = nil
+    }
+    
+    private func receiveMessage() {
+        webSocketTask?.receive { [weak self] result in
+            switch result {
+            case .success(let message):
+                self?.handleWebSocketMessage(message)
+                self?.receiveMessage() // Continue receiving
+            case .failure(let error):
+                self?.log("WebSocket receive error: \(error.localizedDescription)")
+                self?.handleWebSocketDisconnection()
+            }
+        }
+    }
+    
+    private func handleWebSocketMessage(_ message: URLSessionWebSocketTask.Message) {
+        switch message {
+        case .string(let text):
+            handleTextMessage(text)
+        case .data(let data):
+            if let text = String(data: data, encoding: .utf8) {
+                handleTextMessage(text)
+            }
+        @unknown default:
+            log("Unknown WebSocket message type")
+        }
+    }
+    
+    private func handleTextMessage(_ text: String) {
+        guard let data = text.data(using: .utf8) else {
+            log("Failed to convert message to data")
+            return
+        }
+        
+        do {
+            let message = try JSONDecoder().decode(WebSocketMessage.self, from: data)
+            handleDecodedMessage(message)
+        } catch {
+            log("Failed to decode message: \(error.localizedDescription)")
+        }
+    }
+    
+    private func handleDecodedMessage(_ message: WebSocketMessage) {
+        log("Received message: \(message.type)")
+        
+        switch message.type {
+        case "device_update":
+            handleDeviceUpdate(message)
+        case "device_list_update":
+            handleDeviceListUpdate(message)
+        default:
+            log("Unknown message type: \(message.type)")
+        }
+    }
+    
+    private func handleDeviceUpdate(_ message: WebSocketMessage) {
+        guard let deviceId = message.deviceId,
+              let data = message.data else { return }
+        
+        let existingDevice = devices[deviceId] ?? IoTDevice(id: deviceId)
+        let updatedDevice = IoTDevice(
+            id: deviceId,
+            name: existingDevice.name,
+            status: data,
+            lastSeen: Date()
+        )
+        
+        devices[deviceId] = updatedDevice
+        
+        // Check for alerts
+        checkForAlerts(deviceId: deviceId, data: data)
+        
+        // Update UI
+        DispatchQueue.main.async { [weak self] in
+            self?.deviceTableView.reloadData()
+        }
+        
+        log("Device updated: \(deviceId)")
+    }
+    
+    private func handleDeviceListUpdate(_ message: WebSocketMessage) {
+        guard let deviceList = message.devices else { return }
+        
+        log("Device list updated")
+        
+        for device in deviceList {
+            devices[device.id] = device
+        }
+        
+        DispatchQueue.main.async { [weak self] in
+            self?.deviceTableView.reloadData()
+        }
+    }
+    
+    private func handleWebSocketDisconnection() {
+        log("WebSocket disconnected")
+        updateConnectionStatus(connected: false)
+        attemptReconnect()
+    }
+    
+    private func attemptReconnect() {
+        if reconnectAttempts < maxReconnectAttempts {
+            reconnectAttempts += 1
+            let delay = min(pow(2.0, Double(reconnectAttempts)), 30.0)
+            
+            log("Reconnecting in \(Int(delay))s (attempt \(reconnectAttempts))")
+            
+            reconnectTimer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
+                self?.connectWebSocket()
+            }
+        } else {
+            log("Max reconnection attempts reached")
+            showNotification(message: "Connection lost - please refresh", type: .error)
+        }
+    }
+    
+    private func schedulePing() {
+        Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
+            self?.webSocketTask?.sendPing { error in
+                if let error = error {
+                    self?.log("Ping error: \(error.localizedDescription)")
+                }
+            }
+        }
+    }
+    
+    // MARK: - Alert Handling
+    private func checkForAlerts(deviceId: String, data: DeviceStatus) {
+        let device = devices[deviceId]
+        let deviceName = device?.name ?? deviceId
+        
+        // Water leak alert
+        if data.waterLeak == true {
+            showNotification(message: "🚨 WATER LEAK DETECTED!\n\(deviceName)", type: .error)
+            log("LEAK ALERT: \(deviceName)")
+        }
+        
+        // Low battery alert
+        if data.batteryLow == true || (data.battery != nil && data.battery! < 20) {
+            let batteryLevel = data.battery != nil ? "\(data.battery!)%" : "?"
+            showNotification(message: "🔋 Low battery: \(deviceName) (\(batteryLevel))", type: .warning)
+            log("LOW BATTERY: \(deviceName)")
+        }
+        
+        // Device back online
+        if data.linkQuality != nil && data.linkQuality! > 0 {
+            if let lastSeen = device?.lastSeen,
+               Date().timeIntervalSince(lastSeen) > 3600 { // 1 hour
+                showNotification(message: "📡 Device back online: \(deviceName)", type: .success)
+            }
+        }
+    }
+    
+    // MARK: - UI Updates
+    private func updateConnectionStatus(connected: Bool) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            
+            if connected {
+                self.connectionStatusView.backgroundColor = UIColor.systemGreen.withAlphaComponent(0.1)
+                self.connectionStatusView.layer.borderColor = UIColor.systemGreen.cgColor
+                self.connectionStatusView.layer.borderWidth = 2
+                self.statusTextLabel.text = "System Online"
+                self.wsStatusLabel.text = "WebSocket: Connected"
+                self.reconnectAttempts = 0
+            } else {
+                self.connectionStatusView.backgroundColor = UIColor.systemRed.withAlphaComponent(0.1)
+                self.connectionStatusView.layer.borderColor = UIColor.systemRed.cgColor
+                self.connectionStatusView.layer.borderWidth = 2
+                self.statusTextLabel.text = "System Offline"
+                self.wsStatusLabel.text = "WebSocket: Disconnected"
+            }
+        }
+    }
+    
+    // MARK: - Notifications
+    private func showNotification(message: String, type: NotificationType) {
+        // In-app notification
+        let alert = UIAlertController(title: type.title, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        
+        DispatchQueue.main.async { [weak self] in
+            self?.present(alert, animated: true)
+        }
+        
+        // Local notification
+        let content = UNMutableNotificationContent()
+        content.title = type.title
+        content.body = message
+        content.sound = .default
+        
+        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
+        UNUserNotificationCenter.current().add(request)
+    }
+    
+    enum NotificationType {
+        case error, warning, success, info
+        
+        var title: String {
+            switch self {
+            case .error: return "Alert"
+            case .warning: return "Warning"
+            case .success: return "Success"
+            case .info: return "Info"
+            }
         }
     }
     
     // MARK: - Actions
-    @IBAction func modeSegmentChanged(_ sender: UISegmentedControl) {
-        updateUIForMode()
-        bluetoothManager.mode = BluetoothMode(rawValue: sender.selectedSegmentIndex) ?? .both
+    @objc private func addDeviceButtonTapped(_ sender: UIButton) {
+        enablePairing()
     }
     
-    @IBAction func scanButtonTapped(_ sender: UIButton) {
-        if bluetoothManager.isConnected() {
-            bluetoothManager.disconnect()
-            updateUIForDisconnection()
-        } else if scanButton.title(for: .normal) == "Stop Scan" {
-            stopScan()
-        } else {
-            startScan()
-        }
+    @objc private func testAlertButtonTapped(_ sender: UIButton) {
+        showNotification(message: "🧪 Test notification - system is working!", type: .info)
     }
     
-    @IBAction func broadScanButtonTapped(_ sender: UIButton) {
-        if sender.title(for: .normal) == "Stop Broad Scan" {
-            stopScan()
-        } else {
-            startBroadScan()
-        }
+    @objc private func clearLogsButtonTapped(_ sender: UIButton) {
+        logsTextView.text = ""
     }
     
-    @IBAction func targetedScanButtonTapped(_ sender: UIButton) {
-        if sender.title(for: .normal) == "Stop Targeted Scan" {
-            stopScan()
-        } else {
-            startTargetedScan()
-        }
-    }
-    
-    @IBAction func connectButtonTapped(_ sender: UIButton) {
-        guard let selectedIndex = deviceTableView.indexPathForSelectedRow else {
-            log("No device selected")
+    // MARK: - API Calls
+    private func enablePairing() {
+        guard let url = URL(string: "\(cfg.apiBase)/zigbee/permit-join") else {
+            log("Invalid pairing URL")
             return
         }
         
-        let peripheral = discoveredDevices[selectedIndex.row]
-        bluetoothManager.connect(to: peripheral)
-    }
-    
-    @IBAction func advertiseButtonTapped(_ sender: UIButton) {
-        guard let advertiseButton = advertiseButton else { return }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
         
-        if advertiseButton.title(for: .normal) == "Stop Advertising" {
-            bluetoothManager.stopAdvertising()
-            advertiseButton.setTitle("Start Advertising", for: .normal)
-            advertiseButton.backgroundColor = .systemOrange
-        } else {
-            bluetoothManager.startAdvertising()
-            advertiseButton.setTitle("Stop Advertising", for: .normal)
-            advertiseButton.backgroundColor = .systemRed
-        }
-    }
-    
-    @IBAction func sendDataButtonTapped(_ sender: UIButton) {
-        guard let dataTextField = dataTextField else { return }
-        guard let text = dataTextField.text, !text.isEmpty else {
-            log("No data to send")
-            return
-        }
-        
-        guard let data = text.data(using: .utf8) else {
-            log("Failed to convert text to data")
-            return
-        }
-        
-        bluetoothManager.sendData(data)
-        log("Sending data: \(text)")
-        dataTextField.text = ""
-    }
-    
-    @IBAction func requestStatusButtonTapped(_ sender: UIButton) {
-        bluetoothManager.requestDeviceStatus()
-        log("Requested device status")
-    }
-    
-    @IBAction func enableNotificationsButtonTapped(_ sender: UIButton) {
-        bluetoothManager.enableEventNotifications()
-        log("Enabled event notifications")
-    }
-    
-    @IBAction func initiateHandshakeButtonTapped(_ sender: UIButton) {
-        bluetoothManager.initiateHandshake()
-        log("Initiating handshake sequence...")
-    }
-    
-    @IBAction func requestPairingButtonTapped(_ sender: UIButton) {
-        bluetoothManager.requestPairing()
-        log("Requesting device pairing...")
-    }
-    
-    @IBAction func completePairingButtonTapped(_ sender: UIButton) {
-        bluetoothManager.completePairing()
-        log("Completing pairing process...")
-    }
-    
-    @IBAction func resetHandshakeButtonTapped(_ sender: UIButton) {
-        bluetoothManager.resetHandshake()
-        log("Reset handshake state")
-    }
-    
-    @IBAction func pingSensorButtonTapped(_ sender: UIButton) {
-        bluetoothManager.pingSensor()
-        log("Pinging sensor...")
-    }
-    
-    // MARK: - Bluetooth Operations
-    private func startScan() {
-        discoveredDevices.removeAll()
-        deviceTableView.reloadData()
-        
-        bluetoothManager.startScanning()
-        
-        scanButton.setTitle("Stop Scan", for: .normal)
-        scanButton.backgroundColor = .systemRed
-        statusLabel.text = "Scanning for devices..."
-        
-        // Auto-stop scan after 20 seconds
-        DispatchQueue.main.asyncAfter(deadline: .now() + 20) { [weak self] in
-            self?.stopScan()
-        }
-    }
-    
-    private func startBroadScan() {
-        discoveredDevices.removeAll()
-        deviceTableView.reloadData()
-        
-        bluetoothManager.startScanning() // This now does broad scanning
-        
-        scanButton.setTitle("Stop Broad Scan", for: .normal)
-        scanButton.backgroundColor = .systemRed
-        statusLabel.text = "Broad scanning for ALL devices..."
-        
-        // Auto-stop scan after 30 seconds for broad scanning
-        DispatchQueue.main.asyncAfter(deadline: .now() + 30) { [weak self] in
-            self?.stopScan()
-        }
-    }
-    
-    private func startTargetedScan() {
-        discoveredDevices.removeAll()
-        deviceTableView.reloadData()
-        
-        bluetoothManager.startTargetedScanning()
-        
-        scanButton.setTitle("Stop Targeted Scan", for: .normal)
-        scanButton.backgroundColor = .systemRed
-        statusLabel.text = "Targeted scanning for WoSenW devices..."
-        
-        // Auto-stop scan after 15 seconds for targeted scanning
-        DispatchQueue.main.asyncAfter(deadline: .now() + 15) { [weak self] in
-            self?.stopScan()
-        }
-    }
-    
-    private func stopScan() {
-        bluetoothManager.stopScanning()
-        discoveredDevices = bluetoothManager.getDiscoveredDevices()
-        deviceTableView.reloadData()
-        
-        scanButton.setTitle("Start Scan", for: .normal)
-        scanButton.backgroundColor = .systemBlue
-        statusLabel.text = "Scan complete. Found \(discoveredDevices.count) devices"
-    }
-    
-    private func updateUIForConnection() {
-        scanButton.setTitle("Disconnect", for: .normal)
-        scanButton.backgroundColor = .systemRed
-        connectButton.isEnabled = false
-    }
-    
-    private func updateUIForDisconnection() {
-        scanButton.setTitle("Start Scan", for: .normal)
-        scanButton.backgroundColor = .systemBlue
-        connectButton.setTitle("Connect", for: .normal)
-        connectButton.backgroundColor = .systemGreen
-        connectButton.isEnabled = false
-        statusLabel.text = "Disconnected"
+        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+            if let error = error {
+                self?.log("Pairing failed: \(error.localizedDescription)")
+                self?.showNotification(message: "Failed to enable pairing mode", type: .error)
+                return
+            }
+            
+            self?.log("Pairing mode enabled")
+            self?.showNotification(message: "Pairing mode enabled - add your device now!", type: .success)
+        }.resume()
     }
     
     // MARK: - Logging
@@ -319,120 +572,178 @@ class ViewController: UIViewController {
         let logMessage = "[\(timestamp)] \(message)\n"
         
         DispatchQueue.main.async { [weak self] in
-            self?.logTextView.text += logMessage
-            self?.logTextView.scrollRangeToVisible(NSRange(location: self?.logTextView.text.count ?? 0, length: 0))
+            self?.logsTextView.text += logMessage
+            self?.logsTextView.scrollRangeToVisible(NSRange(location: self?.logsTextView.text.count ?? 0, length: 0))
         }
-    }
-}
-
-// MARK: - BluetoothManagerDelegate
-extension ViewController: BluetoothManagerDelegate {
-    func bluetoothManager(_ manager: BluetoothManager, didUpdateState state: CBManagerState) {
-        DispatchQueue.main.async { [weak self] in
-            switch state {
-            case .poweredOn:
-                self?.statusLabel.text = "Bluetooth Status: Powered On"
-                self?.updateUIForMode()
-            case .poweredOff:
-                self?.statusLabel.text = "Bluetooth Status: Powered Off"
-                self?.scanButton.isEnabled = false
-                self?.advertiseButton.isEnabled = false
-            case .unauthorized:
-                self?.statusLabel.text = "Bluetooth Status: Unauthorized"
-            case .unsupported:
-                self?.statusLabel.text = "Bluetooth Status: Unsupported"
-            case .resetting:
-                self?.statusLabel.text = "Bluetooth Status: Resetting"
-            case .unknown:
-                self?.statusLabel.text = "Bluetooth Status: Unknown"
-            @unknown default:
-                self?.statusLabel.text = "Bluetooth Status: Unknown"
-            }
-        }
-    }
-    
-    func bluetoothManager(_ manager: BluetoothManager, didDiscover peripheral: CBPeripheral, advertisementData: [String: Any], rssi: NSNumber) {
-        DispatchQueue.main.async { [weak self] in
-            self?.discoveredDevices = manager.getDiscoveredDevices()
-            self?.deviceTableView.reloadData()
-        }
-    }
-    
-    func bluetoothManager(_ manager: BluetoothManager, didConnect peripheral: CBPeripheral) {
-        DispatchQueue.main.async { [weak self] in
-            self?.statusLabel.text = "Connected to \(peripheral.name ?? "device")"
-            self?.updateUIForConnection()
-        }
-    }
-    
-    func bluetoothManager(_ manager: BluetoothManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
-        DispatchQueue.main.async { [weak self] in
-            self?.statusLabel.text = "Connection failed"
-        }
-    }
-    
-    func bluetoothManager(_ manager: BluetoothManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
-        DispatchQueue.main.async { [weak self] in
-            self?.updateUIForDisconnection()
-        }
-    }
-    
-    func bluetoothManager(_ manager: BluetoothManager, didReceiveData data: Data, from characteristic: CBCharacteristic, interpretation: String) {
-        // Data is already logged by the BluetoothManager
-        // Additional UI updates can be added here if needed
-    }
-    
-    func bluetoothManager(_ manager: BluetoothManager, didReceiveTransferData data: Data) {
-        DispatchQueue.main.async { [weak self] in
-            if let string = String(data: data, encoding: .utf8) {
-                self?.receivedDataLabel.text = "Received: \(string)"
-            } else {
-                self?.receivedDataLabel.text = "Received: \(data.count) bytes"
-            }
-        }
-    }
-    
-    func bluetoothManager(_ manager: BluetoothManager, didSendTransferData data: Data) {
-        DispatchQueue.main.async { [weak self] in
-            if let string = String(data: data, encoding: .utf8) {
-                self?.log("Successfully sent transfer data: \(string)")
-            } else {
-                self?.log("Successfully sent \(data.count) bytes")
-            }
-        }
-    }
-    
-    func bluetoothManager(_ manager: BluetoothManager, didLog message: String) {
-        log(message)
     }
 }
 
 // MARK: - UITableViewDataSource & UITableViewDelegate
 extension ViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return discoveredDevices.count
+        return devices.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "DeviceCell", for: indexPath)
-        let device = discoveredDevices[indexPath.row]
+        let cell = tableView.dequeueReusableCell(withIdentifier: "DeviceCell", for: indexPath) as! DeviceTableViewCell
         
-        cell.textLabel?.text = device.name ?? "Unknown Device"
-        cell.detailTextLabel?.text = device.identifier.uuidString
+        let deviceId = Array(devices.keys)[indexPath.row]
+        let device = devices[deviceId]!
         
-        // Highlight target device (based on MAC address from Python script)
-        let targetMACAddress = "ECD25189-92D0-6712-8C02-86B4D17BA636"
-        if device.identifier.uuidString.lowercased() == targetMACAddress.lowercased() {
-            cell.backgroundColor = UIColor.systemGreen.withAlphaComponent(0.2)
-            cell.textLabel?.text = "🎯 \(device.name ?? "Target Device")"
-        }
+        cell.configure(with: device)
         
         return cell
     }
     
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        connectButton.isEnabled = true
-        log("Selected device: \(discoveredDevices[indexPath.row].name ?? "Unknown")")
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return UITableView.automaticDimension
+    }
+}
+
+// MARK: - Device Table View Cell
+class DeviceTableViewCell: UITableViewCell {
+    private let deviceNameLabel = UILabel()
+    private let statusStackView = UIStackView()
+    private let lastSeenLabel = UILabel()
+    
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        setupUI()
+    }
+    
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setupUI()
+    }
+    
+    private func setupUI() {
+        // Device name label
+        deviceNameLabel.font = UIFont.boldSystemFont(ofSize: 16)
+        deviceNameLabel.numberOfLines = 0
+        
+        // Status stack view
+        statusStackView.axis = .horizontal
+        statusStackView.distribution = .fillProportionally
+        statusStackView.spacing = 8
+        
+        // Last seen label
+        lastSeenLabel.font = UIFont.systemFont(ofSize: 12)
+        lastSeenLabel.textColor = .systemGray
+        
+        // Layout
+        let mainStackView = UIStackView(arrangedSubviews: [deviceNameLabel, statusStackView, lastSeenLabel])
+        mainStackView.axis = .vertical
+        mainStackView.spacing = 8
+        mainStackView.translatesAutoresizingMaskIntoConstraints = false
+        
+        contentView.addSubview(mainStackView)
+        
+        NSLayoutConstraint.activate([
+            mainStackView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
+            mainStackView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            mainStackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            mainStackView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -12)
+        ])
+    }
+    
+    func configure(with device: IoTDevice) {
+        deviceNameLabel.text = device.name ?? device.id
+        
+        // Clear previous status items
+        statusStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        
+        let status = device.status
+        
+        // Water leak status
+        if let waterLeak = status.waterLeak {
+            let statusItem = createStatusItem(
+                text: waterLeak ? "💧 LEAK DETECTED" : "✅ No Leak",
+                isAlert: waterLeak
+            )
+            statusStackView.addArrangedSubview(statusItem)
+        }
+        
+        // Battery status
+        if let battery = status.battery {
+            let isLowBattery = status.batteryLow == true || battery < 20
+            let statusItem = createStatusItem(
+                text: "🔋 \(battery)%",
+                isWarning: isLowBattery
+            )
+            statusStackView.addArrangedSubview(statusItem)
+        }
+        
+        // Signal quality
+        if let linkQuality = status.linkQuality {
+            let signalStrength = linkQuality > 100 ? "good" : linkQuality > 50 ? "fair" : "poor"
+            let statusItem = createStatusItem(
+                text: "📶 \(linkQuality) (\(signalStrength))",
+                isSafe: true
+            )
+            statusStackView.addArrangedSubview(statusItem)
+        }
+        
+        // Temperature
+        if let temperature = status.deviceTemperature {
+            let statusItem = createStatusItem(
+                text: "🌡️ \(String(format: "%.1f", temperature))°C",
+                isSafe: true
+            )
+            statusStackView.addArrangedSubview(statusItem)
+        }
+        
+        // Last seen
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        formatter.timeStyle = .short
+        lastSeenLabel.text = "Last seen: \(formatter.string(from: device.lastSeen))"
+        
+        // Background color based on alert status
+        if status.waterLeak == true {
+            backgroundColor = UIColor.systemRed.withAlphaComponent(0.1)
+            layer.borderColor = UIColor.systemRed.cgColor
+            layer.borderWidth = 1
+        } else {
+            backgroundColor = UIColor.systemGreen.withAlphaComponent(0.1)
+            layer.borderColor = UIColor.systemGreen.cgColor
+            layer.borderWidth = 1
+        }
+        
+        layer.cornerRadius = 8
+    }
+    
+    private func createStatusItem(text: String, isAlert: Bool = false, isWarning: Bool = false, isSafe: Bool = false) -> UIView {
+        let label = UILabel()
+        label.text = text
+        label.font = UIFont.systemFont(ofSize: 12, weight: .medium)
+        label.textAlignment = .center
+        label.numberOfLines = 0
+        
+        let container = UIView()
+        container.addSubview(label)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        
+        NSLayoutConstraint.activate([
+            label.topAnchor.constraint(equalTo: container.topAnchor, constant: 4),
+            label.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 8),
+            label.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -8),
+            label.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -4)
+        ])
+        
+        container.layer.cornerRadius = 12
+        
+        if isAlert {
+            container.backgroundColor = UIColor.systemRed.withAlphaComponent(0.2)
+            label.textColor = UIColor.systemRed
+        } else if isWarning {
+            container.backgroundColor = UIColor.systemOrange.withAlphaComponent(0.2)
+            label.textColor = UIColor.systemOrange
+        } else if isSafe {
+            container.backgroundColor = UIColor.systemGreen.withAlphaComponent(0.2)
+            label.textColor = UIColor.systemGreen
+        }
+        
+        return container
     }
 }
 

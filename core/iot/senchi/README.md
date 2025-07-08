@@ -1,143 +1,160 @@
-# SwitchBot Leak Detector iOS App
+# Senchi IoT Connection App
 
-A native iOS application for connecting to and monitoring SwitchBot leak detection sensors via Bluetooth Low Energy (BLE).
+A comprehensive iOS application for managing IoT devices, with a focus on water leak detection and home automation.
 
 ## Features
 
-- **Bluetooth Device Discovery**: Automatically scans for and identifies SwitchBot devices
-- **Target Device Recognition**: Specifically targets the SwitchBot leak detector with MAC address `ECD25189-92D0-6712-8C02-86B4D17BA636`
-- **Real-time Connection**: Establishes persistent BLE connections to leak sensors
-- **Service Discovery**: Automatically discovers all available BLE services and characteristics
-- **Data Interpretation**: Interprets SwitchBot-specific data formats including:
-  - Leak detection status (leak detected/no leak)
-  - Temperature readings
-  - Battery level
-  - Manufacturer information
-- **Live Monitoring**: Receives real-time notifications from connected sensors
-- **Activity Logging**: Comprehensive logging of all Bluetooth operations and sensor data
-- **Device Profile Storage**: Saves device information for future connections
+### Bluetooth Device Management
+- **Device Discovery**: Scan for and discover nearby Bluetooth devices
+- **Targeted Scanning**: Focus on specific device types (WoSenW devices)
+- **Connection Management**: Connect to and manage discovered devices
+- **Data Transfer**: Send and receive data from connected devices
+- **Status Monitoring**: Real-time device status and health monitoring
 
-## Requirements
+### Home Automation System
+The app now includes a comprehensive home automation interface that provides the same functionality as the web-based dashboard:
 
-- iOS 13.0 or later
-- iPhone or iPad with Bluetooth Low Energy support
-- SwitchBot leak detector device
+#### Real-time Device Monitoring
+- **WebSocket Connection**: Real-time connection to the home automation server
+- **Device Status Display**: View water leak status, battery levels, signal quality, and temperature
+- **Automatic Reconnection**: Handles connection drops with exponential backoff
+- **Connection Health**: Visual indicators for API and WebSocket status
 
-## Setup Instructions
+#### Alert System
+- **Water Leak Alerts**: Immediate notifications when water leaks are detected
+- **Low Battery Warnings**: Alerts for devices with low battery levels
+- **Device Status Changes**: Notifications when devices come back online
+- **Push Notifications**: Local notifications for critical alerts
+- **In-App Alerts**: Modal alerts for immediate attention
 
-### 1. Build and Run
-1. Open the project in Xcode
-2. Select your target device or simulator
-3. Build and run the application
+#### Device Management
+- **Device Pairing**: Enable pairing mode for adding new devices
+- **Device List**: Real-time list of all connected devices
+- **Status Indicators**: Color-coded status for different device conditions
+- **Last Seen Tracking**: Monitor when devices were last active
 
-### 2. Bluetooth Permissions
-The app will request Bluetooth permissions when first launched. Grant the necessary permissions:
-- **Always Allow**: For background monitoring
-- **While Using**: For active monitoring during app use
+#### Control Features
+- **Add Device**: Enable pairing mode for new device discovery
+- **Test Alerts**: Test the notification system
+- **Clear Logs**: Clear the activity log
+- **Real-time Logs**: Live activity monitoring with timestamps
 
-### 3. Using the App
+## Architecture
 
-#### Scanning for Devices
-1. Tap "Start Scan" to begin searching for Bluetooth devices
-2. The app will automatically filter for SwitchBot devices
-3. Your target leak detector will be highlighted with a 🎯 icon
-4. Scanning automatically stops after 10 seconds
+### Core Components
 
-#### Connecting to a Device
-1. Select a device from the discovered devices list
-2. Tap "Connect" to establish a connection
-3. The app will automatically discover services and characteristics
-4. Once connected, the button changes to "Disconnect"
+1. **BluetoothManager**: Handles all Bluetooth Low Energy operations
+2. **HomeAutomationViewController**: Main interface for home automation features
+3. **DeviceTableViewCell**: Custom cell for displaying device information
+4. **WebSocketManager**: Manages real-time communication with the server
 
-#### Monitoring Sensor Data
-- Once connected, the app automatically subscribes to sensor notifications
-- Real-time data appears in the activity log
-- Leak detection events are clearly marked with 🚨
-- Temperature and battery data are interpreted and displayed
+### Data Models
+
+- **IoTDevice**: Represents a connected IoT device with status information
+- **DeviceStatus**: Contains device sensor data (water leak, battery, temperature, etc.)
+- **WebSocketMessage**: Handles communication protocol with the server
+
+### Network Communication
+
+The app connects to the home automation server at `wss://senchi-mqtt.up.railway.app/ws` for real-time updates and `https://senchi-mqtt.up.railway.app/zigbee/permit-join` for device pairing.
+
+## Usage
+
+### Getting Started
+
+1. **Launch the App**: Open the Senchi app on your iOS device
+2. **Bluetooth Setup**: Ensure Bluetooth is enabled and permissions are granted
+3. **Access Home Automation**: Tap the "🏠 Home Automation" button on the main screen
+
+### Home Automation Interface
+
+1. **Connection Status**: Monitor the connection status at the top of the screen
+2. **Device List**: View all connected devices with their current status
+3. **Controls**: Use the control buttons to manage the system
+4. **Logs**: Monitor real-time activity in the log section
+
+### Device Management
+
+1. **Add New Device**: Tap "Add Device" to enable pairing mode
+2. **Monitor Status**: Watch for alerts and status changes
+3. **Test System**: Use "Test Alert" to verify notifications are working
 
 ## Technical Details
 
-### Target Device Specifications
-- **MAC Address**: `ECD25189-92D0-6712-8C02-86B4D17BA636`
-- **Service UUID**: `0000fd3d-0000-1000-8000-00805f9b34fb`
-- **Device Type**: SwitchBot Leak Detector
+### WebSocket Protocol
 
-### Data Interpretation
-The app interprets SwitchBot-specific data formats:
+The app communicates with the server using a JSON-based WebSocket protocol:
 
-#### Leak Detection
-- `0x00`: No leak detected
-- `0x01`: **LEAK DETECTED** 🚨
+```json
+{
+  "type": "device_update",
+  "device_id": "device123",
+  "data": {
+    "water_leak": false,
+    "battery": 85,
+    "battery_low": false,
+    "linkquality": 120,
+    "device_temperature": 23.5
+  },
+  "timestamp": "2025-01-27T10:30:00Z"
+}
+```
 
-#### Temperature Data
-- Format: `0x57` prefix followed by temperature bytes
-- Temperature calculation: `Int16(data[2]) | (Int16(data[3]) << 8) / 10.0`
+### Alert Types
 
-#### Standard GATT Characteristics
-- **Battery Level** (`2a19`): Battery percentage
-- **Manufacturer Name** (`2a29`): Device manufacturer
-- **Model Number** (`2a24`): Device model
-- **Firmware Revision** (`2a26`): Firmware version
+- **Error**: Critical alerts (water leaks, system failures)
+- **Warning**: Important warnings (low battery, poor signal)
+- **Success**: Positive notifications (device back online)
+- **Info**: General information messages
 
-### Background Operation
-The app supports background Bluetooth operations for continuous monitoring:
-- Configured for `bluetooth-central` and `bluetooth-peripheral` background modes
-- Maintains connections when app is in background
-- Continues receiving sensor notifications
+### Permissions Required
+
+- **Bluetooth**: For device discovery and communication
+- **Notifications**: For alert delivery
+- **Network**: For WebSocket and API communication
+
+## Development
+
+### Building the App
+
+1. Open the project in Xcode
+2. Ensure all dependencies are installed
+3. Build and run on a physical device (Bluetooth features require hardware)
+
+### Key Files
+
+- `ViewController.swift`: Main Bluetooth interface
+- `HomeAutomationViewController.swift`: Home automation interface
+- `BluetoothManager.swift`: Bluetooth communication logic
+- `Main.storyboard`: User interface layout
+
+### Testing
+
+- Use the "Test Alert" button to verify notification functionality
+- Monitor the logs for connection and communication status
+- Test device pairing with actual IoT devices
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Device Not Found**
-   - Ensure the SwitchBot device is powered on
-   - Check that Bluetooth is enabled on your iOS device
-   - Try moving closer to the device
-   - Restart the SwitchBot device if necessary
-
-2. **Connection Fails**
-   - Verify the device is not connected to another app
-   - Check that the device is in pairing mode if required
-   - Ensure the device is within range
-
-3. **No Data Received**
-   - Verify the connection is established
-   - Check that notifications are enabled for the characteristics
-   - Trigger the sensor manually (e.g., with a wet finger for leak detection)
+1. **Connection Failures**: Check network connectivity and server status
+2. **Bluetooth Issues**: Ensure Bluetooth is enabled and permissions granted
+3. **Notification Problems**: Verify notification permissions in Settings
+4. **Device Not Found**: Check device compatibility and pairing mode
 
 ### Debug Information
-The app provides comprehensive logging in the activity log:
-- Bluetooth state changes
-- Device discovery events
-- Connection attempts and results
-- Service and characteristic discovery
-- Real-time sensor data
 
-## Development Notes
+The app includes comprehensive logging that can help diagnose issues:
+- WebSocket connection status
+- Device discovery and updates
+- Alert generation and delivery
+- API call results
 
-### Architecture
-- **ViewController**: Main UI controller with Bluetooth functionality
-- **CBCentralManager**: Manages Bluetooth scanning and connections
-- **CBPeripheralDelegate**: Handles device communication
-- **Core Data**: Stores device profiles and sensor data
+## Future Enhancements
 
-### Key Components
-- `ViewController.swift`: Main application logic
-- `Main.storyboard`: User interface layout
-- `Info.plist`: Bluetooth permissions and background modes
-
-### Extending the App
-The app is designed to be easily extensible:
-- Add support for additional SwitchBot devices
-- Implement data persistence with Core Data
-- Add push notifications for leak events
-- Create a widget for quick status checking
-
-## Privacy and Security
-- The app only connects to authorized SwitchBot devices
-- No data is transmitted to external servers
-- All sensor data is stored locally on the device
-- Bluetooth permissions are clearly explained to users
-
-## Support
-For technical support or feature requests, please refer to the project documentation or contact the development team. 
+- **Device Configuration**: Advanced device settings and configuration
+- **Historical Data**: View device history and trends
+- **Automation Rules**: Create custom automation rules
+- **Multi-User Support**: Share devices between users
+- **Offline Mode**: Local device management when offline 
