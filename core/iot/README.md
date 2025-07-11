@@ -24,3 +24,5 @@ The webhook server will also update the webhook config with the new ngrok URL.
 
 The server will get alerts only when the devices state changes (i.e. when a leak
 is detected). A `detection_state` of `1` indicates a leak, `0` indicates no leak.
+
+Ref: https://www.reddit.com/r/homeassistant/comments/1i28wyd/leak_sensors_just_paid_for_my_entire_home/

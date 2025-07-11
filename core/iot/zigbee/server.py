@@ -108,7 +108,7 @@ async def permit_join(duration: int = 60):
     """Allow new devices to join"""
     if mqtt_monitor.connected:
         mqtt_monitor.client.publish(
-            "zigbee2mqtt/bridge/request/permit_join",
+            "zigbee2mqtt/#/bridge/request/permit_join",
             json.dumps({"time": duration})
         )
         return {"message": f"Permit join enabled for {duration} seconds"}
