@@ -47,15 +47,15 @@ class Monitor:
             logger.info(f"Successfully connected to MQTT broker: {settings.MQTT_BROKER}:{settings.MQTT_PORT}")
             
             # Note: This is republished each time a device is added/removed
-            # self.client.subscribe("zigbee2mqtt/#/bridge/health")
-            # self.client.subscribe("zigbee2mqtt/#/bridge/devices")
-            # self.client.subscribe("zigbee2mqtt/#/bridge/event")
+            self.client.subscribe("zigbee2mqtt/rpi-zigbee-a1fcaf6c/bridge/health")
+            self.client.subscribe("zigbee2mqtt/rpi-zigbee-a1fcaf6c/bridge/devices")
+            self.client.subscribe("zigbee2mqtt/rpi-zigbee-a1fcaf6c/bridge/event")
 
             # For testing, subscribe to all devices
-            self.client.subscribe("zigbee2mqtt/#")
+            # self.client.subscribe("zigbee2mqtt/#")
 
             # Notify on successful device removal
-            # self.client.subscribe("zigbee2mqtt/#/bridge/response/device/remove")
+            self.client.subscribe("zigbee2mqtt/rpi-zigbee-a1fcaf6c/bridge/response/device/remove")
             
         else:
             logger.error(f"Failed to connect to MQTT broker: {rc}")
@@ -134,8 +134,8 @@ class Monitor:
                 print(f"Adding new device: {ieee_address}")
                 self.app_state["devices"][ieee_address] = curr
                 try:
-                    # self.client.subscribe(f"zigbee2mqtt/#/{ieee_address}")
-                    self.client.subscribe(f"zigbee2mqtt/#")
+                    # self.client.subscribe(f"zigbee2mqtt/{ieee_address}")
+                    self.client.subscribe(f"zigbee2mqtt/rpi-zigbee-a1fcaf6c/{ieee_address}")
                     print(f"Subscribed to: {ieee_address}")
                 except Exception as e:
                     print(f"Error subscribing to device: {e}")
