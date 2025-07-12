@@ -8,8 +8,14 @@
 import SwiftUI
 
 struct ContentView: View {
+    @EnvironmentObject private var userSettings: UserSettings
+    
     var body: some View {
-        OnboardingView()
+        if userSettings.loggedIn {
+            HomeDashboardView()
+        } else {
+            OnboardingView()
+        }
     }
 }
 

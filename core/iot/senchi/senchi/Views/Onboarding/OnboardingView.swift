@@ -1,11 +1,13 @@
 import SwiftUI
 
+
 struct OnboardingView: View {
     @State private var fullName: String = ""
     @State private var email: String = ""
     @State private var password: String = ""
     @State private var currentStep: Int = 1
-    private let totalSteps: Int = 3
+    @State private var showDashboard: Bool = false
+    private let totalSteps: Int = 4
     
     @FocusState private var focusedField: Field?
     enum Field: Hashable {
@@ -13,24 +15,28 @@ struct OnboardingView: View {
     }
     
     var body: some View {
-        VStack {
-            ProgressView(value: Double(currentStep), total: Double(totalSteps))
-                .accentColor(SenchiColors.senchiBlue)
-                .padding(.top, 32)
-                .padding(.horizontal, 32)
-            
-            Text("Step \(currentStep) of \(totalSteps)")
-                .font(.subheadline)
-                .foregroundColor(.gray)
-                .padding(.top, 8)
-            
-            Spacer(minLength: 32)
-            
-            currentStepView
-            Spacer()
+        if showDashboard {
+            HomeDashboardView()
+        } else {
+            VStack {
+                ProgressView(value: Double(currentStep), total: Double(totalSteps))
+                    .accentColor(SenchiColors.senchiBlue)
+                    .padding(.top, 32)
+                    .padding(.horizontal, 32)
+                
+                Text("Step \(currentStep) of \(totalSteps)")
+                    .font(.subheadline)
+                    .foregroundColor(.gray)
+                    .padding(.top, 8)
+                
+                Spacer(minLength: 32)
+                
+                currentStepView
+                Spacer()
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color.white.ignoresSafeArea())
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(.systemGray6).opacity(0.5).ignoresSafeArea())
     }
 
     @ViewBuilder
@@ -46,7 +52,7 @@ struct OnboardingView: View {
                     onCreateAccount: {
                         let generator = UIImpactFeedbackGenerator(style: .medium)
                         generator.impactOccurred()
-                        withAnimation { currentStep = 2 }
+                        withAnimation { currentStep = 4}
                     },
                     onSignIn: {
                         let generator = UIImpactFeedbackGenerator(style: .medium)
@@ -74,7 +80,13 @@ struct OnboardingView: View {
             case 3:
                 OnboardingStep3MainWifi(
                     onConnected: {
-                        //
+                        withAnimation { currentStep = 4 }
+                    }
+                )
+            case 4:
+                OnboardingStep4Confirmation(
+                    onGoToDashboard: {
+                        withAnimation { showDashboard = true }
                     }
                 )
             default:

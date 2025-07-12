@@ -22,7 +22,7 @@ struct OnboardingStep3MainWifi: View {
     
     var body: some View {
         if isConnected {
-            HomeView()
+            // TODO: Remove this
         } else {
             VStack(spacing: 24) {
                 Spacer(minLength: 32)
