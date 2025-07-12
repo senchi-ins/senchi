@@ -47,7 +47,7 @@ export default function BespokeHouse({ imageURL, labellingResponse = defaultLabe
   const getRenderURL = async () => {
     if (imageURL !== fallback_url) {
       try {
-        const simpleProxyURL = await proxyGLB(imageURL);
+        const simpleProxyURL = "/3D/sample_house.glb";
         return simpleProxyURL;
       } catch (error) {
         console.warn('Failed to proxy GLB, using fallback:', error);

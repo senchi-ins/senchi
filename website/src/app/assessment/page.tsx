@@ -230,8 +230,9 @@ export default function Assessment() {
         // console.log('analyzeHouse response:', response);
         setLabellingResponse(response);
         // console.log('=== performHouseAnalysis completed successfully ===');
-      } catch {
+      } catch (e) {
         // console.error("=== performHouseAnalysis failed ===");
+        console.log(e);
         console.error("Failed to analyze house. Please refresh the page and try again.");
         // Optionally, handle the error in the UI
       } finally {
@@ -243,7 +244,7 @@ export default function Assessment() {
     const runPipeline = async () => {
       // console.log('=== Starting full pipeline ===');
       try {
-        await fetchModel();
+        // await fetchModel();
         await performHouseAnalysis();
         // console.log('=== Full pipeline completed ===');
       } catch {
@@ -321,7 +322,7 @@ export default function Assessment() {
               ) : (
                 <div className="grid grid-cols-2 md:grid-cols-2 gap-5">
                   <div className="flex flex-col items-center justify-center bg-white rounded-2xl shadow min-h-[500px] w-full max-w-md">
-                    {imageURL && <BespokeHouse imageURL={imageURL} labellingResponse={labellingResponse} />}
+                    {imageURL && <BespokeHouse imageURL="/3D/sample_house.glb" labellingResponse={labellingResponse} />}
                   </div>
                   <div className="flex flex-col items-center justify-center bg-white rounded-2xl shadow min-h-[500px] w-full max-w-md">
                     {labellingResponse && <AssessmentScore labellingResponse={labellingResponse} />}

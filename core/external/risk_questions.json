@@ -1,0 +1,394 @@
+{
+    "risk_questions": [
+    {
+        "question": "Are all major systems (e.g. HVAC, water heater, furnace) elevated at least 1 foot above the ground?",
+        "risk": ["Flooding", "Earthquake"],
+        "importance": ["High", "Medium"],
+        "rubric": {
+          "Yes": 1,
+          "No": 0
+        } 
+    },
+    {
+        "question": "Do you have a sump pump installed in your home?",
+        "risk": ["Flooding"],
+        "importance": ["High"],
+        "rubric": {
+          "Yes": 1,
+          "No": 0
+        }
+    },
+    {
+        "question": "Is your basement properly sealed and waterproofed? Including no cracks and leaks.",
+        "risk": ["Flooding"],
+        "importance": ["High"],
+        "rubric": {
+          "Yes": 1,
+          "No": 0
+        }
+    },
+    {
+        "question": "Does your home have flood vents or openings to allow water to drain from the foundation of your home?",
+        "risk": ["Flooding"],
+        "importance": ["Medium"],
+        "rubric": {
+          "Yes": 1,
+          "No": 0
+        }
+    },
+    {
+        "question": "Is the foundation of your home elevated at least 1 foot above the ground?",
+        "risk": ["Flooding", "Winter", "Earthquake"],
+        "importance": ["High", "High", "Medium"],
+        "rubric": {
+          "Yes": 1,
+          "No": 0
+        }
+    },
+    {
+        "question": "Is your first floor/basement walls and flooring made with flood-resistant materials?",
+        "risk": ["Flooding"],
+        "importance": ["Medium"],
+        "rubric": {
+          "Yes": 1,
+          "No": 0
+        }
+    },
+    {
+        "question": "Have all windows and doors been sealed with weather stripping and/or caulking?",
+        "risk": ["Flooding", "Winter"],
+        "importance": ["Medium", "Medium"],
+        "rubric": {
+          "Yes": 1,
+          "No": 0
+        }
+    },
+    {
+        "question": "Are your eavesdrops, drains, gutters, and roof free of debris?",
+        "risk": ["Flooding", "Winter", "Wildfire"],
+        "importance": ["Medium", "Medium", "High"],
+        "rubric": {
+          "Yes": 1,
+          "No": 0
+        } 
+    },
+    {
+        "question": "Are your gutters and downspouts securely attached to the house and pointed away from the foundation?",
+        "risk": ["Flooding", "Wind", "Earthquake", "Hail"],
+        "importance": ["Medium", "Medium", "Low", "High"],
+        "rubric": {
+          "Yes": 1,
+          "No": 0
+        }
+    },
+    {
+        "question": "Do you have blackflow valves installed in your plumbing?",
+        "risk": ["Flooding"],
+        "importance": ["Medium"],
+        "rubric": {
+          "Yes": 1,
+          "No": 0
+        }
+    },
+    {
+        "question": "Does your roof have any shingles that are missing, cracked, curled or otherwise damaged?",
+        "risk": ["Flooding", "Winter", "Hail", "Wind"],
+        "importance": ["High", "High", "High", "High"],
+        "rubric": {
+          "Yes": 0,
+          "No": 1
+        }
+    },
+    {
+        "question": "Is your landscaping and driveway graded away from your foundation?",
+        "risk": ["Flooding"],
+        "importance": ["Medium"],
+        "rubric": {
+          "Yes": 1,
+          "No": 0
+        }
+    },
+    {
+        "question": "Have you installed any permanent/temporary flood barriers in your home?",
+        "risk": ["Flooding"],
+        "importance": ["Medium"],
+        "rubric": {
+          "Yes": 1,
+          "No": 0
+        }
+    },
+    {
+        "question": "Are there any tree limbs or branches that are hanging over your home?",
+        "risk": ["Winter", "Wildfire", "Wind", "Hail", "Earthquake"],
+        "importance": ["Medium", "High", "High", "High", "Medium"],
+        "rubric": {
+          "Yes": 0,
+          "No": 1
+        }
+    },
+    {
+        "question": "Have your skylights been caulked or sealed in the last 5 yearss?",
+        "risk": ["Flooding", "Winter", "Hail"],
+        "importance": ["Low", "Low", "Medium"],
+        "rubric": {
+          "Yes": 1,
+          "N/A": 1,
+          "No": 0
+        }
+    },
+    {
+        "question": "Are any tree limbs or branches hanging over other structures on your property?",
+        "risk": ["Winter", "Wildfire", "Wind", "Hail", "Earthquake"],
+        "importance": ["Low", "High", "Medium", "Medium", "Medium"],
+        "rubric": {
+          "Yes": 0,
+          "No": 1
+        }
+    },
+    {
+        "question": "Are your ridge, soffit, gable and/or attic vents properly sealed and free of debris?",
+        "risk": ["Flooding", "Winter", "Wildfire", "Wind"],
+        "importance": ["Medium", "Medium", "High", "Low"],
+        "rubric": {
+          "Yes": 1,
+          "No": 0
+        }
+    },
+    {
+        "question": "Are your hose bibs angled up from outside to inside the house? Or do you have a bleeder valve installed on the interior valve of the hose bib?",
+        "risk": ["Winter"],
+        "importance": ["Medium"],
+        "rubric": {
+          "Yes": 1,
+          "No": 0
+        }
+    },
+    {
+        "question": "Do you have metal screens or protective mesh installed on your vents and chimneys?",
+        "risk": ["Winter", "Wildfire"],
+        "importance": ["Low", "High"],
+        "rubric": {
+          "Yes": 1,
+          "No": 0
+        }
+    },
+    {
+        "question": "Are your gutters made of steel or another type of metal?",
+        "risk": ["Winter", "Hail"],
+        "importance": ["Medium", "Medium"],
+        "rubric": {
+          "Yes": 1,
+          "No": 0
+        }
+    },
+    {
+        "question": "Do you have shrubs, leaves, or vegatation within 5 feet of your home? Including under your deck or patio? Or do you have any woodpiles or firewood stored within 30 feet of your home that are not covvered by a fire resistant material?",
+        "risk": ["Wildfire"],
+        "importance": ["High"],
+        "rubric": {
+          "Yes": 0,
+          "No": 1
+        }
+    },
+    {
+        "question": "Is the bottom 3 feet of your home's exterior made of fire resistant material? (e.g. brick, stone, fiber cement)",
+        "risk": ["Wildfire"],
+        "importance": ["High"],
+        "rubric": {
+          "Yes": 1,
+          "No": 0
+        }
+    },
+    {
+        "question": "Is your roof made of class A fire resistant material? (e.g. concrete, clay, metal, asphalt)",
+        "risk": ["Wildfire"],
+        "importance": ["High"],
+        "rubric": {
+          "Yes": 1,
+          "No": 0
+        }
+    },
+    {
+        "question": "Do you have any fuelbreaks on your property that contain flammable materials? (e.g. driveways, stone paths)",
+        "risk": ["Wildfire"],
+        "importance": ["High"],
+        "rubric": {
+          "Yes": 1,
+          "No": 0
+        }
+    },
+    {
+        "question": "Are all tree branches trimmed 6 feet or more from the ground?",
+        "risk": ["Wildfire"],
+        "importance": ["High"],
+        "rubric": {
+          "Yes": 1,
+          "No": 0
+        }
+    },
+    {
+        "question": "From 5 to 30 feet away from your home, is there at least 3 feet of spacing between trees?",
+        "risk": ["Wildfire"],
+        "importance": ["Medium"],
+        "rubric": {
+          "Yes": 1,
+          "No": 0
+        }
+    },
+    {
+        "question": "Is the fence around your property made of fire resistant material?",
+        "risk": ["Wildfire"],
+        "importance": ["Low"],
+        "rubric": {
+          "Yes": 1,
+          "N/A": 1,
+          "No": 0
+        }
+    },
+    {
+        "question": "Do you haveany propane tanks within 10 feet of your home?",
+        "risk": ["Wildfire"],
+        "importance": ["High"],
+        "rubric": {
+          "Yes": 0,
+          "No": 1
+        }
+    },
+    {
+        "question": "Do you have storm shutters, coverings, or panels from your windows and doors?",
+        "risk": ["Wind", "Hail"],
+        "importance": ["High", "High"],
+        "rubric": {
+          "Yes": 1,
+          "No": 0
+        }
+    },
+    {
+        "question": "Do you have impact resistant windows and doors?",
+        "risk": ["Wind", "Hail", "Earthquake"],
+        "importance": ["High", "High", "Medium"],
+        "rubric": {
+          "Yes": 1,
+          "No": 0
+        }
+    },
+    {
+        "question": "Are your garage doors impact resistant or reinforced with panels, braces, or struts",
+        "risk": ["Wind", "Hail", "Earthquake"],
+        "importance": ["Medium", "High", "Low"],
+        "rubric": {
+          "Yes": 1,
+          "No": 0
+        }
+    },
+    {
+        "question": "Do you have an open foundation or piers where air can flow beanth your home?",
+        "risk": ["Wind"],
+        "importance": ["Medium"],
+        "rubric": {
+          "Yes": 0,
+          "No": 1
+        }
+    },
+    {
+        "question": "Are there exposed pipes or vents at the base of your home?",
+        "risk": ["Wind"],
+        "importance": ["Medium"],
+        "rubric": {
+          "Yes": 0,
+          "No": 1
+        }
+    },
+    {
+        "question": "Do you have hardware installed on your roof? (e.g. solar panels, satellites)",
+        "risk": ["Wind", "Hail", "Earthquake"],
+        "importance": ["Medium", "High", "Low"],
+        "rubric": {
+          "Yes": 0,
+          "No": 1
+        }
+    },
+    {
+        "question": "Do you have any outdoor furniture that wouldn't be properly anchored during high winds?",
+        "risk": ["Wind"],
+        "importance": ["High"],
+        "rubric": {
+          "Yes": 0,
+          "No": 1
+        }
+    },
+    {
+        "question": "Is your roof and the siding of your home made of impact resistant material? (e.g. metal, concrete)",
+        "risk": ["Wind"],
+        "importance": ["High"],
+        "rubric": {
+          "Yes": 1,
+          "No": 0
+        }
+    },
+    {
+        "question": "Do you have impact resistant sheilding for outdoor furniture",
+        "risk": ["Hail"],
+        "importance": ["Low"],
+        "rubric": {
+          "Yes": 1,
+          "No": 0
+        }
+    },
+    {
+        "question": "Are fixtures and lights reinforced to the wall or ceiling? Including ceiling fans, shelves on walls, etc.",
+        "risk": ["Earthquake"],
+        "importance": ["Medium"],
+        "rubric": {
+          "Yes": 1,
+          "No": 0
+        }
+    },
+    {
+        "question": "Do you cabinet doors have latches or other locking mechanisms?",
+        "risk": ["Earthquake"],
+        "importance": ["Medium"],
+        "rubric": {
+          "Yes": 1,
+          "No": 0
+        }
+    },
+    {
+        "question": "Do you have a carbon monoxide detector installed in your home?",
+        "risk": ["Earthquake"],
+        "importance": ["High"],
+        "rubric": {
+          "Yes": 1,
+          "No": 0
+        }
+    },
+    {
+        "question": "If you have a brick chimeny, is it properly reinforced?",
+        "risk": ["Earthquake"],
+        "importance": ["High"],
+        "rubric": {
+          "Yes": 1,
+          "N/A": 1,
+          "No": 0
+        }
+    },
+    {
+        "question": "Do you have an automatic shutoff valve for you water main and gas main?",
+        "risk": ["Earthquake"],
+        "importance": ["High"],
+        "rubric": {
+          "Yes": 1,
+          "No": 0
+        }
+    },
+    {
+        "question": "Are expensive fragile items properly secured to the wall or another surface?",
+        "risk": ["Earthquake"],
+        "importance": ["Medium"],
+        "rubric": {
+          "Yes": 1,
+          "No": 0
+        }
+    }
+]
+}
