@@ -2,29 +2,20 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>UIApplicationSceneManifest</key>
-	<dict>
-		<key>UIApplicationSupportsMultipleScenes</key>
-		<false/>
-		<key>UISceneConfigurations</key>
-		<dict>
-			<key>UIWindowSceneSessionRoleApplication</key>
-			<array>
-				<dict>
-					<key>UISceneConfigurationName</key>
-					<string>Default Configuration</string>
-					<key>UISceneDelegateClassName</key>
-					<string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
-					<key>UISceneStoryboardFile</key>
-					<string>Main</string>
-				</dict>
-			</array>
-		</dict>
-	</dict>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>This app needs location access to connect to Wi-Fi networks</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>This app needs location access to connect to Wi-Fi networks</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>This app needs Bluetooth access to connect to leak detection sensors and monitor for water leaks in your home.</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
 	<string>This app needs Bluetooth access to connect to leak detection sensors and monitor for water leaks in your home.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>This app needs camera access to scan QR codes on leak detection sensors for easy setup and configuration.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>This app needs location access to connect to your device's Wi-Fi network</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>This app needs location access to connect to your device's Wi-Fi network</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>bluetooth-central</string>

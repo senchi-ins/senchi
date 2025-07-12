@@ -5,7 +5,6 @@
 //  Created by Michael Dawes on 2025-07-11.
 //
 
-import UIKit
 import Network
 import UserNotifications
 
@@ -54,6 +53,7 @@ struct IoTDevice: Codable {
     }
 }
 
+// TODO: Update this with additional device metrics
 struct DeviceStatus: Codable {
     var waterLeak: Bool?
     var battery: Int?

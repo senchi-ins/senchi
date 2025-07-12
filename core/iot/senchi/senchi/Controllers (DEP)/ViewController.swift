@@ -212,7 +212,7 @@ class ViewController: UIViewController {
     
     // MARK: - WebSocket Connection
     private func connectWebSocket() {
-        let wsUrl = cfg.wsURL;
+        let wsUrl = ApplicationConfig.wsURL;
         guard let url = URL(string: wsUrl) else {
             log("Invalid WebSocket URL")
             return
@@ -458,7 +458,7 @@ class ViewController: UIViewController {
     
     // MARK: - API Calls
     private func enablePairing() {
-        guard let url = URL(string: "\(cfg.apiBase)/zigbee/permit-join") else {
+        guard let url = URL(string: "\(ApplicationConfig.apiBase)/zigbee/permit-join") else {
             log("Invalid pairing URL")
             return
         }
