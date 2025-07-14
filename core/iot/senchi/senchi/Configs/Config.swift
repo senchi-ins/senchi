@@ -5,6 +5,8 @@ import SwiftUI
 struct ApplicationConfig {
     static let wsURL: String =  "wss://senchi-mqtt.up.railway.app/ws"
     static let apiBase: String = "https://senchi-mqtt.up.railway.app"
+    static let setupURL: String = "http://10.42.0.1"
+    static let setupPort: String = "80"
     static let hubName: String = "HomeGuard Hub"
     static let version: String = "0.0.1"
 }

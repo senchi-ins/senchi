@@ -52,7 +52,7 @@ struct OnboardingView: View {
                     onCreateAccount: {
                         let generator = UIImpactFeedbackGenerator(style: .medium)
                         generator.impactOccurred()
-                        withAnimation { currentStep = 4}
+                        withAnimation { currentStep = 2}
                     },
                     onSignIn: {
                         let generator = UIImpactFeedbackGenerator(style: .medium)
@@ -71,10 +71,10 @@ struct OnboardingView: View {
                     onConnected: {
                         let generator = UIImpactFeedbackGenerator(style: .medium)
                         generator.impactOccurred()
-                        // TODO: Move to next onboarding step
+                        withAnimation { currentStep = 3 }
                     },
                     onNextStep: {
-                        withAnimation { currentStep = 3 }
+                        // TODO: Remove this
                     }
                 )
             case 3:

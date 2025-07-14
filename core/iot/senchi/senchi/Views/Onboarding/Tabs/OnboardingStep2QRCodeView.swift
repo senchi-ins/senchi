@@ -14,6 +14,10 @@ struct OnboardingStep2QRCodeView: View {
     @State private var connectionStatus = ""
     @State private var connectedSSID: String? = nil
     @State private var deviceSerial: String? = nil
+    @State private var showingConnectionHelp = false
+    @State private var connectionFailed = false
+    @State private var scannedSSID: String? = nil
+    @State private var scannedPassword: String? = nil
     
     var body: some View {
         VStack(spacing: 20) {
@@ -50,9 +54,19 @@ struct OnboardingStep2QRCodeView: View {
                 VStack {
                     if let code = scannedCode {
                         VStack(spacing: 8) {
-                            Text("QR Code Scanned!")
+                            HStack {
+                                Text("QR Code Scanned!")
+                                    .font(.caption)
+                                    .foregroundColor(.green)
+                                
+                                Spacer()
+                                
+                                Button("Scan Again") {
+                                    resetConnection()
+                                }
                                 .font(.caption)
-                                .foregroundColor(.green)
+                                .foregroundColor(.blue)
+                            }
                             
                             if isConnecting {
                                 ProgressView("Connecting to device...")
@@ -72,7 +86,68 @@ struct OnboardingStep2QRCodeView: View {
                             if !connectionStatus.isEmpty {
                                 Text(connectionStatus)
                                     .font(.caption2)
-                                    .foregroundColor(.red)
+                                    .foregroundColor(connectionFailed ? .red : .orange)
+                                    .multilineTextAlignment(.leading)
+                            }
+                            
+                            // Show manual connection help if needed
+                            if showingConnectionHelp {
+                                VStack(spacing: 12) {
+                                    Divider()
+                                    
+                                    Text("Manual Connection Steps:")
+                                        .font(.caption)
+                                        .fontWeight(.semibold)
+                                        .foregroundColor(.orange)
+                                    
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("1. Open Settings → WiFi")
+                                        Text("2. Select '\(scannedSSID ?? "SenchiSetup")'")
+                                        Text("3. Enter password: '\(scannedPassword ?? "")'")
+                                        Text("4. Return to this app")
+                                    }
+                                    .font(.caption2)
+                                    .foregroundColor(.gray)
+                                    
+                                    HStack(spacing: 12) {
+                                        Button("Open Settings") {
+                                            if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
+                                                UIApplication.shared.open(settingsUrl)
+                                            }
+                                        }
+                                        .font(.caption)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 6)
+                                        .background(Color.blue)
+                                        .foregroundColor(.white)
+                                        .cornerRadius(6)
+                                        
+                                        Button("I've Connected") {
+                                            checkConnectionAfterManual()
+                                        }
+                                        .font(.caption)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 6)
+                                        .background(Color.green)
+                                        .foregroundColor(.white)
+                                        .cornerRadius(6)
+                                    }
+                                }
+                                .padding(.top, 8)
+                            }
+                            
+                            // Retry button for failed connections
+                            if connectionFailed && !showingConnectionHelp {
+                                Button("Try Again") {
+                                    retryConnection()
+                                }
+                                .font(.caption)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(Color.blue)
+                                .foregroundColor(.white)
+                                .cornerRadius(6)
+                                .padding(.top, 4)
                             }
                         }
                     } else if isShowingScanner {
@@ -97,14 +172,17 @@ struct OnboardingStep2QRCodeView: View {
                             Text("QR Code Placeholder")
                                 .font(.caption)
                                 .foregroundColor(.gray)
-                            Text("Network: SenchiSetup_12345")
-                                .font(.caption2)
-                                .foregroundColor(.gray)
                         }
                     }
                     
-                    Button(action: { isShowingScanner.toggle() }) {
-                        Text(isShowingScanner ? "Cancel Scanner" : "Scan QR Code")
+                    Button(action: {
+                        if scannedCode != nil {
+                            resetConnection()
+                        } else {
+                            isShowingScanner.toggle()
+                        }
+                    }) {
+                        Text(getScannerButtonText())
                             .font(.caption)
                             .foregroundColor(.blue)
                             .padding(.top, 4)
@@ -151,6 +229,15 @@ struct OnboardingStep2QRCodeView: View {
         .onAppear {
             checkCurrentConnection()
         }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+            // Check if user connected while in Settings
+            print("🔍 App returned from background, checking connection...")
+            checkCurrentConnection()
+            
+            if showingConnectionHelp, let expectedSSID = scannedSSID {
+                checkConnectionAfterManual()
+            }
+        }
     }
     
     // Helper functions for dynamic button
@@ -173,49 +260,161 @@ struct OnboardingStep2QRCodeView: View {
             return Color.gray
         }
     }
+    
+    private func getScannerButtonText() -> String {
+        if scannedCode != nil {
+            return "Scan Different QR Code"
+        } else if isShowingScanner {
+            return "Cancel Scanner"
+        } else {
+            return "Scan QR Code"
+        }
+    }
+    
+    private func resetConnection() {
+        scannedCode = nil
+        isShowingScanner = false
+        isConnecting = false
+        connectionStatus = ""
+        connectedSSID = nil
+        deviceSerial = nil
+        showingConnectionHelp = false
+        connectionFailed = false
+        scannedSSID = nil
+        scannedPassword = nil
+    }
 
     private func handleQRCodeScanned(_ code: String) {
         scannedCode = code
         isShowingScanner = false
         
-        // Parse the Wi-Fi QR code
         guard let wifiInfo = WiFiQRHandler.parseWiFiQR(code) else {
             connectionStatus = "Invalid QR code format"
+            connectionFailed = true
             return
         }
         
-        // Extract serial number from password (your approach)
         deviceSerial = wifiInfo.password
-        
-        // Connect to the Wi-Fi network
+        scannedSSID = wifiInfo.ssid
+        scannedPassword = wifiInfo.password
         isConnecting = true
-        connectionStatus = ""
+        connectionStatus = "Connecting to device..."
+        connectionFailed = false
+        showingConnectionHelp = false
         
-        WiFiQRHandler.connectToWiFi(ssid: wifiInfo.ssid, password: wifiInfo.password) { success in
-            isConnecting = false
-            
+        // Fixed the typo: max -> maxAttempts
+        let maxAttempts: Int = 1
+        attemptConnection(ssid: wifiInfo.ssid, password: wifiInfo.password, attempt: 1, maxAttempts: maxAttempts)
+    }
+    
+    private func attemptConnection(ssid: String, password: String, attempt: Int, maxAttempts: Int) {
+        connectionStatus = "Connecting... (attempt \(attempt)/\(maxAttempts))"
+        
+        WiFiQRHandler.connectToWiFi(ssid: ssid, password: password) { success in
             if success {
-                connectedSSID = wifiInfo.ssid
-                connectionStatus = ""
-                // Pass serial to parent immediately upon successful connection
-                onQRCodeScanned(deviceSerial ?? wifiInfo.password)
+                self.isConnecting = false
+                self.connectedSSID = ssid
+                self.connectionStatus = ""
+                self.connectionFailed = false
+                self.showingConnectionHelp = false
+                self.onQRCodeScanned(self.deviceSerial ?? password)
+            } else if attempt < maxAttempts {
+                // Wait and retry
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                    self.attemptConnection(ssid: ssid, password: password, attempt: attempt + 1, maxAttempts: maxAttempts)
+                }
             } else {
-                connectionStatus = "Failed to connect. Try manually connecting to \(wifiInfo.ssid)"
+                // All attempts failed - show in-app instructions
+                self.isConnecting = false
+                self.connectionFailed = true
+                self.showInAppConnectionInstructions(ssid: ssid, password: password)
             }
         }
     }
     
-    private func checkCurrentConnection() {
+    private func showInAppConnectionInstructions(ssid: String, password: String) {
+        isConnecting = false
+        connectionStatus = "Automatic connection failed"
+        showingConnectionHelp = true
+    }
+    
+    // Removed the problematic startPollingForConnection function
+    // that was causing repeated nehelper errors
+    
+    private func handleSuccessfulConnection(ssid: String) {
+        print("🎉 Handling successful connection to: \(ssid)")
+        isConnecting = false
+        connectedSSID = ssid
+        connectionStatus = ""
+        connectionFailed = false
+        showingConnectionHelp = false
+        
+        // Extract serial from SSID or use the stored password
+        if let serial = WiFiQRHandler.extractSerialFromSSID(ssid) {
+            deviceSerial = serial
+            print("🔍 Extracted serial from SSID: \(serial)")
+        } else if let storedSerial = deviceSerial {
+            print("🔍 Using stored serial: \(storedSerial)")
+        }
+        
+        if let serial = deviceSerial {
+            print("🔍 Calling onQRCodeScanned with serial: \(serial)")
+            onQRCodeScanned(serial)
+        }
+    }
+    
+    private func checkConnectionAfterManual() {
+        print("🔍 Checking connection after manual setup...")
+        
         if let currentSSID = WiFiQRHandler.getCurrentWiFiSSID() {
+            print("🔍 Current SSID: '\(currentSSID)'")
+            if let expectedSSID = scannedSSID {
+                print("🔍 Expected SSID: '\(expectedSSID)'")
+                if currentSSID == expectedSSID {
+                    print("✅ Manual connection successful!")
+                    handleSuccessfulConnection(ssid: expectedSSID)
+                    return
+                }
+            }
+        } else {
+            print("🔍 No current SSID detected")
+        }
+        
+        connectionStatus = "Still not connected. Please try again."
+        print("❌ Manual connection check failed")
+    }
+    
+    private func retryConnection() {
+        guard let ssid = scannedSSID, let password = scannedPassword else { return }
+        
+        isConnecting = true
+        connectionStatus = "Retrying connection..."
+        connectionFailed = false
+        showingConnectionHelp = false
+        
+        attemptConnection(ssid: ssid, password: password, attempt: 1, maxAttempts: 3)
+    }
+    
+    private func checkCurrentConnection() {
+        print("🔍 Checking current connection...")
+        
+        if let currentSSID = WiFiQRHandler.getCurrentWiFiSSID() {
+            print("🔍 Current SSID detected: '\(currentSSID)'")
             connectedSSID = currentSSID
             
             if currentSSID.hasPrefix("SenchiSetup") {
+                print("🔍 Connected to SenchiSetup network!")
                 deviceSerial = WiFiQRHandler.extractSerialFromSSID(currentSSID)
+                
                 // If we detect we're already connected, pass the serial
                 if let serial = deviceSerial {
+                    print("🔍 Auto-detected serial: \(serial)")
                     onQRCodeScanned(serial)
                 }
             }
+        } else {
+            print("🔍 No current SSID detected")
+            connectedSSID = nil
         }
     }
 }

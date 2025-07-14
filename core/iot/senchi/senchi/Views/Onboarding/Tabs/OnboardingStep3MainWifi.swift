@@ -118,8 +118,21 @@ struct OnboardingStep3MainWifi: View {
     
     private var connectButton: some View {
         Button(action: {
-            // Simulate connection and navigate to home
-            isConnected = true
+            print(ssid)
+            configureWiFi(ssid: ssid, password: password) { result in
+                DispatchQueue.main.async {
+                    switch result {
+                    case .success(_):
+                        isConnected = true
+                        onConnected()
+                    case .failure(let error):
+                        print("WiFi configuration failed: \(error.localizedDescription)")
+                        // Optionally, show an alert or set an error state here
+                        // TODO: Update this to be more useful
+                        Alert(title: Text("Incorrect password, please try again."))
+                    }
+                }
+            }
         }) {
             Text("Connect to Home WiFi")
                 .frame(maxWidth: .infinity)

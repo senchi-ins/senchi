@@ -4,20 +4,30 @@
 <dict>
 	<key>UIUserInterfaceStyle</key>
 	<string>Light</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>This app needs location access to connect to Wi-Fi networks</string>
+	
+	<!-- Location permissions for WiFi access -->
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>This app needs location access to connect to Wi-Fi networks</string>
+	<string>This app needs location access to connect to Wi-Fi networks and discover nearby devices.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>This app needs location access to connect to Wi-Fi networks and discover nearby devices.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>This app needs location access to connect to Wi-Fi networks and discover nearby devices.</string>
+	
+	<!-- Critical for iOS 14+ WiFi operations -->
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>This app needs access to your local network to connect to and communicate with your leak detection devices.</string>
+	
+	<!-- Bluetooth permissions -->
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>This app needs Bluetooth access to connect to leak detection sensors and monitor for water leaks in your home.</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
 	<string>This app needs Bluetooth access to connect to leak detection sensors and monitor for water leaks in your home.</string>
+	
+	<!-- Camera permission -->
 	<key>NSCameraUsageDescription</key>
 	<string>This app needs camera access to scan QR codes on leak detection sensors for easy setup and configuration.</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>This app needs location access to connect to your device's Wi-Fi network</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>This app needs location access to connect to your device's Wi-Fi network</string>
+	
+	<!-- Background modes -->
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>bluetooth-central</string>
