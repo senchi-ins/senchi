@@ -3,6 +3,7 @@ Risk lookup module for identifying catastrophic risks based on location.
 """
 import pandas as pd
 from typing import Dict, List, Mapping, Optional, Union
+from pathlib import Path
 
 # Risk category mappings
 RISK_CATEGORIES = {
@@ -26,17 +27,26 @@ RISK_RATINGS = [
 class RiskLookup:
     """Handles risk assessment based on location data."""
     
-    def __init__(self, nri_data_path: str = '../../external/NRI_Ratings_Counties.csv'):
+    def __init__(self, nri_data_path: str = '../../external/data/NRI_Ratings_Counties.csv',
+                 canada_data_path: str = '../../external/data/canada_risk.csv'):
         """
-        Initialize the risk lookup with NRI data.
+        Initialize the risk lookup with NRI data and Canadian risk data.
         
         Args:
             nri_data_path: Path to the NRI ratings CSV file
+            canada_data_path: Path to the Canadian risk ratings CSV file
         """
+        # Load USA data
         self.nri_data = pd.read_csv(nri_data_path)
         # Preprocess the reference data
         self.nri_data['COUNTY'] = self.nri_data['COUNTY'].str.strip().str.lower()
         self.nri_data['STATEABBRV'] = self.nri_data['STATEABBRV'].str.strip().str.lower()
+        
+        # Load Canadian data
+        self.canada_data = pd.read_csv(canada_data_path)
+        # Preprocess Canadian data
+        self.canada_data['Province'] = self.canada_data['Province'].str.strip()
+        self.canada_data['Region'] = self.canada_data['Region'].str.strip()
         
     def _normalize_string(self, value: str) -> str:
         """
@@ -65,7 +75,8 @@ class RiskLookup:
                     'country': str,
                     'county': str (USA only),
                     'state': str (USA only),
-                    'province': str (Canada only)
+                    'province': str (Canada only),
+                    'region': str (Canada only, administrative area level 2)
                 }
                 
         Returns:
@@ -127,5 +138,25 @@ class RiskLookup:
         
     def _get_canada_risks(self, location_data: Dict) -> Mapping[str, Optional[str]]:
         """Get risks for a Canadian location."""
-        # TODO: Implement Canadian risk assessment
-        return {category: None for category in RISK_CATEGORIES.keys()}
+        # Find the region data
+        region_data = self.canada_data[
+            (self.canada_data['Province'] == location_data['province']) &
+            (self.canada_data['Region'] == location_data['region'])
+        ]
+        
+        if region_data.empty:
+            # Return message about automated risk detection not being available
+            error_msg = f"Automated risk detection currently not implemented for {location_data['formatted_address']}"
+            raise ValueError(error_msg)
+            
+        # Initialize results with all categories
+        risks = {category: None for category in RISK_CATEGORIES.keys()}
+        
+        # For Canadian data, we directly map the categories without risk codes
+        for category in RISK_CATEGORIES.keys():
+            if category in region_data.columns:
+                rating = region_data[category].iloc[0]
+                if rating in RISK_RATINGS:
+                    risks[category] = rating
+                    
+        return risks

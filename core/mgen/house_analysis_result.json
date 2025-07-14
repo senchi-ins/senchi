@@ -10,7 +10,7 @@
     },
     {
       "title": "Extend gutter downspouts away from the house",
-      "score": "medium"
+      "score": "low"
     },
     {
       "title": "Install non-combustible siding",
@@ -30,7 +30,7 @@
     },
     {
       "title": "Trim tree branches and shrubs around the house",
-      "score": "medium"
+      "score": "high"
     },
     {
       "title": "Seal exterior wall openings",
@@ -50,15 +50,15 @@
     },
     {
       "title": "Insulate exposed exterior pipes",
-      "score": "medium"
+      "score": "high"
     },
     {
       "title": "Create a non-flammable (e.g. gravel or stone) barrier around the foundation",
-      "score": "medium"
+      "score": "high"
     },
     {
       "title": "Reinforce Roof-to-Wall Connections",
-      "score": "medium"
+      "score": "high"
     }
   ],
   "recommendations": [
@@ -66,26 +66,26 @@
       "title": "Install gutter guards",
       "description": "Install guards to prevent leaves and debris from clogging gutters.",
       "location": "Gutters",
-      "explanation": "Gutters are visible but do not appear to have guards installed, which can lead to clogging and water damage.",
-      "x": "100",
-      "y": "290"
+      "explanation": "The exterior views show that there are no visible gutter guards on the gutters, posing a risk of clogging and subsequent water damage.",
+      "x": 150,
+      "y": 100
+    },
+    {
+      "title": "Extend gutter downspouts away from the house",
+      "description": "Extend downspouts to carry roof water at least 5-10 feet from the foundation.",
+      "location": "Corner of the house",
+      "explanation": "Downspouts appear to discharge relatively close to the foundation, increasing the risk of water pooling against the home.",
+      "x": 120,
+      "y": 280
     },
     {
       "title": "Clear roof and gutters of debris",
       "description": "Remove leaves, pine needles, and other flammable debris from the roof and gutters.",
       "location": "Roof",
-      "explanation": "There appears to be some debris on the roof that should be removed to reduce fire hazards.",
-      "x": "120",
-      "y": "280"
-    },
-    {
-      "title": "Reinforce the garage door",
-      "description": "Install a vertical bracing system or a wind-rated garage door.",
-      "location": "Garage door",
-      "explanation": "The garage door looks standard and may not have adequate reinforcement against severe weather.",
-      "x": "160",
-      "y": "330"
+      "explanation": "While some debris is noted, it can be risky as it may lead to blockage and fire hazards; visible debris should be removed.",
+      "x": 200,
+      "y": 50
     }
   ],
-  "final_score": 70
+  "final_score": 78
 }

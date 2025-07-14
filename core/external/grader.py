@@ -57,11 +57,13 @@ class RiskGrader:
                 - points_possible: Total points possible
                 - breakdown: Dictionary of scores by risk level
                 - photo_validations: Dictionary of photo validation results by question
+                - question_scores: List of dictionaries containing per-question scores and details
         """
         points_earned = 0
         points_possible = 0
         breakdown = {level: {'earned': 0, 'possible': 0} for level in RISK_RATINGS}
         photo_validations = {}
+        question_scores = []  # New list to store individual question scores
         
         for answer_data in answers:
             risk_level = answer_data['risk_level']
@@ -69,6 +71,7 @@ class RiskGrader:
             rubric = answer_data['rubric']
             answer = answer_data['answer']
             question = answer_data['question']
+            risk_type = answer_data['risk_type']
             
             # Skip if risk level not in scoring criteria
             if risk_level not in self.scoring_criteria:
@@ -93,10 +96,23 @@ class RiskGrader:
             # Skip photo validation if user admits to risk
             needs_validation = requires_photo and self.photo_validator._requires_photo_validation(answer, rubric)
             
+            # Initialize question score data
+            question_score_data = {
+                'question': question,
+                'risk_type': risk_type,
+                'risk_level': risk_level,
+                'importance': importance,
+                'answer': answer,
+                'points_possible': question_points,
+                'requires_photo': requires_photo,
+                'photo_validated': False
+            }
+            
             if needs_validation and photos:
                 # Validate photos and adjust score accordingly
                 validation = self.photo_validator.verify_answer(photos, question, answer, rubric)
                 photo_validations[question] = validation
+                question_score_data['photo_validated'] = True
                 
                 if validation['verified']:
                     if validation['matches_answer']:
@@ -131,6 +147,11 @@ class RiskGrader:
                 # Update breakdown
                 breakdown[risk_level]['earned'] += earned
                 breakdown[risk_level]['possible'] += question_points
+            
+            # Add earned points and score percentage to question data
+            question_score_data['points_earned'] = earned
+            question_score_data['score_percentage'] = (earned / question_points * 100) if question_points > 0 else 0
+            question_scores.append(question_score_data)
         
         # Calculate final percentage score
         final_score = (points_earned / points_possible * 100) if points_possible > 0 else 0
@@ -148,7 +169,11 @@ class RiskGrader:
                 for level, stats in breakdown.items()
                 if stats['possible'] > 0  # Only include risk levels that had questions
             },
-            'photo_validations': photo_validations
+            'photo_validations': photo_validations,
+            'question_scores': sorted(
+                question_scores,
+                key=lambda x: (x['score_percentage'], -x['points_possible'])  # Sort by score (ascending) and then by points possible (descending)
+            )
         }
 
 def main():
@@ -197,6 +222,15 @@ def main():
             print(f"  Matches Answer: {validation['matches_answer']}")
             print(f"  Confidence: {validation['confidence']}")
             print(f"  Analysis: {validation['analysis']}")
+            
+    print("\nQuestion Scores:")
+    for q_score in results['question_scores']:
+        print(f"\n{q_score['question']}:")
+        print(f"  Risk Type: {q_score['risk_type']}")
+        print(f"  Risk Level: {q_score['risk_level']}")
+        print(f"  Importance: {q_score['importance']}")
+        print(f"  Score: {q_score['score_percentage']}%")
+        print(f"  Points: {q_score['points_earned']} / {q_score['points_possible']}")
 
 if __name__ == '__main__':
     main()

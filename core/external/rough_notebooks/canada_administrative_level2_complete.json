@@ -1,0 +1,169 @@
+{
+  "collection_metadata": {
+    "total_regions_found": 72,
+    "total_expected": 293,
+    "coverage_percentage": 24.573378839590443,
+    "collection_date": "2025-01-17",
+    "method": "Google Maps Geocoding API - Administrative Area Level 2"
+  },
+  "by_province": {
+    "BC": {
+      "regions": [
+        "Capital Regional District",
+        "Cariboo",
+        "Central Okanagan",
+        "Columbia-Shuswap",
+        "Comox Valley",
+        "Cowichan Valley",
+        "Fraser Valley",
+        "Metro Vancouver",
+        "Nanaimo",
+        "North Okanagan",
+        "Okanagan-Similkameen",
+        "Peace River",
+        "Squamish-Lillooet",
+        "Strathcona",
+        "Thompson-Nicola"
+      ],
+      "count": 15,
+      "expected_count": 29
+    },
+    "AB": {
+      "regions": [
+        "Cypress County",
+        "Grande Prairie County No. 1",
+        "Lethbridge County",
+        "Strathcona County",
+        "Wood Buffalo"
+      ],
+      "count": 5,
+      "expected_count": 19
+    },
+    "ON": {
+      "regions": [
+        "Essex County",
+        "Frontenac County",
+        "Greater Sudbury",
+        "Hamilton",
+        "Middlesex County",
+        "Ottawa",
+        "Regional Municipality of Durham",
+        "Regional Municipality of Niagara",
+        "Regional Municipality of Peel",
+        "Simcoe County",
+        "Toronto",
+        "Wellington County"
+      ],
+      "count": 12,
+      "expected_count": 49
+    },
+    "QC": {
+      "regions": [
+        "Abitibi-Témiscamingue",
+        "Bas-Saint-Laurent",
+        "Capitale-Nationale",
+        "Estrie",
+        "Laval",
+        "Mauricie",
+        "Montréal",
+        "Montérégie",
+        "Outaouais",
+        "Saguenay–Lac-Saint-Jean"
+      ],
+      "count": 10,
+      "expected_count": 98
+    },
+    "NS": {
+      "regions": [
+        "Annapolis County",
+        "Cape Breton Regional Municipality",
+        "Colchester County",
+        "Cumberland County",
+        "Halifax Regional Municipality",
+        "Kings County",
+        "Pictou County"
+      ],
+      "count": 7,
+      "expected_count": 18
+    },
+    "NB": {
+      "regions": [
+        "Bathurst",
+        "Fredericton",
+        "Fundy Albert",
+        "Miramichi",
+        "Moncton",
+        "Saint Andrews",
+        "Sussex"
+      ],
+      "count": 7,
+      "expected_count": 15
+    },
+    "MB": {
+      "regions": [
+        "Altona",
+        "Brandon",
+        "City Of Portage La Prairie",
+        "Flin Flon",
+        "Steinbach",
+        "The Pas",
+        "Winnipeg"
+      ],
+      "count": 7,
+      "expected_count": 23
+    },
+    "SK": {
+      "regions": [
+        "Orkney No. 244"
+      ],
+      "count": 1,
+      "expected_count": 18
+    },
+    "NL": {
+      "regions": [],
+      "count": 0,
+      "expected_count": 11
+    },
+    "PE": {
+      "regions": [],
+      "count": 0,
+      "expected_count": 3
+    },
+    "YT": {
+      "regions": [],
+      "count": 0,
+      "expected_count": 1
+    },
+    "NT": {
+      "regions": [
+        "Dehcho Region",
+        "Inuvik Region",
+        "North Slave Region",
+        "Sahtu Region",
+        "South Slave Region"
+      ],
+      "count": 5,
+      "expected_count": 6
+    },
+    "NU": {
+      "regions": [
+        "Kitikmeot Region",
+        "Kivalliq Region",
+        "Qikiqtaaluk Region"
+      ],
+      "count": 3,
+      "expected_count": 3
+    }
+  },
+  "naming_patterns": {
+    "Geographic/Named region": 44,
+    "Regional District": 1,
+    "County": 13,
+    "County No. 1": 1,
+    "Regional Municipality of Niagara": 1,
+    "Regional Municipality of Peel": 1,
+    "Regional Municipality of Durham": 1,
+    "Regional Municipality": 2,
+    "Region": 8
+  }
+}

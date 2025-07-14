@@ -44,7 +44,7 @@ class GoogleMapsGeocoder:
         """
         Convert a USA or Canadian address to latitude and longitude coordinates and return as a dictionary.
         For USA addresses, also include 'County' and 'State' abbreviation.
-        For Canadian addresses, include 'Province' abbreviation.
+        For Canadian addresses, include 'Province' abbreviation and 'Region' (administrative area level 2).
         """
         try:
             result = self.client.geocode(address)
@@ -63,6 +63,7 @@ class GoogleMapsGeocoder:
             postal_code = ""
             country = None
             county = None
+            region = None  # For Canadian administrative_area_level_2
             
             for component in address_components:
                 types = component['types']
@@ -80,9 +81,12 @@ class GoogleMapsGeocoder:
                     country_code = component['short_name']
                     country = 'USA' if country_code == 'US' else ('Canada' if country_code == 'CA' else None)
                 elif 'administrative_area_level_2' in types:
-                    county = component['long_name']
-                    if county.endswith(' County'):
-                        county = county[:-7]
+                    if country == 'USA':
+                        county = component['long_name']
+                        if county.endswith(' County'):
+                            county = county[:-7]
+                    else:  # Canada
+                        region = component['long_name']
             
             if not country or country not in ['USA', 'Canada']:
                 raise GeocodingError(f"Address not found in USA/Canada: {address}")
@@ -121,6 +125,8 @@ class GoogleMapsGeocoder:
             elif country == 'Canada':
                 if state_abbr:
                     output['province'] = state_abbr
+                if region:
+                    output['region'] = region
                     
             return output
                 

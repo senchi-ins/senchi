@@ -108,46 +108,57 @@ async def analyze_house_images(image_inputs: List[Union[str, bytes]], client: Op
             for i, rubric in enumerate(rubrics)
         ])
 
-        prompt = f"""You are a home safety and disaster preparedness expert. You will be provided with one or more views of a house. Using ALL provided views to make your assessment:
+        prompt = f"""You are a home-safety and disaster-preparedness expert.
 
-1. From this list of available improvements, understand what suggested improvements you are able to recommend.
+You will be given one or more exterior views of a house.  
+Use *all* views for your assessment.
+
+COORDINATE SYSTEM
+• You will output (x, y) pixel coordinates on the **front-facing STREET-VIEW image only**.  
+• Origin (0, 0) is the **top-left corner**.  
+• The image width is <IMG_WIDTH> px and height is <IMG_HEIGHT> px.  
+• Coordinates must be integers (round or floor as needed).
+
+TASKS
+1. Use all views to identify potential improvements from this list:  
 {improvements_text}
 
-2. Score each category as either 'low', 'medium', or 'high' based on the following criteria:
-
+2. Score every category as “low”, “medium”, or “high” using:  
 {scoring_text}
 
-3. From this list of available improvements, identify the three most critical ones needed (those scored as 'low'):
+3. Choose the **three most critical improvements** (those whose category you scored “low”).
 
-{improvements_text}
+4. For each of those three, output a pixel location that marks **where the improvement should actually be made** on the front image.
 
-4. For the three improvements that you identified as most critical, provide the x, y coordinate of where the improvement is located on the image. You must provide a valid number for the x and y coordinates for each improvement. 
+SPACING RULE
+To avoid overlap, the **Euclidean distance between any two of your (x, y) coordinates must be ≥ 100 pixels**.  
+If two recommended fixes would naturally fall closer than that, adjust one point slightly (while keeping it on the correct feature) so the rule holds.
 
-Use all provided views of the house to make your assessment. If certain aspects aren't visible in any view, mention this in your explanations.
+OUTPUT
+Return a single valid JSON string in exactly this structure - nothing else:
 
-Format your response as a valid JSON string with this exact structure:
 {{
-    "category_scores": [
-        {{
-            "title": "Category title",
-            "score": "low/medium/high"
-        }},
-        // for all 15 categories
-    ],
-    "recommendations": [
-        {{
-            "title": "Exact title from list",
-            "description": "Exact description from list",
-            "location": "Exact location from list",
-            "explanation": "Your specific explanation based on all provided views",
-            "x": "x coordinate of the improvement (must be a valid number)",
-            "y": "y coordinate of the improvement (must be a valid number)"
-        }},
-        // for the three most critical improvements (scored as low)
-    ],
-    "final_score": "Final house score out of 100"
+  "category_scores": [
+    {{
+      "title": "Category title",
+      "score": "low|medium|high"
+    }}
+    // ...15 total
+  ],
+  "recommendations": [
+    {{
+      "title": "Exact title from list",
+      "description": "Exact description from list",
+      "location": "Exact location from list",
+      "explanation": "Specific reasoning using ALL views",
+      "x":  <integer x>,
+      "y":  <integer y>
+    }}
+    // ...exactly 3 objects
+  ],
+  "final_score": "Score out of 100"
 }}
-The output format must be the JSON string as shown above. No other text or formatting.
+
 """
 
         try:
