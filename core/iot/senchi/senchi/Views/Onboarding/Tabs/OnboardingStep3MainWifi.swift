@@ -129,7 +129,7 @@ struct OnboardingStep3MainWifi: View {
                         print("WiFi configuration failed: \(error.localizedDescription)")
                         // Optionally, show an alert or set an error state here
                         // TODO: Update this to be more useful
-                        Alert(title: Text("Incorrect password, please try again."))
+                        print("WiFi configuration failed: \(error.localizedDescription)")
                     }
                 }
             }

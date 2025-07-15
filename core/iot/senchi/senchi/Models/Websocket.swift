@@ -9,8 +9,8 @@ struct WebSocketMessage: Codable {
     let type: String
     let timestamp: String?
     let deviceId: String?
-    let data: DeviceStatus?
-    let devices: [IoTDevice]?
+    let data: DeviceUpdatePayload?
+    let devices: [Device]?
     
     enum CodingKeys: String, CodingKey {
         case type
@@ -25,7 +25,7 @@ struct WebSocketMessage: Codable {
         type = try container.decode(String.self, forKey: .type)
         timestamp = try container.decodeIfPresent(String.self, forKey: .timestamp)
         deviceId = try container.decodeIfPresent(String.self, forKey: .deviceId)
-        data = try container.decodeIfPresent(DeviceStatus.self, forKey: .data)
-        devices = try container.decodeIfPresent([IoTDevice].self, forKey: .devices)
+        data = try container.decodeIfPresent(DeviceUpdatePayload.self, forKey: .data)
+        devices = try container.decodeIfPresent([Device].self, forKey: .devices)
     }
 }

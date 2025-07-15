@@ -1,12 +1,19 @@
 import SwiftUI
 
-
-struct OnboardingView: View {
+struct OnboardingViewMain: View {
+    @EnvironmentObject var authManager: AuthManager
+    
     @State private var fullName: String = ""
     @State private var email: String = ""
     @State private var password: String = ""
     @State private var currentStep: Int = 1
     @State private var showDashboard: Bool = false
+    @State private var isSigningIn: Bool = false
+    @State private var showingAlert = false
+    @State private var alertMessage = ""
+    @State private var deviceSerial: String = ""
+    @State private var isLoading = false
+    
     private let totalSteps: Int = 4
     
     @FocusState private var focusedField: Field?
@@ -36,6 +43,22 @@ struct OnboardingView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.white.ignoresSafeArea())
+            .alert("Alert", isPresented: $showingAlert) {
+                Button("OK") { }
+            } message: {
+                Text(alertMessage)
+            }
+            .overlay(
+                Group {
+                    if isLoading {
+                        Color.black.opacity(0.3)
+                            .ignoresSafeArea()
+                        ProgressView("Processing...")
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .scaleEffect(1.5)
+                    }
+                }
+            )
         }
     }
 
@@ -48,22 +71,22 @@ struct OnboardingView: View {
                     fullName: $fullName,
                     email: $email,
                     password: $password,
-                    focusedField: _focusedField,
+                    focusedField: $focusedField,
                     onCreateAccount: {
                         let generator = UIImpactFeedbackGenerator(style: .medium)
                         generator.impactOccurred()
-                        withAnimation { currentStep = 2}
+                        createAccount()
                     },
                     onSignIn: {
                         let generator = UIImpactFeedbackGenerator(style: .medium)
                         generator.impactOccurred()
-                        // Navigate to sign in
+                        signIn()
                     }
                 )
             case 2:
                 OnboardingStep2QRCodeView(
                     onQRCodeScanned: { code in
-                        // Handle scanned QR code
+                        deviceSerial = code
                     },
                     onManualConnect: {
                         // Handle manual connect
@@ -71,10 +94,10 @@ struct OnboardingView: View {
                     onConnected: {
                         let generator = UIImpactFeedbackGenerator(style: .medium)
                         generator.impactOccurred()
-                        withAnimation { currentStep = 3 }
+                        setupDevice()
                     },
                     onNextStep: {
-                        // TODO: Remove this
+                        // This will be handled by onConnected
                     }
                 )
             case 3:
@@ -96,8 +119,98 @@ struct OnboardingView: View {
         .animation(.easeInOut, value: currentStep)
         .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading)))
     }
+    
+    private func createAccount() {
+        guard !fullName.isEmpty && !email.isEmpty && !password.isEmpty else {
+            alertMessage = "Please fill in all fields"
+            showingAlert = true
+            return
+        }
+        
+        isLoading = true
+        
+        Task {
+            do {
+                try await authManager.createAccount(
+                    fullName: fullName,
+                    email: email,
+                    password: password
+                )
+                
+                await MainActor.run {
+                    isLoading = false
+                    alertMessage = "Account created successfully!"
+                    showingAlert = true
+                    withAnimation { currentStep = 2 }
+                }
+            } catch {
+                await MainActor.run {
+                    isLoading = false
+                    alertMessage = "Account creation failed: \(error.localizedDescription)"
+                    showingAlert = true
+                }
+            }
+        }
+    }
+    
+    private func signIn() {
+        guard !email.isEmpty && !password.isEmpty else {
+            alertMessage = "Please enter email and password"
+            showingAlert = true
+            return
+        }
+        
+        isLoading = true
+        
+        Task {
+            do {
+                try await authManager.signIn(email: email, password: password)
+                
+                await MainActor.run {
+                    isLoading = false
+                    alertMessage = "Signed in successfully!"
+                    showingAlert = true
+                    withAnimation { currentStep = 2 }
+                }
+            } catch {
+                await MainActor.run {
+                    isLoading = false
+                    alertMessage = "Sign in failed: \(error.localizedDescription)"
+                    showingAlert = true
+                }
+            }
+        }
+    }
+    
+    private func setupDevice() {
+        guard !deviceSerial.isEmpty else {
+            alertMessage = "Please scan the QR code on your device first"
+            showingAlert = true
+            return
+        }
+        
+        isLoading = true
+        
+        Task {
+            do {
+                try await authManager.setupDevice(serialNumber: deviceSerial)
+                
+                await MainActor.run {
+                    isLoading = false
+                    withAnimation { currentStep = 3 }
+                }
+            } catch {
+                await MainActor.run {
+                    isLoading = false
+                    alertMessage = "Device setup failed: \(error.localizedDescription)"
+                    showingAlert = true
+                }
+            }
+        }
+    }
 }
 
 #Preview {
-    OnboardingView()
-} 
+    OnboardingViewMain()
+        .environmentObject(AuthManager())
+}

@@ -1,10 +1,12 @@
 import SwiftUI
 
+
 struct OnboardingStep1AccountView: View {
     @Binding var fullName: String
     @Binding var email: String
     @Binding var password: String
-    @FocusState var focusedField: OnboardingView.Field?
+    
+    @FocusState.Binding var focusedField: OnboardingViewMain.Field?
     var onCreateAccount: () -> Void
     var onSignIn: () -> Void
     
@@ -106,4 +108,4 @@ struct OnboardingStep1AccountView: View {
         .padding(.horizontal, 16)
         .padding(.top, 32)
     }
-} 
+}

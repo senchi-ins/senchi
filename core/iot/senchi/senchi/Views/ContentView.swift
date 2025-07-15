@@ -1,24 +1,20 @@
-//
-//  ContentView.swift
-//  senchi
-//
-//  Created by Michael Dawes on 2025-07-11.
-//
 
 import SwiftUI
 
 struct ContentView: View {
-    @EnvironmentObject private var userSettings: UserSettings
+    @EnvironmentObject var userSettings: UserSettings
+    @EnvironmentObject var authManager: AuthManager
+    @EnvironmentObject var pushManager: PushNotificationManager
     
     var body: some View {
-        if userSettings.loggedIn {
-            HomeDashboardView()
-        } else {
-            OnboardingView()
+        Group {
+            if authManager.isAuthenticated || userSettings.loggedIn {
+                // Your main app interface
+                HomeDashboardView()
+            } else {
+                // User needs to create account/sign in
+                OnboardingViewMain()
+            }
         }
     }
-}
-
-#Preview {
-    ContentView()
 }

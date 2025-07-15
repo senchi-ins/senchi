@@ -1,10 +1,27 @@
 
 import SwiftUI
+import Foundation
 
 struct HomeTabContent: View {
+    @StateObject private var webSocketManager = WebSocketManager()
+    @State private var savingsAmount: Double = 0
+    @State private var homeHealthScore: Double = 1.0
+    
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
+                // Connection Status Indicator
+                HStack {
+                    Circle()
+                        .fill(webSocketManager.isConnected ? SenchiColors.senchiGreen : SenchiColors.senchiRed)
+                        .frame(width: 12, height: 12)
+                    Text(webSocketManager.isConnected ? "Connected" : "Disconnected")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                    Spacer()
+                }
+                .padding(.horizontal, 4)
+                
                 // Greeting
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 4) {
@@ -31,23 +48,24 @@ struct HomeTabContent: View {
                                 .foregroundColor(.gray)
                             // TODO: Update to read from api
                             HStack(alignment: .center, spacing: 8) {
-                                Text("85%")
+                                Text("\(homeHealthScore, format: .percent.precision(.fractionLength(0)))")
                                     .font(.title2).fontWeight(.bold)
-                                    .foregroundColor(SenchiColors.senchiBlue)
+                                    .foregroundColor(SenchiColors.senchiGrey)
                                 Spacer()
-                                HStack(spacing: 4) {
-                                    Image(systemName: "exclamationmark.triangle.fill")
-                                        .foregroundColor(.yellow)
-                                    Text("Good")
-                                        .font(.caption)
-                                        .foregroundColor(.gray)
-                                }
+                                // TODO: Make this dynamic
+//                                HStack(spacing: 4) {
+//                                    Image(systemName: "exclamationmark.triangle.fill")
+//                                        .foregroundColor(.yellow)
+//                                    Text("Good")
+//                                        .font(.caption)
+//                                        .foregroundColor(.gray)
+//                                }
                             }
                         }
                     }
-                    ProgressView(value: 0.85)
-                        .accentColor(SenchiColors.senchiBlue)
-                    Text("1 alert require attention")
+                    ProgressView(value: homeHealthScore)
+                        .accentColor(SenchiColors.senchiGrey)
+                    Text("Coming soon!")
                         .font(.caption2)
                         .foregroundColor(.gray)
                 }
@@ -56,8 +74,7 @@ struct HomeTabContent: View {
                 // Device/Savings
                 HStack(spacing: 16) {
                     VStack {
-                        // TODO: Get this to read from the returned list
-                        Text("4")
+                        Text("\(webSocketManager.deviceCount)")
                             .font(.title2).fontWeight(.bold)
                             .foregroundColor(.black)
                         Text("Connected Devices")
@@ -68,9 +85,9 @@ struct HomeTabContent: View {
                     .padding()
                     .background(RoundedRectangle(cornerRadius: 14).stroke(Color.gray.opacity(0.15)))
                     VStack {
-                        Text("$127")
+                        Text("$\(Int(savingsAmount))")
                             .font(.title2).fontWeight(.bold)
-                            .foregroundColor(.green)
+                            .foregroundColor(SenchiColors.senchiBlack)
                         Text("Est. Savings")
                             .font(.caption)
                             .foregroundColor(.gray)
@@ -85,7 +102,24 @@ struct HomeTabContent: View {
                         .font(.headline)
                         .foregroundColor(.black)
                     Spacer()
-                    Button(action: {}) {
+                    Button(action: {
+                        Task {
+                            do {
+                                let result = try await permitJoin(duration: 60)
+                                print("Permit join successful: \(result)")
+                                
+                                // Success haptic feedback
+                                let generator = UINotificationFeedbackGenerator()
+                                generator.notificationOccurred(.success)
+                            } catch {
+                                print("Permit join failed: \(error)")
+                                
+                                // Error haptic feedback
+                                let generator = UINotificationFeedbackGenerator()
+                                generator.notificationOccurred(.error)
+                            }
+                        }
+                    }) {
                         HStack(spacing: 4) {
                             // TODO: Fix colours
                             Image(systemName: "plus.circle.fill").background(Color.white).clipShape(Circle())
@@ -100,44 +134,23 @@ struct HomeTabContent: View {
                         .cornerRadius(8)
                     }
                 }
-                // TODO: Load in based on live data
+                // Device Cards from API
                 VStack(spacing: 12) {
-                    // Device Cards (mocked)
-                    DeviceCardView(
-                        icon: "thermometer",
-                        name: "Living Room Sensor",
-                        type: "Temperature & Humidity",
-                        status: .online,
-                        time: "2 min ago",
-                        details: ["Temperature: 72°F", "Humidity: 45%"]
-                    )
-                    DeviceCardView(
-                        icon: "drop.fill",
-                        name: "Kitchen Water Sensor",
-                        type: "Water Leak Detection",
-                        status: .online,
-                        time: "5 min ago",
-                        details: ["No leaks detected"]
-                    )
-                    DeviceCardView(
-                        icon: "humidity",
-                        name: "Basement Moisture",
-                        type: "Humidity Monitor",
-                        status: .warning,
-                        time: "1 min ago",
-                        details: ["High humidity detected - check ventilation"]
-                    )
-                    DeviceCardView(
-                        icon: "bolt.fill",
-                        name: "Main Circuit Monitor",
-                        type: "Electrical Safety",
-                        status: .online,
-                        time: "3 min ago",
-                        details: ["Voltage: 120V"]
-                    )
+                    ForEach(webSocketManager.devices) { device in
+                        DeviceCardView(device: device)
+                    }
                 }
             }
             .padding(20)
+        }
+        .refreshable {
+            webSocketManager.reconnect()
+        }
+        .onAppear {
+            webSocketManager.fetchDevices()
+            Task {
+                savingsAmount = await calculateSavings()
+            }
         }
     }
 }
