@@ -68,10 +68,13 @@ class Monitor:
             # Check if Redis is connected
             if not redis_db.conn:
                 logger.warning("Redis not connected, attempting to connect...")
+                print("Redis not connected, attempting to connect...")
                 try:
                     redis_db.connect()
+                    print("Redis connection successful")
                 except Exception as e:
                     logger.error(f"Failed to connect to Redis: {e}")
+                    print(f"Failed to connect to Redis: {e}")
                     logger.warning("Subscribing to default topics only")
                     self._subscribe_to_default_topics()
                     return
@@ -80,22 +83,47 @@ class Monitor:
             try:
                 jwt_keys = redis_db.conn.keys("jwt:*")
                 device_serials = set()
-                print(f"JWT keys: {jwt_keys}")
+                print(f"JWT keys found: {len(jwt_keys)}")
+                
+                if not jwt_keys:
+                    print("No JWT keys found in Redis")
+                    logger.warning("No JWT keys found in Redis, subscribing to default topics")
+                    self._subscribe_to_default_topics()
+                    return
                 
                 for key in jwt_keys:
                     try:
                         # Get the JWT token from the key
                         jwt_token = key.decode().split(":", 1)[1]
+                        print(f"Processing JWT token: {jwt_token[:50]}...")
                         
                         # Get the JWT data
                         jwt_data = redis_db.get_key(f"jwt:{jwt_token}")
                         if jwt_data:
                             import json
                             data = json.loads(jwt_data)
+                            print(f"JWT data: {data}")
+                            
+                            # Try to get device_serial from different possible fields
+                            device_serial = None
                             if 'device_serial' in data:
-                                device_serials.add(data['device_serial'])
+                                device_serial = data['device_serial']
+                            elif 'location_id' in data:
+                                # Extract device serial from location_id (e.g., "rpi-zigbee-nrjrjr" -> "nrjrjr")
+                                location_id = data['location_id']
+                                if location_id.startswith('rpi-zigbee-'):
+                                    device_serial = location_id.replace('rpi-zigbee-', '')
+                                else:
+                                    device_serial = location_id
+                            
+                            if device_serial:
+                                device_serials.add(device_serial)
+                                print(f"Added device serial: {device_serial}")
+                            else:
+                                print(f"No device serial found in JWT data: {data}")
                     except Exception as e:
                         logger.warning(f"Error processing JWT key {key}: {e}")
+                        print(f"Error processing JWT key {key}: {e}")
                         continue
                 
                 # Subscribe to topics for each device serial
@@ -110,15 +138,19 @@ class Monitor:
                         f"{base_topic}/bridge/response/device/remove",
                     ]
                     
+                    print(f"Subscribing to topics for device serial: {device_serial}")
                     for topic in topics:
                         try:
                             self.client.subscribe(topic)
                             logger.info(f"Subscribed to topic: {topic}")
+                            print(f"✅ Subscribed to topic: {topic}")
                         except Exception as e:
                             logger.error(f"Failed to subscribe to {topic}: {e}")
+                            print(f"❌ Failed to subscribe to {topic}: {e}")
                 
                 if not device_serials:
                     logger.warning("No device serials found in Redis, subscribing to default topics")
+                    print("No device serials found in Redis, subscribing to default topics")
                     self._subscribe_to_default_topics()
                     
             except Exception as e:
