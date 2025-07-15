@@ -45,6 +45,7 @@ class Monitor:
         if rc == 0:
             self.connected = True
             logger.info(f"Successfully connected to MQTT broker: {settings.MQTT_BROKER}:{settings.MQTT_PORT}")
+            logger.info(f"MQTT client ID: {client._client_id}")
             
             # Subscribe to topics for all known device serials
             self._subscribe_to_device_topics()
@@ -64,63 +65,85 @@ class Monitor:
                 from rdsdb.rdsdb import RedisDB
                 redis_db = RedisDB()
             
-            # Get all JWT keys
-            jwt_keys = redis_db.conn.keys("jwt:*")
-            device_serials = set()
-            
-            for key in jwt_keys:
+            # Check if Redis is connected
+            if not redis_db.conn:
+                logger.warning("Redis not connected, attempting to connect...")
                 try:
-                    # Get the JWT token from the key
-                    jwt_token = key.decode().split(":", 1)[1]
-                    
-                    # Get the JWT data
-                    jwt_data = redis_db.get_key(f"jwt:{jwt_token}")
-                    if jwt_data:
-                        import json
-                        data = json.loads(jwt_data)
-                        if 'device_serial' in data:
-                            device_serials.add(data['device_serial'])
+                    redis_db.connect()
                 except Exception as e:
-                    logger.warning(f"Error processing JWT key {key}: {e}")
-                    continue
+                    logger.error(f"Failed to connect to Redis: {e}")
+                    logger.warning("Subscribing to default topics only")
+                    self._subscribe_to_default_topics()
+                    return
             
-            # Subscribe to topics for each device serial
-            for device_serial in device_serials:
-                # Use the correct topic format: zigbee2mqtt/senchi-{device_serial}/*
-                base_topic = f"zigbee2mqtt/senchi-{device_serial}"
+            # Get all JWT keys
+            try:
+                jwt_keys = redis_db.conn.keys("jwt:*")
+                device_serials = set()
                 
-                topics = [
-                    f"{base_topic}/bridge/health",
-                    f"{base_topic}/bridge/devices", 
-                    f"{base_topic}/bridge/event",
-                    f"{base_topic}/bridge/response/device/remove",
-                ]
+                for key in jwt_keys:
+                    try:
+                        # Get the JWT token from the key
+                        jwt_token = key.decode().split(":", 1)[1]
+                        
+                        # Get the JWT data
+                        jwt_data = redis_db.get_key(f"jwt:{jwt_token}")
+                        if jwt_data:
+                            import json
+                            data = json.loads(jwt_data)
+                            if 'device_serial' in data:
+                                device_serials.add(data['device_serial'])
+                    except Exception as e:
+                        logger.warning(f"Error processing JWT key {key}: {e}")
+                        continue
                 
-                for topic in topics:
-                    try:
-                        self.client.subscribe(topic)
-                        logger.info(f"Subscribed to topic: {topic}")
-                    except Exception as e:
-                        logger.error(f"Failed to subscribe to {topic}: {e}")
-            
-            if not device_serials:
-                logger.warning("No device serials found in Redis, subscribing to default topics")
-                # Fallback to default topics for testing
-                default_topics = [
-                    "zigbee2mqtt/senchi-SNH2025001/bridge/health",
-                    "zigbee2mqtt/senchi-SNH2025001/bridge/devices",
-                    "zigbee2mqtt/senchi-SNH2025001/bridge/event",
-                    "zigbee2mqtt/senchi-SNH2025001/bridge/response/device/remove",
-                ]
-                for topic in default_topics:
-                    try:
-                        self.client.subscribe(topic)
-                        logger.info(f"Subscribed to default topic: {topic}")
-                    except Exception as e:
-                        logger.error(f"Failed to subscribe to default topic {topic}: {e}")
+                # Subscribe to topics for each device serial
+                for device_serial in device_serials:
+                    # Use the correct topic format: zigbee2mqtt/senchi-{device_serial}/*
+                    base_topic = f"zigbee2mqtt/senchi-{device_serial}"
+                    
+                    topics = [
+                        f"{base_topic}/bridge/health",
+                        f"{base_topic}/bridge/devices", 
+                        f"{base_topic}/bridge/event",
+                        f"{base_topic}/bridge/response/device/remove",
+                    ]
+                    
+                    for topic in topics:
+                        try:
+                            self.client.subscribe(topic)
+                            logger.info(f"Subscribed to topic: {topic}")
+                        except Exception as e:
+                            logger.error(f"Failed to subscribe to {topic}: {e}")
+                
+                if not device_serials:
+                    logger.warning("No device serials found in Redis, subscribing to default topics")
+                    self._subscribe_to_default_topics()
+                    
+            except Exception as e:
+                logger.error(f"Error accessing Redis keys: {e}")
+                logger.warning("Subscribing to default topics due to Redis error")
+                self._subscribe_to_default_topics()
                         
         except Exception as e:
             logger.error(f"Error subscribing to device topics: {e}")
+            logger.warning("Subscribing to default topics due to error")
+            self._subscribe_to_default_topics()
+
+    def _subscribe_to_default_topics(self):
+        """Subscribe to default topics for testing when Redis is unavailable"""
+        default_topics = [
+            "zigbee2mqtt/senchi-SNH2025001/bridge/health",
+            "zigbee2mqtt/senchi-SNH2025001/bridge/devices",
+            "zigbee2mqtt/senchi-SNH2025001/bridge/event",
+            "zigbee2mqtt/senchi-SNH2025001/bridge/response/device/remove",
+        ]
+        for topic in default_topics:
+            try:
+                self.client.subscribe(topic)
+                logger.info(f"Subscribed to default topic: {topic}")
+            except Exception as e:
+                logger.error(f"Failed to subscribe to default topic {topic}: {e}")
 
     def on_disconnect(
         self,
@@ -354,24 +377,46 @@ class Monitor:
     def route_notification_by_topic(self, topic, payload):
         # Find all JWTs associated with this topic
         jwt_key = f"topic:{topic}:jwts"
-        jwt_data = self.app_state["redis_db"].get_key(jwt_key) if "redis_db" in self.app_state else None
-        if not jwt_data and hasattr(self, 'db') and hasattr(self.db, 'conn'):
-            # fallback to global redis_db if available
+        
+        # Try to get Redis connection from app_state first
+        redis_db = None
+        if "redis_db" in self.app_state:
+            redis_db = self.app_state["redis_db"]
+        
+        # If not in app_state, try to get global redis_db
+        if not redis_db:
             try:
-                # TODO: Pass the redis_db object instead of importing it here
-                from rdsdb import RedisDB
+                # TODO: Remove this, temp fix
+                from rdsdb.rdsdb import RedisDB
                 redis_db = RedisDB()
+                # Try to connect if not already connected
+                if not redis_db.conn:
+                    redis_db.connect()
+            except Exception as e:
+                logger.warning(f"Could not get Redis connection for topic routing: {e}")
+                return
+        
+        # Get JWT data if Redis is available
+        jwt_data = None
+        if redis_db and redis_db.conn:
+            try:
                 jwt_data = redis_db.get_key(jwt_key)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"Error getting JWT data for topic {topic}: {e}")
+                return
+        
         if not jwt_data:
             logger.info(f"No JWTs found for topic {topic}")
             return
-        jwt_list = jwt_data.decode().split(",")
-        for jwt_token in jwt_list:
-            logger.info(f"Would route notification to JWT: {jwt_token} for topic: {topic}")
-            # Here you can send a notification to the user/device associated with this JWT
-            # For example, via WebSocket, push, etc.
-            # Example: self.send_websocket_notification(jwt_token, payload)
+            
+        try:
+            jwt_list = jwt_data.decode().split(",")
+            for jwt_token in jwt_list:
+                logger.info(f"Would route notification to JWT: {jwt_token} for topic: {topic}")
+                # Here you can send a notification to the user/device associated with this JWT
+                # For example, via WebSocket, push, etc.
+                # Example: self.send_websocket_notification(jwt_token, payload)
+        except Exception as e:
+            logger.error(f"Error processing JWT data for topic {topic}: {e}")
 
     

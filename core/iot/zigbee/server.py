@@ -69,6 +69,9 @@ db = init_db()
 mqtt_monitor = Monitor(app_state, db)
 redis_db = RedisDB()
 
+# Add Redis database to app_state so Monitor can access it
+app_state["redis_db"] = redis_db
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -77,33 +80,44 @@ async def lifespan(app: FastAPI):
     mqtt_monitor.loop = loop
     mqtt_monitor.start()
     
-    # Initialize Redis connection
+    # Initialize Redis connection with better error handling
+    redis_connected = False
     try:
+        logger.info("Attempting to connect to Redis...")
         redis_db.connect()  # Remove await - this is a synchronous method
-        logging.info("Redis connection established")
+        redis_connected = True
+        logger.info("Redis connection established successfully")
     except Exception as e:
-        logging.error(f"Failed to connect to Redis: {e}")
+        logger.error(f"Failed to connect to Redis: {e}")
+        logger.error("Server will start without Redis functionality")
+        logger.error("Please check your REDIS_URL environment variable")
+        # Continue without Redis - some endpoints will fail but server won't crash
     
-    # Start background thread for topic subscription
-    threading.Thread(
-        target=subscribe_to_new_topics_periodically,
-        args=(mqtt_monitor, redis_db),
-        daemon=True
-    ).start()
+    # Start background thread for topic subscription only if Redis is connected
+    if redis_connected:
+        threading.Thread(
+            target=subscribe_to_new_topics_periodically,
+            args=(mqtt_monitor, redis_db),
+            daemon=True
+        ).start()
+        logger.info("Background topic subscription thread started")
+    else:
+        logger.warning("Skipping background topic subscription due to Redis connection failure")
     
-    logging.info("Home API Server started with integrated MQTT monitoring")
+    logger.info("Home API Server started with integrated MQTT monitoring")
     yield
     
     mqtt_monitor.stop()
     
     # Clean up Redis connection
-    try:
-        redis_db.disconnect()  # Remove await - this is a synchronous method
-        logging.info("Redis connection closed")
-    except Exception as e:
-        logging.error(f"Error closing Redis connection: {e}")
+    if redis_connected:
+        try:
+            redis_db.disconnect()  # Remove await - this is a synchronous method
+            logger.info("Redis connection closed")
+        except Exception as e:
+            logger.error(f"Error closing Redis connection: {e}")
     
-    logging.info("Home API Server stopped")
+    logger.info("Home API Server stopped")
 
 app = FastAPI(lifespan=lifespan)
 
@@ -238,8 +252,10 @@ async def permit_join(
 ):
     """Allow new devices to join for the authenticated user's location"""
     logger.info(f"Permit join requested for {duration} seconds by user {current_user.get('user_id')}. MQTT connected: {mqtt_monitor.connected}")
+    logger.info(f"Full user token data: {current_user}")
     
     if not mqtt_monitor.connected:
+        print(f"MQTT not connected. Broker: {settings.MQTT_BROKER}:{settings.MQTT_PORT}")
         logger.error(f"MQTT not connected. Broker: {settings.MQTT_BROKER}:{settings.MQTT_PORT}")
         raise HTTPException(
             status_code=503, 
@@ -248,21 +264,37 @@ async def permit_join(
     
     # Get the device serial from the user's JWT token
     device_serial = current_user.get('device_serial')
+    logger.info(f"Extracted device serial: {device_serial}")
+    
     if not device_serial:
         logger.error(f"No device serial found in user token: {current_user}")
         raise HTTPException(status_code=400, detail="No device serial associated with user")
     
     # Construct the topic using the device serial
     topic = f"zigbee2mqtt/senchi-{device_serial}/bridge/request/permit_join"
+    payload = json.dumps({"time": duration})
+    
+    logger.info(f"Publishing to topic: {topic}")
+    logger.info(f"Payload: {payload}")
+    logger.info(f"MQTT client state: connected={mqtt_monitor.client.is_connected()}")
     
     try:
-        mqtt_monitor.client.publish(topic, json.dumps({"time": duration}))
-        logger.info(f"Permit join message published to {topic} successfully")
-        return {
-            "message": f"Permit join enabled for {duration} seconds",
-            "topic": topic,
-            "device_serial": device_serial
-        }
+        result = mqtt_monitor.client.publish(topic, payload)
+        logger.info(f"Publish result: rc={result.rc}, mid={result.mid}")
+        
+        if result.rc == 0:
+            logger.info(f"Permit join message published to {topic} successfully")
+            return {
+                "message": f"Permit join enabled for {duration} seconds",
+                "topic": topic,
+                "device_serial": device_serial,
+                "publish_rc": result.rc,
+                "publish_mid": result.mid
+            }
+        else:
+            logger.error(f"MQTT publish failed with rc={result.rc}")
+            raise HTTPException(status_code=500, detail=f"MQTT publish failed with rc={result.rc}")
+            
     except Exception as e:
         logger.error(f"Error publishing permit join message to {topic}: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to publish permit join: {str(e)}")
@@ -291,10 +323,19 @@ async def websocket_endpoint(websocket: WebSocket):
 
 @app.get("/health")
 async def health_check():
+    redis_status = "unknown"
+    try:
+        redis_db.conn.ping()
+        redis_status = "connected"
+    except:
+        redis_status = "disconnected"
+    
     return {
         "status": "healthy",
         "mqtt_connected": mqtt_monitor.connected,
         "mqtt_broker": f"{settings.MQTT_BROKER}:{settings.MQTT_PORT}",
+        "redis_status": redis_status,
+        "redis_url": redis_db.redis_url.replace(redis_db.redis_url.split('@')[-1], '***') if '@' in redis_db.redis_url else redis_db.redis_url,
         "devices": len(app_state["devices"]),
         "active_leaks": len(app_state["active_leaks"]),
         "websocket_connections": len(app_state["websocket_connections"])
