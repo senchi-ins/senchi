@@ -264,8 +264,7 @@ async def permit_join(
         )
     
     # Get the device serial from the user's JWT token
-    device_serial = current_user.get('location_id')
-    device_serial = device_serial.replace("rpi-zigbee-", "senchi-")
+    device_serial = current_user.get('device_serial')
     logger.info(f"Extracted device serial: {device_serial}")
     print(f"Extracted device serial: {device_serial}")
     
