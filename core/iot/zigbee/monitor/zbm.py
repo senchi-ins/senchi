@@ -80,6 +80,7 @@ class Monitor:
             try:
                 jwt_keys = redis_db.conn.keys("jwt:*")
                 device_serials = set()
+                print(f"JWT keys: {jwt_keys}")
                 
                 for key in jwt_keys:
                     try:

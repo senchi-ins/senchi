@@ -253,6 +253,7 @@ async def permit_join(
     """Allow new devices to join for the authenticated user's location"""
     logger.info(f"Permit join requested for {duration} seconds by user {current_user.get('user_id')}. MQTT connected: {mqtt_monitor.connected}")
     logger.info(f"Full user token data: {current_user}")
+    print(f"Full user token data: {current_user}")
     
     if not mqtt_monitor.connected:
         print(f"MQTT not connected. Broker: {settings.MQTT_BROKER}:{settings.MQTT_PORT}")
@@ -263,8 +264,9 @@ async def permit_join(
         )
     
     # Get the device serial from the user's JWT token
-    device_serial = current_user.get('device_serial')
+    device_serial = current_user.get('location_id')
     logger.info(f"Extracted device serial: {device_serial}")
+    print(f"Extracted device serial: {device_serial}")
     
     if not device_serial:
         logger.error(f"No device serial found in user token: {current_user}")
