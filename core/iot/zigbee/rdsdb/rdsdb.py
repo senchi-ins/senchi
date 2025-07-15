@@ -39,3 +39,9 @@ class RedisDB:
             self.connect()
         logger.info(f"Getting key: {key}")
         return self.conn.get(key)
+    
+    def delete_key(self, key: str):
+        if not self.conn:
+            self.connect()
+        logger.info(f"Deleting key: {key}")
+        return self.conn.delete(key)

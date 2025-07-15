@@ -17,6 +17,7 @@ import time
 
 import uvicorn
 import pandas as pd
+from pydantic import BaseModel
 from fastapi import FastAPI, HTTPException, Header, WebSocket, WebSocketDisconnect, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
@@ -170,14 +171,59 @@ async def verify_token(current_user: dict = Depends(get_current_user)):
         "valid": True,
         "user_id": current_user["user_id"],
         "location_id": current_user["location_id"],
+        "device_serial": current_user.get("device_serial", ""),
         "expires_at": current_user["exp"]
     }
 
+class LoginRequest(BaseModel):
+    email: str
+
+@app.post("/api/auth/login")
+async def login_with_email(request: LoginRequest):
+    """Login with email to retrieve stored token"""
+    try:
+        email = request.email
+        # Get token from Redis using email
+        token = redis_db.get_key(f"email:{email}")
+        print(f"Token for email {email}: {token}")
+        
+        if not token:
+            raise HTTPException(status_code=404, detail="No account found for this email")
+        
+        # Convert bytes to string if needed
+        if isinstance(token, bytes):
+            token = token.decode('utf-8')
+        
+        # Validate the token
+        user_info = await notification_router.validate_token(token)
+        
+        if not user_info:
+            # Token is invalid, remove the mapping
+            redis_db.delete_key(f"email:{email}")
+            raise HTTPException(status_code=401, detail="Invalid or expired token")
+        
+        return {
+            "message": "Login successful",
+            "token": token,
+            "user_info": user_info
+        }
+        
+    except Exception as e:
+        logger.error(f"Login failed for email {email}: {e}")
+        raise HTTPException(status_code=500, detail=f"Login failed: {str(e)}")
+
+from pydantic import BaseModel
+
+class RedisSetRequest(BaseModel):
+    key: str
+    value: str
+    ttl: int = None
+
 @app.post("/redis/set")
-def set_redis_key(key: str, value: Any, ttl: int = None):
-    print(f"Setting key: {key} with value: {value} and ttl: {ttl}")
-    logger.info(f"Setting key: {key} with value: {value} and ttl: {ttl}")
-    redis_db.set_key(key, value, ttl)
+def set_redis_key(request: RedisSetRequest):
+    print(f"Setting key: {request.key} with value: {request.value[:50]}... and ttl: {request.ttl}")
+    logger.info(f"Setting key: {request.key} with ttl: {request.ttl}")
+    redis_db.set_key(request.key, request.value, request.ttl)
     return {"message": "Key set successfully"}
 
 @app.get("/redis/get")
@@ -186,16 +232,40 @@ def get_redis_key(key: str):
     return {"key": key, "value": value}
 
 @app.post("/zigbee/permit-join")
-async def permit_join(duration: int = 60):
-    """Allow new devices to join"""
-    if mqtt_monitor.connected:
-        mqtt_monitor.client.publish(
-            "zigbee2mqtt/rpi-zigbee-a1fcaf6c/bridge/request/permit_join",
-            json.dumps({"time": duration})
+async def permit_join(
+    duration: int = 60,
+    current_user: dict = Depends(get_current_user)
+):
+    """Allow new devices to join for the authenticated user's location"""
+    logger.info(f"Permit join requested for {duration} seconds by user {current_user.get('user_id')}. MQTT connected: {mqtt_monitor.connected}")
+    
+    if not mqtt_monitor.connected:
+        logger.error(f"MQTT not connected. Broker: {settings.MQTT_BROKER}:{settings.MQTT_PORT}")
+        raise HTTPException(
+            status_code=503, 
+            detail=f"MQTT not connected to {settings.MQTT_BROKER}:{settings.MQTT_PORT}"
         )
-        return {"message": f"Permit join enabled for {duration} seconds"}
-    else:
-        raise HTTPException(status_code=503, detail="MQTT not connected")
+    
+    # Get the device serial from the user's JWT token
+    device_serial = current_user.get('device_serial')
+    if not device_serial:
+        logger.error(f"No device serial found in user token: {current_user}")
+        raise HTTPException(status_code=400, detail="No device serial associated with user")
+    
+    # Construct the topic using the device serial
+    topic = f"zigbee2mqtt/senchi-{device_serial}/bridge/request/permit_join"
+    
+    try:
+        mqtt_monitor.client.publish(topic, json.dumps({"time": duration}))
+        logger.info(f"Permit join message published to {topic} successfully")
+        return {
+            "message": f"Permit join enabled for {duration} seconds",
+            "topic": topic,
+            "device_serial": device_serial
+        }
+    except Exception as e:
+        logger.error(f"Error publishing permit join message to {topic}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to publish permit join: {str(e)}")
     
 
 @app.websocket("/ws")
@@ -224,6 +294,7 @@ async def health_check():
     return {
         "status": "healthy",
         "mqtt_connected": mqtt_monitor.connected,
+        "mqtt_broker": f"{settings.MQTT_BROKER}:{settings.MQTT_PORT}",
         "devices": len(app_state["devices"]),
         "active_leaks": len(app_state["active_leaks"]),
         "websocket_connections": len(app_state["websocket_connections"])

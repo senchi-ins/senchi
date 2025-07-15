@@ -46,20 +46,81 @@ class Monitor:
             self.connected = True
             logger.info(f"Successfully connected to MQTT broker: {settings.MQTT_BROKER}:{settings.MQTT_PORT}")
             
-            # Note: This is republished each time a device is added/removed
-            self.client.subscribe("zigbee2mqtt/rpi-zigbee-a1fcaf6c/bridge/health")
-            self.client.subscribe("zigbee2mqtt/rpi-zigbee-a1fcaf6c/bridge/devices")
-            self.client.subscribe("zigbee2mqtt/rpi-zigbee-a1fcaf6c/bridge/event")
-
-            # For testing, subscribe to all devices
-            # self.client.subscribe("zigbee2mqtt/#")
-
-            # Notify on successful device removal
-            self.client.subscribe("zigbee2mqtt/rpi-zigbee-a1fcaf6c/bridge/response/device/remove")
+            # Subscribe to topics for all known device serials
+            self._subscribe_to_device_topics()
             
         else:
             logger.error(f"Failed to connect to MQTT broker: {rc}")
             self.connected = False
+    
+    def _subscribe_to_device_topics(self):
+        """Subscribe to MQTT topics for all known device serials"""
+        try:
+            # Get all JWT tokens from Redis to find device serials
+            if hasattr(self, 'app_state') and 'redis_db' in self.app_state:
+                redis_db = self.app_state['redis_db']
+            else:
+                # Fallback to global redis_db
+                from rdsdb.rdsdb import RedisDB
+                redis_db = RedisDB()
+            
+            # Get all JWT keys
+            jwt_keys = redis_db.conn.keys("jwt:*")
+            device_serials = set()
+            
+            for key in jwt_keys:
+                try:
+                    # Get the JWT token from the key
+                    jwt_token = key.decode().split(":", 1)[1]
+                    
+                    # Get the JWT data
+                    jwt_data = redis_db.get_key(f"jwt:{jwt_token}")
+                    if jwt_data:
+                        import json
+                        data = json.loads(jwt_data)
+                        if 'device_serial' in data:
+                            device_serials.add(data['device_serial'])
+                except Exception as e:
+                    logger.warning(f"Error processing JWT key {key}: {e}")
+                    continue
+            
+            # Subscribe to topics for each device serial
+            for device_serial in device_serials:
+                # Use the correct topic format: zigbee2mqtt/senchi-{device_serial}/*
+                base_topic = f"zigbee2mqtt/senchi-{device_serial}"
+                
+                topics = [
+                    f"{base_topic}/bridge/health",
+                    f"{base_topic}/bridge/devices", 
+                    f"{base_topic}/bridge/event",
+                    f"{base_topic}/bridge/response/device/remove",
+                ]
+                
+                for topic in topics:
+                    try:
+                        self.client.subscribe(topic)
+                        logger.info(f"Subscribed to topic: {topic}")
+                    except Exception as e:
+                        logger.error(f"Failed to subscribe to {topic}: {e}")
+            
+            if not device_serials:
+                logger.warning("No device serials found in Redis, subscribing to default topics")
+                # Fallback to default topics for testing
+                default_topics = [
+                    "zigbee2mqtt/senchi-SNH2025001/bridge/health",
+                    "zigbee2mqtt/senchi-SNH2025001/bridge/devices",
+                    "zigbee2mqtt/senchi-SNH2025001/bridge/event",
+                    "zigbee2mqtt/senchi-SNH2025001/bridge/response/device/remove",
+                ]
+                for topic in default_topics:
+                    try:
+                        self.client.subscribe(topic)
+                        logger.info(f"Subscribed to default topic: {topic}")
+                    except Exception as e:
+                        logger.error(f"Failed to subscribe to default topic {topic}: {e}")
+                        
+        except Exception as e:
+            logger.error(f"Error subscribing to device topics: {e}")
 
     def on_disconnect(
         self,
@@ -136,9 +197,12 @@ class Monitor:
                 print(f"Adding new device: {ieee_address}")
                 self.app_state["devices"][ieee_address] = curr
                 try:
-                    # self.client.subscribe(f"zigbee2mqtt/{ieee_address}")
-                    self.client.subscribe(f"zigbee2mqtt/rpi-zigbee-a1fcaf6c/{ieee_address}")
-                    print(f"Subscribed to: {ieee_address}")
+                    # Subscribe to device updates using the correct topic format
+                    # We need to determine which device serial this belongs to
+                    # For now, use the default device serial
+                    device_serial = "SNH2025001"  # TODO: Get from context
+                    self.client.subscribe(f"zigbee2mqtt/senchi-{device_serial}/{ieee_address}")
+                    print(f"Subscribed to: zigbee2mqtt/senchi-{device_serial}/{ieee_address}")
                 except Exception as e:
                     print(f"Error subscribing to device: {e}")
                     logger.error(f"Error subscribing to device: {e}")
