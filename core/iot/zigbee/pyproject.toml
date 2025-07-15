@@ -16,4 +16,7 @@ dependencies = [
     "paho-mqtt>=2.1.0",
     "qrcode>=8.2",
     "pillow>=11.3.0",
+    "aioredis>=2.0.0",
+    "redis>=6.2.0",
+    "jwt>=1.4.0",
 ]

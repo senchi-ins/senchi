@@ -5,7 +5,7 @@ import sys
 import json
 import asyncio
 import logging
-from typing import Union
+from typing import Any, Union
 from datetime import datetime
 import uuid
 import io
@@ -15,10 +15,11 @@ import subprocess
 
 import uvicorn
 import pandas as pd
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, Header, WebSocket, WebSocketDisconnect, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
+from models.tokens import TokenRequest, TokenResponse
 from monitor.config import settings
 from monitor.models import (
     Device,
@@ -31,6 +32,8 @@ from monitor.models import (
 )
 from monitor.zbm import Monitor
 from monitor.utils import get_all_model_fields
+from notifications.noti import NotificationRouter
+from rdsdb.rdsdb import RedisDB
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +64,7 @@ def init_db():
 
 db = init_db()
 mqtt_monitor = Monitor(app_state, db)
+redis_db = RedisDB()
 
 
 @asynccontextmanager
@@ -70,13 +74,30 @@ async def lifespan(app: FastAPI):
     mqtt_monitor.loop = loop
     mqtt_monitor.start()
     
+    # Initialize Redis connection
+    try:
+        await redis_db.connect()
+        logging.info("Redis connection established")
+    except Exception as e:
+        logging.error(f"Failed to connect to Redis: {e}")
+    
     logging.info("Home API Server started with integrated MQTT monitoring")
     yield
     
     mqtt_monitor.stop()
+    
+    # Clean up Redis connection
+    try:
+        await redis_db.disconnect()
+        logging.info("Redis connection closed")
+    except Exception as e:
+        logging.error(f"Error closing Redis connection: {e}")
+    
     logging.info("Home API Server stopped")
 
 app = FastAPI(lifespan=lifespan)
+
+notification_router = NotificationRouter(redis_db)  
 
 app.add_middleware(
     CORSMiddleware,
@@ -85,6 +106,19 @@ app.add_middleware(
     allow_headers=settings.ALLOWED_HEADERS,
     allow_methods=settings.ALLOWED_METHODS,
 )
+
+async def get_current_user(authorization: str = Header(None)):
+    """FastAPI dependency to validate JWT token"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid authorization header")
+    
+    token = authorization.replace("Bearer ", "")
+    user_info = await notification_router.validate_token(token)
+    
+    if not user_info:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    
+    return user_info
 
 @app.get("/")
 async def root():
@@ -102,6 +136,45 @@ async def get_devices():
     """Get all devices"""
     return list(app_state["devices"].values())
 
+
+@app.post("/api/auth/setup", response_model=TokenResponse)
+async def setup_device_auth(request: TokenRequest):
+    """Generate JWT token during device setup"""
+    return await notification_router.create_user_token(
+        device_serial=request.device_serial,
+        push_token=request.push_token
+    )
+
+@app.post("/api/auth/push-token")
+async def update_push_token(
+    push_token: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Update user's push notification token"""
+    await notification_router.update_push_token(current_user["jwt_token"], push_token)
+    return {"message": "Push token updated successfully"}
+
+@app.get("/api/auth/verify")
+async def verify_token(current_user: dict = Depends(get_current_user)):
+    """Verify if token is valid"""
+    return {
+        "valid": True,
+        "user_id": current_user["user_id"],
+        "location_id": current_user["location_id"],
+        "expires_at": current_user["exp"]
+    }
+
+@app.post("/redis/set")
+def set_redis_key(key: str, value: Any, ttl: int = None):
+    print(f"Setting key: {key} with value: {value} and ttl: {ttl}")
+    logger.info(f"Setting key: {key} with value: {value} and ttl: {ttl}")
+    redis_db.set_key(key, value, ttl)
+    return {"message": "Key set successfully"}
+
+@app.get("/redis/get")
+def get_redis_key(key: str):
+    value = redis_db.get_key(key)
+    return {"key": key, "value": value}
 
 @app.post("/zigbee/permit-join")
 async def permit_join(duration: int = 60):

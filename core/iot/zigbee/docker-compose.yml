@@ -16,6 +16,13 @@ services:
     networks:
       - mqtt_network
 
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - mqtt_network
+
   senchi-zigbee-api:
     build:
       context: .
@@ -35,12 +42,14 @@ services:
       - MQTT_PASSWORD=${MQTT_PASSWORD:-senchi-dev-pswd}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - TZ=${TZ:-America/Toronto}
+      - REDIS_URL=redis://redis:6379
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs
       - ./configuration.yml:/app/configuration.yml:ro
     depends_on:
       - mosquitto
+      - redis
     networks:
       - mqtt_network
 
