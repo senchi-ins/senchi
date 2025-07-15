@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from mgen.gmaps import get_streetview_image
 from mgen.house_labelling import label_house
 from bucket.s3 import upload_file_from_bytes, get_file_url
+from server.api.v1.utils.heading import get_camera_position
 
 TAG = "Labelling"
 PREFIX = "/labelling"
@@ -26,35 +27,20 @@ async def get_labelling():
 @router.post("/analyze-house", response_model=LabellingResponse)
 async def analyze_house(
         address: str,
-        heading: int,
         bucket: str = "senchi-gen-dev",
         zoom: int = 21, 
         file_type: str = "png",
     ):
         try:
             print("starting upload-file")
+            
+            # Calculate optimal heading
+            camera_data = await get_camera_position(address)
+            heading = int(camera_data.heading)  # Convert to int for the API
+            
             # Get Street View image
             image = get_streetview_image(address, heading, zoom)
-            # object_name = address + "_" + str(heading)
-
-            # # Hash the object name to avoid leaking sensitive information
-            # object_name = hashlib.sha256(object_name.encode()).hexdigest()
-            # # object_name = "house_testing"
-            # sv_success = upload_file_from_bytes(
-            #     stream=images["sv_response"],
-            #     bucket=bucket,
-            #     object_name=f"{object_name}.png"
-            # )
-
-            # if sv_success:
-            #     print(f"Uploaded streetview image to S3: {object_name}.png")
-            #     file_url = get_file_url(bucket, f"{object_name}.png")
-            # else:
-            #     raise HTTPException(
-            #         status_code=500,
-            #         detail="Failed to upload file to S3"
-            #     )
-        
+            
             # Analyze the house using the streetview image
             result = await label_house([image["sv_response"]])
             

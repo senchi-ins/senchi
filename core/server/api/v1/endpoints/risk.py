@@ -7,9 +7,9 @@ from pydantic import BaseModel
 from mgen.gmaps import get_streetview_image
 from mgen.tripo import upload_file_to_tripo, generate_model, get_model_output
 from mgen.vector_image import process_vector_image
-from mgen.house_labelling import label_house
 from openai import OpenAI
 from bucket.s3 import upload_file_from_bytes, get_file_url
+from server.api.v1.utils.heading import get_camera_position
 
 TAG = "Risk"
 PREFIX = "/risk"
@@ -28,12 +28,15 @@ async def get_risk():
 @router.post("/upload-file")
 async def upload_file_endpoint(
         address: str,
-        heading: int,
         bucket: str = "senchi-gen-dev",
         zoom: int = 21, 
         file_type: str = "png",
     ):
         try:
+            # Calculate optimal heading
+            camera_data = await get_camera_position(address)
+            heading = int(camera_data.heading)  # Convert to int for the API
+            
             # Get Street View image
             response = get_streetview_image(address, heading, zoom)
             object_name = address + "_" + str(heading)

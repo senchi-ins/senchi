@@ -27,8 +27,8 @@ RISK_RATINGS = [
 class RiskLookup:
     """Handles risk assessment based on location data."""
     
-    def __init__(self, nri_data_path: str = '../../external/data/NRI_Ratings_Counties.csv',
-                 canada_data_path: str = '../../external/data/canada_risk.csv'):
+    def __init__(self, nri_data_path: str = '../external/data/NRI_Ratings_Counties.csv',
+                 canada_data_path: str = '../external/data/canada_risk.csv'):
         """
         Initialize the risk lookup with NRI data and Canadian risk data.
         

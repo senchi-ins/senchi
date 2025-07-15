@@ -3,13 +3,13 @@ Module for grading risk assessment answers based on risk levels and scoring crit
 """
 import json
 from pathlib import Path
-from typing import Dict, List, Union, Optional
+from typing import Dict, List, Optional
 
 from .risk_lookup import RISK_RATINGS
 from .camera import RiskPhotoValidator
 
 class RiskGrader:
-    def __init__(self, scoring_path: str = 'scoring.json', questions_path: str = 'risk_questions.json'):
+    def __init__(self, scoring_path: str = '../external/scoring.json', questions_path: str = '../external/risk_questions.json'):
         """
         Initialize RiskGrader with scoring criteria.
         

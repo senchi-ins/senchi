@@ -2,13 +2,13 @@
 Module for generating risk-specific questions based on location risk assessment.
 """
 import json
-from typing import Dict, List, Optional, Union, Set
+from typing import Dict, List, Optional, Set
 from pathlib import Path
 
 from .risk_lookup import RISK_RATINGS, RiskLookup
 
 class QuestionMaster:
-    def __init__(self, questions_path: str = 'risk_questions.json'):
+    def __init__(self, questions_path: str = '../external/risk_questions.json'):
         """
         Initialize QuestionMaster with risk questions data.
         

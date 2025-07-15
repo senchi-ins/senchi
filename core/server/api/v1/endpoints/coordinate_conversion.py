@@ -1,16 +1,20 @@
-from fastapi import APIRouter, HTTPException, Depends, Body
-from typing import List, Dict, Optional
-from pydantic import BaseModel
+from fastapi import APIRouter, HTTPException
 import tempfile
 import os
-from pathlib import Path
 
 from mgen.gmaps import get_streetview_image
 from external.labeller import StreetViewLabeller
 from external.TwoD2ThreeD import CoordinateConverter
 from bucket.s3 import get_file_url
+from schemas.coordinates import (
+    CoordinateRequest,
+    Coordinate2D,
+    Coordinate3D,
+    RecommendationCoordinates,
+    CoordinateResponse
+)
 
-TAG = "Coordinates"
+TAG = "Coordinate Conversion"
 PREFIX = "/coordinates"
 
 router = APIRouter()
@@ -22,53 +26,6 @@ converter = CoordinateConverter()
 # Configuration
 MODEL_BUCKET = "senchi-gen-dev"
 MODEL_PREFIX = "models"
-
-class RecommendationInput(BaseModel):
-    """Model for input recommendations"""
-    question: str
-    risk_type: str
-    importance: str
-    risk_level: str
-    points_possible: float
-    points_earned: float
-    score_percentage: float
-
-class CoordinateRequest(BaseModel):
-    """Model for coordinate conversion request"""
-    address: str
-    heading: int = 0  # Default to front view
-    zoom: int = 21    # Default zoom level
-    recommendations: List[RecommendationInput]
-    model_task_id: str  # Task ID from risk.py generate-model endpoint
-
-class Coordinate2D(BaseModel):
-    """Model for 2D coordinates"""
-    x_pixel: int
-    y_pixel: int
-    x_percent: float
-    y_percent: float
-    visible: bool
-    description: str
-
-class Coordinate3D(BaseModel):
-    """Model for 3D coordinates"""
-    x: float
-    y: float
-    z: float
-    scaling_info: Dict[str, float]
-
-class RecommendationCoordinates(BaseModel):
-    """Model for recommendation with coordinates"""
-    recommendation: RecommendationInput
-    location_category: str
-    coordinates_2d: Coordinate2D
-    coordinates_3d: Optional[Coordinate3D] = None
-
-class CoordinateResponse(BaseModel):
-    """Model for coordinate conversion response"""
-    image_dimensions: Dict[str, int]
-    recommendations: List[RecommendationCoordinates]
-    model_info: Optional[Dict] = None
 
 def save_bytes_to_temp(image_bytes: bytes, suffix: str = '.jpg') -> str:
     """Save bytes to a temporary file and return the path."""
@@ -166,40 +123,6 @@ async def convert_coordinates(request: CoordinateRequest):
         raise HTTPException(
             status_code=500,
             detail=f"Error converting coordinates: {str(e)}"
-        )
-    finally:
-        if temp_image_path:
-            cleanup_temp_file(temp_image_path)
-
-@router.post("/preview")
-async def preview_coordinates(request: CoordinateRequest):
-    """
-    Generate a preview of the coordinate mapping without 3D conversion.
-    Useful for testing and visualization.
-    """
-    temp_image_path = None
-    try:
-        # Get street view image
-        images = get_streetview_image(request.address, request.heading, request.zoom)
-        
-        # Save image bytes to temporary file
-        temp_image_path = save_bytes_to_temp(images["sv_response"])
-        
-        # Use labeller to identify locations
-        labelled_results = labeller.label_recommendations(
-            temp_image_path,
-            [rec.dict() for rec in request.recommendations]
-        )
-        
-        return {
-            "image_dimensions": labelled_results['image_dimensions'],
-            "labeled_recommendations": labelled_results['labeled_recommendations']
-        }
-        
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error generating preview: {str(e)}"
         )
     finally:
         if temp_image_path:

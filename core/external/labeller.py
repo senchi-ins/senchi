@@ -4,7 +4,7 @@ Module for labeling street view images with improvement recommendations.
 import os
 import json
 import base64
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple
 from openai import OpenAI
 from dotenv import load_dotenv
 from PIL import Image

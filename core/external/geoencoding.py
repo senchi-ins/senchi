@@ -2,7 +2,7 @@
 Geocoding module for converting USA and Canadian addresses to latitude/longitude coordinates.
 """
 import os
-from typing import Optional, Tuple
+from typing import Optional
 from dataclasses import dataclass, asdict
 
 import googlemaps

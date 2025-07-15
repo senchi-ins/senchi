@@ -1,11 +1,10 @@
 """
 Module for converting 2D street view coordinates to 3D GLB model coordinates.
 """
-import os
-import json
-from typing import Dict, List, Tuple, Optional
+
+from typing import Dict, List, Union
 import trimesh
-import numpy as np
+import io
 
 class CoordinateConverter:
     def __init__(self):
@@ -21,18 +20,25 @@ class CoordinateConverter:
             'drainage': 0.4     # Middle-forward
         }
     
-    def load_glb_model(self, glb_path: str) -> trimesh.Scene:
+    def load_glb_model(self, glb_input: Union[str, bytes]) -> trimesh.Scene:
         """
-        Load a GLB file and return the trimesh scene.
+        Load a GLB file from either a local path, URL, or raw bytes and return the trimesh scene.
         
         Args:
-            glb_path: Path to the GLB file
+            glb_input: Path to GLB file or raw GLB bytes
             
         Returns:
             Trimesh scene object
         """
         try:
-            scene = trimesh.load(glb_path)
+            if isinstance(glb_input, bytes):
+                # Handle raw bytes (from proxy endpoint)
+                glb_data = io.BytesIO(glb_input)
+                scene = trimesh.load(glb_data, file_type='glb')
+            else:
+                # Handle local file path
+                scene = trimesh.load(glb_input)
+                
             return scene
         except Exception as e:
             raise ValueError(f"Error loading GLB file: {str(e)}")
@@ -133,12 +139,12 @@ class CoordinateConverter:
         
         return converted_recommendations
     
-    def process_labeller_output(self, glb_path: str, labeller_output: Dict) -> Dict:
+    def process_labeller_output(self, glb_input: Union[str, bytes], labeller_output: Dict) -> Dict:
         """
         Main processing function that takes labeller output and converts to 3D.
         
         Args:
-            glb_path: Path to the GLB file
+            glb_input: Path to the GLB file or raw GLB bytes
             labeller_output: Complete output from labeller.py
             
         Returns:
@@ -148,7 +154,7 @@ class CoordinateConverter:
                 - converted_recommendations: Recommendations with 3D coordinates
         """
         # Load the GLB model
-        scene = self.load_glb_model(glb_path)
+        scene = self.load_glb_model(glb_input)
         
         # Get 3D bounds
         bounds_3d = self.get_3d_bounds(scene)
