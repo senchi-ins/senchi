@@ -36,6 +36,21 @@ class NotificationRouter:
             jwt_token = jwt.encode(jwt_payload, NOTIFICATION_CONFIG["JWT_SECRET"], algorithm=NOTIFICATION_CONFIG["JWT_ALGORITHM"])
             
             await self._store_token_mappings(user_id, location_id, jwt_token, push_token, expires)
+
+            # --- Store JWT <-> topic mapping in Redis ---
+            topic = f"zigbee2mqtt/{location_id}/#"
+            # TODO: Store in postgres later
+            ttl_seconds = 60 * 60 * 24 * 30  # 30 days
+            self.redis_db.set_key(f"jwt:{jwt_token}:topic", topic, ttl_seconds)
+            # Store mapping: topic -> JWTs (append to a set or comma-separated string)
+            existing_jwts = self.redis_db.get_key(f"topic:{topic}:jwts")
+            if existing_jwts:
+                jwt_list = set(existing_jwts.decode().split(","))
+                jwt_list.add(jwt_token)
+                self.redis_db.set_key(f"topic:{topic}:jwts", ",".join(jwt_list), ttl_seconds)
+            else:
+                self.redis_db.set_key(f"topic:{topic}:jwts", jwt_token, ttl_seconds)
+            # --- End JWT <-> topic mapping ---
             
             return TokenResponse(
                 jwt_token=jwt_token,
@@ -49,22 +64,24 @@ class NotificationRouter:
     
     async def _store_token_mappings(self, user_id: str, location_id: str, jwt_token: str, 
                                    push_token: Optional[str], expires: datetime):
-        ttl_seconds = int((expires - datetime.now()).total_seconds())
+        # ttl_seconds = int((expires - datetime.now()).total_seconds())
+        # TODO: Make this dynamic based on the expiry time of the token
+        ttl_seconds = 60 * 60 * 24 * 30 # 30 days
         
         token_data = {
             "user_id": user_id,
             "location_id": location_id,
             "created_at": datetime.utcnow().isoformat()
         }
-        await self.redis_db.set_key(f"jwt:{jwt_token}", json.dumps(token_data), ttl_seconds)
+        self.redis_db.set_key(f"jwt:{jwt_token}", json.dumps(token_data), ttl_seconds)
         
-        await self.redis_db.set_key(f"user:{user_id}:location", location_id, ttl_seconds)
+        self.redis_db.set_key(f"user:{user_id}:location", location_id, ttl_seconds)
         
-        await self.redis_db.set_key(f"location:{location_id}:users", user_id, ttl_seconds)
+        self.redis_db.set_key(f"location:{location_id}:users", user_id, ttl_seconds)
         
         if push_token:
-            await self.redis_db.set_key(f"user:{user_id}:push_token", push_token, ttl_seconds)
-            await self.redis_db.set_key(f"push_token:{push_token}", user_id, ttl_seconds)
+            self.redis_db.set_key(f"user:{user_id}:push_token", push_token, ttl_seconds)
+            self.redis_db.set_key(f"push_token:{push_token}", user_id, ttl_seconds)
     
     async def route_mqtt_message(self, topic: str, payload: dict):
         """Route MQTT message to correct users"""
@@ -77,16 +94,23 @@ class NotificationRouter:
             location_id = topic_parts[1]  # e.g., "rpi-zigbee-abc123"
             
             # Get all users for this location
-            user_ids = await self.redis.smembers(f"location:{location_id}:users")
+            user_ids = self.redis_db.get_key(f"location:{location_id}:users")
             
             if not user_ids:
                 logger.warning(f"No users found for location {location_id}")
                 return
             
+            # Parse user IDs if it's a string
+            if isinstance(user_ids, str):
+                try:
+                    user_ids = json.loads(user_ids)
+                except json.JSONDecodeError:
+                    user_ids = [user_ids]
+            
             # Get push tokens for all users
             push_tokens = []
             for user_id in user_ids:
-                token = await self.redis.get(f"user:{user_id}:push_token")
+                token = self.redis_db.get_key(f"user:{user_id}:push_token")
                 if token:
                     push_tokens.append(token)
             
@@ -136,11 +160,11 @@ class NotificationRouter:
     async def validate_token(self, token: str) -> Optional[Dict[str, Any]]:
         """Validate JWT token and return user info"""
         try:
-            token_data = await self.redis_db.get_key(f"jwt:{token}")
+            token_data = self.redis_db.get_key(f"jwt:{token}")
             if not token_data:
                 return None
             
-            payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+            payload = jwt.decode(token, NOTIFICATION_CONFIG["JWT_SECRET"], algorithms=[NOTIFICATION_CONFIG["JWT_ALGORITHM"]])
             
             redis_data = json.loads(token_data)
             return {**payload, **redis_data}
@@ -164,11 +188,10 @@ class NotificationRouter:
             
             user_id = user_info["user_id"]
             
-            # Get token TTL and apply to push token
-            ttl = await self.redis.ttl(f"jwt:{jwt_token}")
-            if ttl > 0:
-                await self.redis.setex(f"user:{user_id}:push_token", ttl, new_push_token)
-                await self.redis.setex(f"push_token:{new_push_token}", ttl, user_id)
+            # Set TTL to 30 days for push tokens
+            ttl_seconds = 60 * 60 * 24 * 30
+            self.redis_db.set_key(f"user:{user_id}:push_token", new_push_token, ttl_seconds)
+            self.redis_db.set_key(f"push_token:{new_push_token}", user_id, ttl_seconds)
             
         except Exception as e:
             logger.error(f"Failed to update push token: {e}")

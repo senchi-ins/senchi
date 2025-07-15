@@ -105,6 +105,8 @@ class Monitor:
                     self.handle_device_update(ieee_address, payload), 
                     self.loop
                 )
+        # --- Route notification by topic ---
+        self.route_notification_by_topic(topic, payload)
 
     async def handle_device_list(self, devices: List[Dict]):
         i = 0
@@ -284,5 +286,28 @@ class Monitor:
         if self.client:
             self.client.loop_stop()
             self.client.disconnect()
+
+    def route_notification_by_topic(self, topic, payload):
+        # Find all JWTs associated with this topic
+        jwt_key = f"topic:{topic}:jwts"
+        jwt_data = self.app_state["redis_db"].get_key(jwt_key) if "redis_db" in self.app_state else None
+        if not jwt_data and hasattr(self, 'db') and hasattr(self.db, 'conn'):
+            # fallback to global redis_db if available
+            try:
+                # TODO: Pass the redis_db object instead of importing it here
+                from rdsdb import RedisDB
+                redis_db = RedisDB()
+                jwt_data = redis_db.get_key(jwt_key)
+            except Exception:
+                pass
+        if not jwt_data:
+            logger.info(f"No JWTs found for topic {topic}")
+            return
+        jwt_list = jwt_data.decode().split(",")
+        for jwt_token in jwt_list:
+            logger.info(f"Would route notification to JWT: {jwt_token} for topic: {topic}")
+            # Here you can send a notification to the user/device associated with this JWT
+            # For example, via WebSocket, push, etc.
+            # Example: self.send_websocket_notification(jwt_token, payload)
 
     

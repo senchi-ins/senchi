@@ -12,6 +12,8 @@ import io
 import base64
 import qrcode
 import subprocess
+import threading
+import time
 
 import uvicorn
 import pandas as pd
@@ -76,10 +78,17 @@ async def lifespan(app: FastAPI):
     
     # Initialize Redis connection
     try:
-        await redis_db.connect()
+        redis_db.connect()  # Remove await - this is a synchronous method
         logging.info("Redis connection established")
     except Exception as e:
         logging.error(f"Failed to connect to Redis: {e}")
+    
+    # Start background thread for topic subscription
+    threading.Thread(
+        target=subscribe_to_new_topics_periodically,
+        args=(mqtt_monitor, redis_db),
+        daemon=True
+    ).start()
     
     logging.info("Home API Server started with integrated MQTT monitoring")
     yield
@@ -88,7 +97,7 @@ async def lifespan(app: FastAPI):
     
     # Clean up Redis connection
     try:
-        await redis_db.disconnect()
+        redis_db.disconnect()  # Remove await - this is a synchronous method
         logging.info("Redis connection closed")
     except Exception as e:
         logging.error(f"Error closing Redis connection: {e}")
@@ -356,6 +365,21 @@ async def confirm_location_setup(location_id: str):
         return {"status": "confirmed", "location_id": location_id}
     else:
         raise HTTPException(status_code=404, detail="Location not found")
+
+def subscribe_to_new_topics_periodically(monitor, redis_db, interval=60):
+    known_topics = set()
+    while True:
+        try:
+            keys = redis_db.conn.keys("topic:*:jwts")
+            for key in keys:
+                topic = key.decode().split(":", 1)[1].rsplit(":", 1)[0]
+                if topic not in known_topics:
+                    monitor.client.subscribe(topic)
+                    known_topics.add(topic)
+                    logger.info(f"Subscribed to new topic: {topic}")
+        except Exception as e:
+            logger.error(f"Error subscribing to new topics: {e}")
+        time.sleep(interval)
 
 if __name__ == "__main__":
 
