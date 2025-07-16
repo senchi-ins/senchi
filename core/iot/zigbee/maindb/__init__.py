@@ -1,1 +1,0 @@
-# Currently google sheets is used as the main database lol

@@ -218,10 +218,22 @@ class Monitor:
 
             if "bridge/response/device/remove" in topic:
                 logger.info(f"Device removed: {payload['data']['id']}")
+                # Log device removal event
+                asyncio.run_coroutine_threadsafe(
+                    self.log_device_event(payload['data']['id'], {"event": "device_removed", "data": payload}),
+                    self.loop
+                )
 
-            elif "bridge/devices" in topic or "bridge/event" in topic:
+            elif "bridge/devices" in topic:
                 asyncio.run_coroutine_threadsafe(
                     self.handle_device_list(payload), 
+                    self.loop
+                )
+                return
+            elif "bridge/event" in topic:
+                # Log bridge events
+                asyncio.run_coroutine_threadsafe(
+                    self.log_bridge_event(payload),
                     self.loop
                 )
                 return
@@ -279,6 +291,12 @@ class Monitor:
                     logger.error(f"Error subscribing to device: {e}")
                 
                 logger.info(f"Added device: {ieee_address}")
+                
+                # Log new device event to PostgreSQL
+                asyncio.run_coroutine_threadsafe(
+                    self.log_device_event(ieee_address, {"event": "device_added", "device_data": curr.dict()}),
+                    self.loop
+                )
             else:
                 if ieee_address in self.app_state["devices"]:
                     existing_device = self.app_state["devices"][ieee_address]
@@ -286,6 +304,12 @@ class Monitor:
                         if value is not None:
                             setattr(existing_device, field, value)
                     logger.info(f"Updated device: {ieee_address}")
+                    
+                    # Log device update event to PostgreSQL
+                    asyncio.run_coroutine_threadsafe(
+                        self.log_device_event(ieee_address, {"event": "device_updated", "device_data": curr.dict()}),
+                        self.loop
+                    )
         print(f"Added {i} devices")
 
     async def handle_device_update(self, ieee_address: str, payload: Dict) -> bool:
@@ -296,6 +320,12 @@ class Monitor:
         print(f"Payload: {payload}")
         
         try:
+            # Log device event to PostgreSQL
+            await self.log_device_event(ieee_address, payload)
+            
+            # Log sensor events (leaks, battery warnings, etc.)
+            await self.log_sensor_event(ieee_address, payload)
+            
             # Store event in database
             # if not self.store_device_event(ieee_address, "state_update", payload):
             #     return
@@ -314,6 +344,190 @@ class Monitor:
     def store_device_event(self, device_id: str, event_type: str, data: Dict) -> bool:
         self.db["notifications"].loc[device_id, event_type] = data
 
+    async def log_device_event(self, device_id: str, payload: Dict) -> bool:
+        """Log device event to PostgreSQL database.
+        
+        Args:
+            device_id: The device IEEE address
+            payload: The device payload/status data
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            # Get PostgreSQL database from app_state
+            pg_db = self.app_state.get("pg_db")
+            if not pg_db:
+                logger.warning("PostgreSQL database not available in app_state")
+                return False
+            
+            # Get device info
+            device = self.app_state["devices"].get(device_id)
+            device_name = device.friendly_name if device else device_id
+            
+            # Determine event type from payload
+            event_type = 'device_update'
+            if 'event' in payload:
+                event_type = payload['event']
+            
+            # Insert event into PostgreSQL
+            query = """
+            INSERT INTO events (device, event_type, event_time, event_location, time_to_stop)
+            VALUES (%s, %s, %s, %s, %s)
+            """
+            params = (
+                device_name,
+                event_type,
+                datetime.now(),
+                'unknown',  # Could be enhanced to get from device config
+                None  # Not applicable for device updates
+            )
+            
+            row_count = pg_db.execute_insert(query, params)
+            
+            if row_count > 0:
+                logger.info(f"Successfully logged device event to PostgreSQL: {device_id}")
+            else:
+                logger.error(f"Failed to log device event to PostgreSQL: {device_id}")
+            
+            return row_count > 0
+            
+        except Exception as e:
+            logger.error(f"Error logging device event to PostgreSQL: {e}")
+            return False
+
+    # TODO: Refine the event logging
+    async def log_sensor_event(self, device_id: str, payload: Dict) -> bool:
+        """Log sensor events like leaks, battery warnings, etc. to PostgreSQL database.
+        
+        Args:
+            device_id: The device IEEE address
+            payload: The device payload/status data
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            # Get PostgreSQL database from app_state
+            pg_db = self.app_state.get("pg_db")
+            if not pg_db:
+                logger.warning("PostgreSQL database not available in app_state")
+                return False
+            
+            # Get device info
+            device = self.app_state["devices"].get(device_id)
+            device_name = device.friendly_name if device else device_id
+            
+            events_to_log = []
+            
+            # Check for water leak detection
+            water_leak = payload.get('water_leak')
+            if water_leak is True:
+                events_to_log.append(('water_leak_detected', None))
+            elif water_leak is False:
+                events_to_log.append(('water_leak_cleared', None))
+            
+            # Check for battery warnings
+            battery = payload.get('battery')
+            battery_low = payload.get('battery_low')
+            if battery is not None and battery < 20:
+                events_to_log.append(('low_battery', battery))
+            elif battery_low is True:
+                events_to_log.append(('battery_low', battery))
+            
+            # Check for power outages
+            power_outage_count = payload.get('power_outage_count')
+            if power_outage_count is not None and power_outage_count > 0:
+                events_to_log.append(('power_outage', power_outage_count))
+            
+            # Check for device temperature warnings
+            device_temperature = payload.get('device_temperature')
+            if device_temperature is not None and device_temperature > 50:
+                events_to_log.append(('high_temperature', device_temperature))
+            
+            # Check for voltage issues
+            voltage = payload.get('voltage')
+            if voltage is not None and voltage < 2800:  # Low voltage threshold
+                events_to_log.append(('low_voltage', voltage))
+            
+            # Check for trigger events (motion, etc.)
+            trigger_count = payload.get('trigger_count')
+            if trigger_count is not None and trigger_count > 0:
+                events_to_log.append(('trigger_event', trigger_count))
+            
+            # Log all detected events
+            for event_type, value in events_to_log:
+                query = """
+                INSERT INTO events (device, event_type, event_time, event_location, time_to_stop)
+                VALUES (%s, %s, %s, %s, %s)
+                """
+                params = (
+                    device_name,
+                    event_type,
+                    datetime.now(),
+                    'unknown',  # Could be enhanced to get from device config
+                    value
+                )
+                
+                row_count = pg_db.execute_insert(query, params)
+                
+                if row_count > 0:
+                    logger.info(f"Successfully logged sensor event to PostgreSQL: {device_id} - {event_type}")
+                else:
+                    logger.error(f"Failed to log sensor event to PostgreSQL: {device_id} - {event_type}")
+            
+            return len(events_to_log) > 0
+            
+        except Exception as e:
+            logger.error(f"Error logging sensor event to PostgreSQL: {e}")
+            return False
+
+    # TODO: Move to separate db
+    async def log_bridge_event(self, payload: Dict) -> bool:
+        """Log bridge event to PostgreSQL database.
+        
+        Args:
+            payload: The bridge event payload
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            # Get PostgreSQL database from app_state
+            pg_db = self.app_state.get("pg_db")
+            if not pg_db:
+                logger.warning("PostgreSQL database not available in app_state")
+                return False
+            
+            # Extract event info from payload
+            event_type = payload.get('type', 'unknown')
+            data = payload.get('data', {})
+            
+            # Insert bridge event into PostgreSQL
+            query = """
+            INSERT INTO events (device, event_type, event_time, event_location, time_to_stop)
+            VALUES (%s, %s, %s, %s, %s)
+            """
+            params = (
+                data.get('friendly_name', 'bridge'),
+                f"bridge_{event_type}",
+                datetime.now(),
+                'bridge',
+                None
+            )
+            
+            row_count = pg_db.execute_insert(query, params)
+            
+            if row_count > 0:
+                logger.info(f"Successfully logged bridge event to PostgreSQL: {event_type}")
+            else:
+                logger.error(f"Failed to log bridge event to PostgreSQL: {event_type}")
+            
+            return row_count > 0
+            
+        except Exception as e:
+            logger.error(f"Error logging bridge event to PostgreSQL: {e}")
+            return False
 
     async def check_notification_triggers(self, device_id: str, payload: Dict):
         """Check if this update should trigger notifications"""

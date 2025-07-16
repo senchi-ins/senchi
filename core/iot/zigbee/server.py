@@ -37,6 +37,7 @@ from monitor.zbm import Monitor
 from monitor.utils import get_all_model_fields
 from notifications.noti import NotificationRouter
 from rdsdb.rdsdb import RedisDB
+from maindb.pg import PostgresDB
 
 logger = logging.getLogger(__name__)
 
@@ -68,10 +69,11 @@ def init_db():
 db = init_db()
 mqtt_monitor = Monitor(app_state, db)
 redis_db = RedisDB()
+pg_db = PostgresDB()
 
-# Add Redis database to app_state so Monitor can access it
+# Add Redis and Postgres database to app_state so Monitor can access it
 app_state["redis_db"] = redis_db
-
+app_state["pg_db"] = pg_db
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
