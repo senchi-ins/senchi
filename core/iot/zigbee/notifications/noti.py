@@ -16,7 +16,7 @@ class NotificationRouter:
     def __init__(self, redis_db: RedisDB):
         self.redis_db = redis_db
     
-    async def create_user_token(self, device_serial: str, push_token: Optional[str] = None, email: Optional[str] = None) -> TokenResponse:
+    async def create_user_token(self, device_serial: str, push_token: Optional[str] = None, email: Optional[str] = None, full_name: Optional[str] = None) -> TokenResponse:
         """Create JWT token for a user during device setup"""
         try:
             location_id = f"rpi-zigbee-{device_serial[-8:]}"
@@ -35,7 +35,7 @@ class NotificationRouter:
             
             jwt_token = jwt.encode(jwt_payload, NOTIFICATION_CONFIG["JWT_SECRET"], algorithm=NOTIFICATION_CONFIG["JWT_ALGORITHM"])
             
-            await self._store_token_mappings(user_id, location_id, jwt_token, push_token, email, expires, device_serial)
+            await self._store_token_mappings(user_id, location_id, jwt_token, push_token, email, expires, device_serial, full_name)
 
             # --- Store JWT <-> topic mapping in Redis ---
             topic = f"zigbee2mqtt/senchi-{device_serial}/#"
@@ -63,7 +63,7 @@ class NotificationRouter:
             raise HTTPException(status_code=500, detail="Token creation failed")
     
     async def _store_token_mappings(self, user_id: str, location_id: str, jwt_token: str, 
-                                   push_token: Optional[str], email: Optional[str], expires: datetime, device_serial: str):
+                                   push_token: Optional[str], email: Optional[str], expires: datetime, device_serial: str, full_name: Optional[str] = None):
         # ttl_seconds = int((expires - datetime.now()).total_seconds())
         # TODO: Make this dynamic based on the expiry time of the token
         ttl_seconds = 60 * 60 * 24 * 30 # 30 days
@@ -74,6 +74,11 @@ class NotificationRouter:
             "device_serial": device_serial,
             "created_at": datetime.utcnow().isoformat()
         }
+        
+        # Add full_name to token data if provided
+        if full_name:
+            token_data["full_name"] = full_name
+        
         self.redis_db.set_key(f"jwt:{jwt_token}", json.dumps(token_data), ttl_seconds)
         
         self.redis_db.set_key(f"user:{user_id}:location", location_id, ttl_seconds)
@@ -88,6 +93,11 @@ class NotificationRouter:
         if email:
             self.redis_db.set_key(f"email:{email}", jwt_token, ttl_seconds)
             logger.info(f"Stored email -> token mapping for: {email}")
+        
+        # Store user name mapping for easy lookup
+        if full_name:
+            self.redis_db.set_key(f"user:{user_id}:name", full_name, ttl_seconds)
+            logger.info(f"Stored user name mapping for: {user_id} -> {full_name}")
     
     async def route_mqtt_message(self, topic: str, payload: dict):
         """Route MQTT message to correct users"""

@@ -167,7 +167,8 @@ async def setup_device_auth(request: TokenRequest):
     return await notification_router.create_user_token(
         device_serial=request.device_serial,
         push_token=request.push_token,
-        email=request.email  # Add email parameter
+        email=request.email,
+        full_name=request.full_name
     )
 
 @app.post("/api/auth/push-token")
@@ -187,6 +188,7 @@ async def verify_token(current_user: dict = Depends(get_current_user)):
         "user_id": current_user["user_id"],
         "location_id": current_user["location_id"],
         "device_serial": current_user.get("device_serial", ""),
+        "full_name": current_user.get("full_name", ""),
         "expires_at": current_user["exp"]
     }
 

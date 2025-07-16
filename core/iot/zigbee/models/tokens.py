@@ -11,6 +11,7 @@ class TokenRequest(BaseModel):
     device_serial: str
     push_token: Optional[str] = None
     email: Optional[str] = None
+    full_name: Optional[str] = None
 
 class TokenResponse(BaseModel):
     jwt_token: str
