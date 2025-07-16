@@ -16,7 +16,7 @@ class NotificationRouter:
     def __init__(self, redis_db: RedisDB):
         self.redis_db = redis_db
     
-    async def create_user_token(self, device_serial: str, push_token: Optional[str] = None) -> TokenResponse:
+    async def create_user_token(self, device_serial: str, push_token: Optional[str] = None, email: Optional[str] = None) -> TokenResponse:
         """Create JWT token for a user during device setup"""
         try:
             location_id = f"rpi-zigbee-{device_serial[-8:]}"
@@ -35,7 +35,7 @@ class NotificationRouter:
             
             jwt_token = jwt.encode(jwt_payload, NOTIFICATION_CONFIG["JWT_SECRET"], algorithm=NOTIFICATION_CONFIG["JWT_ALGORITHM"])
             
-            await self._store_token_mappings(user_id, location_id, jwt_token, push_token, expires)
+            await self._store_token_mappings(user_id, location_id, jwt_token, push_token, email, expires)
 
             # --- Store JWT <-> topic mapping in Redis ---
             topic = f"zigbee2mqtt/{location_id}/#"
@@ -63,7 +63,7 @@ class NotificationRouter:
             raise HTTPException(status_code=500, detail="Token creation failed")
     
     async def _store_token_mappings(self, user_id: str, location_id: str, jwt_token: str, 
-                                   push_token: Optional[str], expires: datetime):
+                                   push_token: Optional[str], email: Optional[str], expires: datetime):
         # ttl_seconds = int((expires - datetime.now()).total_seconds())
         # TODO: Make this dynamic based on the expiry time of the token
         ttl_seconds = 60 * 60 * 24 * 30 # 30 days
@@ -82,6 +82,11 @@ class NotificationRouter:
         if push_token:
             self.redis_db.set_key(f"user:{user_id}:push_token", push_token, ttl_seconds)
             self.redis_db.set_key(f"push_token:{push_token}", user_id, ttl_seconds)
+        
+        # Store email -> token mapping for login functionality
+        if email:
+            self.redis_db.set_key(f"email:{email}", jwt_token, ttl_seconds)
+            logger.info(f"Stored email -> token mapping for: {email}")
     
     async def route_mqtt_message(self, topic: str, payload: dict):
         """Route MQTT message to correct users"""
@@ -150,12 +155,48 @@ class NotificationRouter:
     
     async def _send_push_notifications(self, push_tokens: List[str], notification: NotificationPayload):
         """Send push notifications to devices"""
-        # TODO: Integrate with Apple Push Notification Service
-        # For now, just log the notification
-        logger.info(f"Sending notification to {len(push_tokens)} devices:")
-        logger.info(f"Title: {notification.title}")
-        logger.info(f"Body: {notification.body}")
-        logger.info(f"Data: {notification.data}")
+        try:
+            from .apns_service import apns_service
+            
+            # Prepare notification data
+            data = {
+                "type": notification.data.get("type", "device_update"),
+                "topic": notification.data.get("topic", ""),
+                "payload": notification.data.get("payload", {}),
+                "timestamp": notification.data.get("timestamp", datetime.now().isoformat())
+            }
+            
+            # Determine category and priority based on notification type
+            category = "LEAK_ALERT" if notification.data.get("type") == "leak_alert" else "DEVICE_UPDATE"
+            
+            # Send notifications via APNs
+            results = await apns_service.send_bulk_notifications(
+                device_tokens=push_tokens,
+                title=notification.title,
+                body=notification.body,
+                data=data,
+                category=category
+            )
+            
+            # Log results
+            success_count = sum(1 for success in results.values() if success)
+            logger.info(f"APNs notification sent to {success_count}/{len(push_tokens)} devices")
+            
+            # Log any failures
+            for device_token, success in results.items():
+                if not success:
+                    logger.warning(f"Failed to send notification to device {device_token[:8]}...")
+                    
+        except ImportError:
+            logger.warning("APNs service not available, falling back to logging")
+            logger.info(f"Sending notification to {len(push_tokens)} devices:")
+            logger.info(f"Title: {notification.title}")
+            logger.info(f"Body: {notification.body}")
+            logger.info(f"Data: {notification.data}")
+        except Exception as e:
+            logger.error(f"Failed to send push notifications: {e}")
+            # Fallback to logging
+            logger.info(f"Notification (failed to send): {notification.title} - {notification.body}")
     
     async def validate_token(self, token: str) -> Optional[Dict[str, Any]]:
         """Validate JWT token and return user info"""

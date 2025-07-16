@@ -166,7 +166,8 @@ async def setup_device_auth(request: TokenRequest):
     """Generate JWT token during device setup"""
     return await notification_router.create_user_token(
         device_serial=request.device_serial,
-        push_token=request.push_token
+        push_token=request.push_token,
+        email=request.email  # Add email parameter
     )
 
 @app.post("/api/auth/push-token")
@@ -342,6 +343,45 @@ async def health_check():
         "active_leaks": len(app_state["active_leaks"]),
         "websocket_connections": len(app_state["websocket_connections"])
     }
+
+class TestNotificationRequest(BaseModel):
+    device_token: str
+    title: str = "Test Notification"
+    body: str = "This is a test notification from your server"
+
+@app.post("/test-notification")
+async def test_notification(request: TestNotificationRequest):
+    """Test APNs notification delivery"""
+    try:
+        from notifications.apns_service import apns_service
+        
+        success = await apns_service.send_notification(
+            device_token=request.device_token,
+            title=request.title,
+            body=request.body,
+            data={"type": "test", "timestamp": datetime.now().isoformat()},
+            category="TEST"
+        )
+        
+        return {
+            "success": success,
+            "device_token": request.device_token[:8] + "...",
+            "message": "Notification sent successfully" if success else "Failed to send notification"
+        }
+        
+    except ImportError:
+        return {
+            "success": False,
+            "error": "APNs service not configured",
+            "message": "Please configure APNs environment variables"
+        }
+    except Exception as e:
+        logger.error(f"Test notification failed: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "message": "Failed to send test notification"
+        }
 
 # Adding new users
 # TODO: Test e2e flow with rpi once set up

@@ -19,4 +19,6 @@ dependencies = [
     "aioredis>=2.0.0",
     "redis>=6.2.0",
     "pyjwt>=2.10.1",
+    "aiohttp>=3.9.0",
+    "cryptography>=41.0.0",
 ]

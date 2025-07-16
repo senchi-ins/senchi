@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 class TokenRequest(BaseModel):
     device_serial: str
     push_token: Optional[str] = None
+    email: Optional[str] = None
 
 class TokenResponse(BaseModel):
     jwt_token: str

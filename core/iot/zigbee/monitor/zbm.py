@@ -187,7 +187,7 @@ class Monitor:
         self.connected = False
 
     def on_message(
-        self, 
+        self,
         client: mqtt.Client,
         userdata: Any,
         msg: mqtt.MQTTMessage,
