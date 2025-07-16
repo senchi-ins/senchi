@@ -28,6 +28,7 @@ class Monitor:
         self.connected = False
         self.message_queue = queue.Queue()
         self.loop = None
+        self.current_device_serial = None
 
         # TODO: Can this just be defined here?
         self.app_state = initial_app_state
@@ -49,6 +50,9 @@ class Monitor:
             
             # Subscribe to topics for all known device serials
             self._subscribe_to_device_topics()
+            
+            # Restore devices from database and subscribe to their topics
+            self._restore_devices_from_database()
             
             # Request device list from bridge to restore device state after a short delay
             # This ensures the connection is fully established
@@ -223,6 +227,97 @@ class Monitor:
         except Exception as e:
             logger.error(f"Error requesting device list: {e}")
     
+    def _extract_device_serial_from_topic(self):
+        """Extract device serial from the last bridge/devices topic received"""
+        if hasattr(self, 'current_device_serial') and self.current_device_serial:
+            return self.current_device_serial
+        # Default fallback
+        return "SNH2025001"
+    
+    def _store_device_mapping(self, device_serial: str, device: Device):
+        """Store device mapping in database"""
+        try:
+            pg_db = self.app_state.get("pg_db")
+            if not pg_db:
+                logger.warning("PostgreSQL database not available for device mapping")
+                return
+            
+            pg_db.upsert_device_mapping(
+                device_serial=device_serial,
+                ieee_address=device.ieee_address,
+                friendly_name=device.friendly_name,
+                device_type=device.type,
+                model=device.model,
+                manufacturer=device.manufacturer
+            )
+            logger.info(f"Stored device mapping: {device_serial} -> {device.ieee_address}")
+            
+        except Exception as e:
+            logger.error(f"Error storing device mapping: {e}")
+    
+    def _remove_device_mapping(self, device_serial: str, ieee_address: str):
+        """Remove device mapping from database"""
+        try:
+            pg_db = self.app_state.get("pg_db")
+            if not pg_db:
+                logger.warning("PostgreSQL database not available for device mapping removal")
+                return
+            
+            pg_db.remove_device_mapping(device_serial, ieee_address)
+            logger.info(f"Removed device mapping: {device_serial} -> {ieee_address}")
+            
+        except Exception as e:
+            logger.error(f"Error removing device mapping: {e}")
+    
+    def _restore_devices_from_database(self):
+        """Restore devices from database and subscribe to their topics"""
+        try:
+            # Get PostgreSQL database from app_state
+            pg_db = self.app_state.get("pg_db")
+            if not pg_db:
+                logger.warning("PostgreSQL database not available in app_state")
+                return
+            
+            # Get device serials from Redis or use default
+            device_serials = self._get_device_serials()
+            
+            for device_serial in device_serials:
+                logger.info(f"Restoring devices for device serial: {device_serial}")
+                
+                # Get devices from database for this serial
+                devices = pg_db.get_devices_by_serial(device_serial)
+                
+                for device_data in devices:
+                    ieee_address = device_data['ieee_address']
+                    friendly_name = device_data['friendly_name']
+                    
+                    # Create a minimal Device object for restoration
+                    device_info = {
+                        'ieee_address': ieee_address,
+                        'friendly_name': friendly_name,
+                        'type': device_data.get('device_type', 'unknown'),
+                        'model': device_data.get('model', ''),
+                        'manufacturer': device_data.get('manufacturer', ''),
+                        'status': {},
+                        'last_seen': device_data.get('last_seen')
+                    }
+                    
+                    try:
+                        device = Device(**device_info)
+                        self.app_state["devices"][ieee_address] = device
+                        
+                        # Subscribe to device topic
+                        self.client.subscribe(f"zigbee2mqtt/senchi-{device_serial}/{ieee_address}")
+                        logger.info(f"Restored device and subscribed to: zigbee2mqtt/senchi-{device_serial}/{ieee_address}")
+                        
+                    except Exception as e:
+                        logger.error(f"Error restoring device {ieee_address}: {e}")
+                
+                logger.info(f"Restored {len(devices)} devices for device serial: {device_serial}")
+                
+        except Exception as e:
+            logger.error(f"Error restoring devices from database: {e}")
+    
     def _get_device_serials(self):
         """Get list of device serials from Redis or return default"""
         device_serials = set()
@@ -301,6 +396,11 @@ class Monitor:
 
             if "bridge/response/device/remove" in topic:
                 logger.info(f"Device removed: {payload['data']['id']}")
+                
+                # Remove device from database
+                device_serial = self._extract_device_serial_from_topic()
+                self._remove_device_mapping(device_serial, payload['data']['id'])
+                
                 # Log device removal event
                 asyncio.run_coroutine_threadsafe(
                     self.log_device_event(payload['data']['id'], {"event": "device_removed", "data": payload}),
@@ -308,6 +408,11 @@ class Monitor:
                 )
 
             elif "bridge/devices" in topic:
+                # Extract device serial from topic for device subscriptions
+                device_serial = topic.split("/")[1].replace("senchi-", "")
+                self.current_device_serial = device_serial
+                logger.info(f"Processing device list for device serial: {device_serial}")
+                
                 asyncio.run_coroutine_threadsafe(
                     self.handle_device_list(payload), 
                     self.loop
@@ -362,11 +467,14 @@ class Monitor:
             if ieee_address not in self.app_state["devices"]:
                 print(f"Adding new device: {ieee_address}")
                 self.app_state["devices"][ieee_address] = curr
+                
+                # Store device mapping in database
+                device_serial = self._extract_device_serial_from_topic()
+                self._store_device_mapping(device_serial, curr)
+                
                 try:
                     # Subscribe to device updates using the correct topic format
-                    # We need to determine which device serial this belongs to
-                    # For now, use the default device serial
-                    device_serial = "SNH2025001"  # TODO: Get from context
+                    # Extract device serial from the topic that sent the device list
                     self.client.subscribe(f"zigbee2mqtt/senchi-{device_serial}/{ieee_address}")
                     print(f"Subscribed to: zigbee2mqtt/senchi-{device_serial}/{ieee_address}")
                 except Exception as e:

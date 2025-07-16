@@ -37,7 +37,7 @@ from monitor.zbm import Monitor
 from monitor.utils import get_all_model_fields
 from notifications.noti import NotificationRouter
 from rdsdb.rdsdb import RedisDB
-from maindb.pg import PostgresDB
+from maindb.pg import PostgresDB, create_tables
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +74,11 @@ pg_db = PostgresDB()
 # Add Redis and Postgres database to app_state so Monitor can access it
 app_state["redis_db"] = redis_db
 app_state["pg_db"] = pg_db
+
+try:
+    create_tables()
+except Exception as e:
+    logger.error(f"Error creating tables: {e}")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

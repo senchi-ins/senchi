@@ -19,6 +19,41 @@ class PostgresDB:
         with self.conn.cursor() as cur:
             cur.execute(query, params)
             return cur.rowcount
+    
+    def upsert_device_mapping(self, device_serial: str, ieee_address: str, friendly_name: str = None, 
+                             device_type: str = None, model: str = None, manufacturer: str = None):
+        """Insert or update device mapping"""
+        query = """
+        INSERT INTO device_mappings (device_serial, ieee_address, friendly_name, device_type, model, manufacturer, last_seen)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        ON CONFLICT (device_serial, ieee_address) 
+        DO UPDATE SET 
+            friendly_name = EXCLUDED.friendly_name,
+            device_type = EXCLUDED.device_type,
+            model = EXCLUDED.model,
+            manufacturer = EXCLUDED.manufacturer,
+            last_seen = EXCLUDED.last_seen
+        """
+        params = (device_serial, ieee_address, friendly_name, device_type, model, manufacturer, datetime.now())
+        return self.execute_insert(query, params)
+    
+    def get_devices_by_serial(self, device_serial: str):
+        """Get all devices for a given device serial"""
+        query = """
+        SELECT ieee_address, friendly_name, device_type, model, manufacturer, last_seen
+        FROM device_mappings 
+        WHERE device_serial = %s
+        ORDER BY last_seen DESC
+        """
+        return self.execute_query(query, (device_serial,))
+    
+    def remove_device_mapping(self, device_serial: str, ieee_address: str):
+        """Remove a device mapping"""
+        query = """
+        DELETE FROM device_mappings 
+        WHERE device_serial = %s AND ieee_address = %s
+        """
+        return self.execute_insert(query, (device_serial, ieee_address))
 
 # For reference, already created table in the database
 def create_tables():
@@ -32,4 +67,28 @@ def create_tables():
         event_location VARCHAR(255),
         time_to_stop INTEGER
     )
+    """)
+    
+    db.execute_query("""
+    CREATE TABLE IF NOT EXISTS device_mappings (
+        id SERIAL PRIMARY KEY,
+        device_serial VARCHAR(255) NOT NULL,
+        ieee_address VARCHAR(255) NOT NULL,
+        friendly_name VARCHAR(255),
+        device_type VARCHAR(255),
+        model VARCHAR(255),
+        manufacturer VARCHAR(255),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(device_serial, ieee_address)
+    )
+    """)
+    
+    # Insert the two existing leak sensors
+    db.execute_query("""
+    INSERT INTO device_mappings (device_serial, ieee_address, friendly_name, device_type, model, manufacturer)
+    VALUES 
+        ('1752620536f20e64', '0x00158d008b91088e', '0x00158d008b91088e', 'leak_sensor', 'aqara', 'aqara'),
+        ('1752620536f20e64', '0x00158d008b91089c', '0x00158d008b91089c', 'leak_sensor', 'aqara', 'aqara')
+    ON CONFLICT (device_serial, ieee_address) DO NOTHING
     """)
