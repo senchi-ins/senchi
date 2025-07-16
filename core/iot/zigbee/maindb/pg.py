@@ -64,5 +64,4 @@ def add_rows():
     VALUES 
         ('1752620536f20e64', '0x00158d008b91088e', '0x00158d008b91088e', 'leak_sensor', 'aqara', 'aqara'),
         ('1752620536f20e64', '0x00158d008b91089c', '0x00158d008b91089c', 'leak_sensor', 'aqara', 'aqara')
-    ON CONFLICT (device_serial, ieee_address) DO NOTHING
     """)
