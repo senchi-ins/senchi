@@ -60,8 +60,8 @@ def add_rows():
     db = PostgresDB()
     # Insert the two existing leak sensors
     db.execute_query("""
-    INSERT INTO device_mappings (device_serial, ieee_address, friendly_name, device_type, model, manufacturer)
+    INSERT INTO device_mappings (id, device_serial, ieee_address, friendly_name, device_type, model, manufacturer)
     VALUES 
-        ('1752620536f20e64', '0x00158d008b91088e', '0x00158d008b91088e', 'leak_sensor', 'aqara', 'aqara'),
-        ('1752620536f20e64', '0x00158d008b91089c', '0x00158d008b91089c', 'leak_sensor', 'aqara', 'aqara')
+        (1, '1752620536f20e64', '0x00158d008b91088e', '0x00158d008b91088e', 'leak_sensor', 'aqara', 'aqara'),
+        (2, '1752620536f20e64', '0x00158d008b91089c', '0x00158d008b91089c', 'leak_sensor', 'aqara', 'aqara')
     """)
