@@ -93,16 +93,31 @@ class Monitor:
                 
                 for key in jwt_keys:
                     try:
+                        # Skip keys that end with :topic (these are topic mappings, not JWT data)
+                        key_str = key.decode()
+                        if key_str.endswith(':topic'):
+                            print(f"Skipping topic mapping key: {key_str}")
+                            continue
+                        
                         # Get the JWT token from the key
-                        jwt_token = key.decode().split(":", 1)[1]
+                        jwt_token = key_str.split(":", 1)[1]
                         print(f"Processing JWT token: {jwt_token[:50]}...")
                         
                         # Get the JWT data
                         jwt_data = redis_db.get_key(f"jwt:{jwt_token}")
                         if jwt_data:
-                            import json
-                            data = json.loads(jwt_data)
-                            print(f"JWT data: {data}")
+                            # Handle bytes vs string
+                            if isinstance(jwt_data, bytes):
+                                jwt_data = jwt_data.decode('utf-8')
+                            
+                            try:
+                                import json
+                                data = json.loads(jwt_data)
+                                print(f"JWT data: {data}")
+                            except json.JSONDecodeError as e:
+                                logger.warning(f"Invalid JSON in JWT data for token {jwt_token[:20]}...: {e}")
+                                print(f"Invalid JSON in JWT data for token {jwt_token[:20]}...: {e}")
+                                continue
                             
                             # Try to get device_serial from different possible fields
                             device_serial = None
