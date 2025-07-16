@@ -75,13 +75,12 @@ pg_db = PostgresDB()
 app_state["redis_db"] = redis_db
 app_state["pg_db"] = pg_db
 
-try:
-    create_tables()
-except Exception as e:
-    logger.error(f"Error creating tables: {e}")
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    try:
+        create_tables()
+    except Exception as e:
+        logger.error(f"Error creating tables: {e}")
 
     loop = asyncio.get_running_loop()
     mqtt_monitor.loop = loop
