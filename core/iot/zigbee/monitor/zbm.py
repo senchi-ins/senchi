@@ -242,11 +242,14 @@ class Monitor:
                 logger.warning("PostgreSQL database not available for device mapping")
                 return
             
+            # Store the original device type for reference, but use the enum-compatible type for the Device object
+            original_device_type = getattr(device, 'original_device_type', device.type)
+            
             pg_db.upsert_device_mapping(
                 device_serial=device_serial,
                 ieee_address=device.ieee_address,
                 friendly_name=device.friendly_name,
-                device_type=device.type,
+                device_type=original_device_type,  # Store the original type (e.g., 'leak_sensor')
                 model=device.model,
                 manufacturer=device.manufacturer
             )
@@ -292,10 +295,17 @@ class Monitor:
                     friendly_name = device_data['friendly_name']
                     
                     # Create a minimal Device object for restoration
+                    # Map device_type to valid Device.type enum values
+                    device_type = device_data.get('device_type', 'unknown')
+                    if device_type == 'leak_sensor':
+                        device_type = 'EndDevice'  # Leak sensors are typically end devices
+                    elif device_type not in ['Coordinator', 'EndDevice', 'Router']:
+                        device_type = 'EndDevice'  # Default to EndDevice for unknown types
+                    
                     device_info = {
                         'ieee_address': ieee_address,
                         'friendly_name': friendly_name,
-                        'type': device_data.get('device_type', 'unknown'),
+                        'type': device_type,
                         'model': device_data.get('model', ''),
                         'manufacturer': device_data.get('manufacturer', ''),
                         'status': {},

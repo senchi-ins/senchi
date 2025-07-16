@@ -37,7 +37,7 @@ from monitor.zbm import Monitor
 from monitor.utils import get_all_model_fields
 from notifications.noti import NotificationRouter
 from rdsdb.rdsdb import RedisDB
-from maindb.pg import PostgresDB, add_rows
+from maindb.pg import PostgresDB
 
 logger = logging.getLogger(__name__)
 
@@ -77,10 +77,6 @@ app_state["pg_db"] = pg_db
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    try:
-        add_rows()
-    except Exception as e:
-        logger.error(f"Error adding rows: {e}")
 
     loop = asyncio.get_running_loop()
     mqtt_monitor.loop = loop

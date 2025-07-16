@@ -54,25 +54,3 @@ class PostgresDB:
         WHERE device_serial = %s AND ieee_address = %s
         """
         return self.execute_insert(query, (device_serial, ieee_address))
-
-# For reference, already created table in the database
-def add_rows():
-    db = PostgresDB()
-    
-    # First, remove the unique constraint on device_serial if it exists
-    try:
-        db.execute_query("""
-        ALTER TABLE device_mappings DROP CONSTRAINT IF EXISTS device_mappings_device_serial_key
-        """)
-        print("Removed unique constraint on device_serial")
-    except Exception as e:
-        print(f"Note: Could not remove constraint (might not exist): {e}")
-    
-    # Insert the two existing leak sensors
-    db.execute_query("""
-    INSERT INTO device_mappings (id, device_serial, ieee_address, friendly_name, device_type, model, manufacturer)
-    VALUES 
-        (1, '1752620536f20e64', '0x00158d008b91088e', '0x00158d008b91088e', 'leak_sensor', 'aqara', 'aqara'),
-        (2, '1752620536f20e64', '0x00158d008b91089c', '0x00158d008b91089c', 'leak_sensor', 'aqara', 'aqara')
-    """)
-    print("Added leak sensor rows to database")
