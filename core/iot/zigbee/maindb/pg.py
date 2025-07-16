@@ -56,34 +56,8 @@ class PostgresDB:
         return self.execute_insert(query, (device_serial, ieee_address))
 
 # For reference, already created table in the database
-def create_tables():
+def add_rows():
     db = PostgresDB()
-    db.execute_query("""
-    CREATE TABLE IF NOT EXISTS events (
-        id SERIAL PRIMARY KEY,
-        device VARCHAR(255),
-        event_type VARCHAR(255),
-        event_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        event_location VARCHAR(255),
-        time_to_stop INTEGER
-    )
-    """)
-    
-    db.execute_query("""
-    CREATE TABLE IF NOT EXISTS device_mappings (
-        id SERIAL PRIMARY KEY,
-        device_serial VARCHAR(255) NOT NULL,
-        ieee_address VARCHAR(255) NOT NULL,
-        friendly_name VARCHAR(255),
-        device_type VARCHAR(255),
-        model VARCHAR(255),
-        manufacturer VARCHAR(255),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE(device_serial, ieee_address)
-    )
-    """)
-    
     # Insert the two existing leak sensors
     db.execute_query("""
     INSERT INTO device_mappings (device_serial, ieee_address, friendly_name, device_type, model, manufacturer)
