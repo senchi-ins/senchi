@@ -50,6 +50,14 @@ class Monitor:
             # Subscribe to topics for all known device serials
             self._subscribe_to_device_topics()
             
+            # Request device list from bridge to restore device state after a short delay
+            # This ensures the connection is fully established
+            def delayed_request():
+                time.sleep(2)  # Wait 2 seconds for connection to stabilize
+                self._request_device_list()
+            
+            threading.Thread(target=delayed_request, daemon=True).start()
+            
         else:
             logger.error(f"Failed to connect to MQTT broker: {rc}")
             self.connected = False
@@ -192,6 +200,81 @@ class Monitor:
                 logger.info(f"Subscribed to default topic: {topic}")
             except Exception as e:
                 logger.error(f"Failed to subscribe to default topic {topic}: {e}")
+
+    def _request_device_list(self):
+        """Request the current device list from the bridge to restore device state"""
+        try:
+            # Get device serials from Redis or use default
+            device_serials = self._get_device_serials()
+            
+            for device_serial in device_serials:
+                # Request device list from bridge
+                topic = f"zigbee2mqtt/senchi-{device_serial}/bridge/request/devices"
+                payload = json.dumps({})
+                
+                logger.info(f"Requesting device list from bridge: {topic}")
+                result = self.client.publish(topic, payload)
+                
+                if result.rc == 0:
+                    logger.info(f"Device list request sent successfully to {topic}")
+                else:
+                    logger.error(f"Failed to send device list request to {topic}: rc={result.rc}")
+                    
+        except Exception as e:
+            logger.error(f"Error requesting device list: {e}")
+    
+    def _get_device_serials(self):
+        """Get list of device serials from Redis or return default"""
+        device_serials = set()
+        
+        try:
+            # Try to get from Redis
+            if hasattr(self, 'app_state') and 'redis_db' in self.app_state:
+                redis_db = self.app_state['redis_db']
+                
+                if redis_db.conn:
+                    jwt_keys = redis_db.conn.keys("jwt:*")
+                    
+                    for key in jwt_keys:
+                        key_str = key.decode()
+                        if key_str.endswith(':topic'):
+                            continue
+                        
+                        jwt_token = key_str.split(":", 1)[1]
+                        jwt_data = redis_db.get_key(f"jwt:{jwt_token}")
+                        
+                        if jwt_data:
+                            if isinstance(jwt_data, bytes):
+                                jwt_data = jwt_data.decode('utf-8')
+                            
+                            try:
+                                data = json.loads(jwt_data)
+                                device_serial = None
+                                
+                                if 'device_serial' in data:
+                                    device_serial = data['device_serial']
+                                elif 'location_id' in data:
+                                    location_id = data['location_id']
+                                    if location_id.startswith('rpi-zigbee-'):
+                                        device_serial = location_id.replace('rpi-zigbee-', '')
+                                    else:
+                                        device_serial = location_id
+                                
+                                if device_serial:
+                                    device_serials.add(device_serial)
+                                    
+                            except json.JSONDecodeError:
+                                continue
+                                
+        except Exception as e:
+            logger.warning(f"Error getting device serials from Redis: {e}")
+        
+        # If no device serials found, use default
+        if not device_serials:
+            device_serials.add("SNH2025001")
+            logger.info("Using default device serial: SNH2025001")
+        
+        return device_serials
 
     def on_disconnect(
         self,
