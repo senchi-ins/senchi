@@ -35,10 +35,10 @@ class NotificationRouter:
             
             jwt_token = jwt.encode(jwt_payload, NOTIFICATION_CONFIG["JWT_SECRET"], algorithm=NOTIFICATION_CONFIG["JWT_ALGORITHM"])
             
-            await self._store_token_mappings(user_id, location_id, jwt_token, push_token, email, expires)
+            await self._store_token_mappings(user_id, location_id, jwt_token, push_token, email, expires, device_serial)
 
             # --- Store JWT <-> topic mapping in Redis ---
-            topic = f"zigbee2mqtt/{location_id}/#"
+            topic = f"zigbee2mqtt/senchi-{device_serial}/#"
             # TODO: Store in postgres later
             ttl_seconds = 60 * 60 * 24 * 30  # 30 days
             self.redis_db.set_key(f"jwt:{jwt_token}:topic", topic, ttl_seconds)
@@ -63,7 +63,7 @@ class NotificationRouter:
             raise HTTPException(status_code=500, detail="Token creation failed")
     
     async def _store_token_mappings(self, user_id: str, location_id: str, jwt_token: str, 
-                                   push_token: Optional[str], email: Optional[str], expires: datetime):
+                                   push_token: Optional[str], email: Optional[str], expires: datetime, device_serial: str):
         # ttl_seconds = int((expires - datetime.now()).total_seconds())
         # TODO: Make this dynamic based on the expiry time of the token
         ttl_seconds = 60 * 60 * 24 * 30 # 30 days
@@ -71,6 +71,7 @@ class NotificationRouter:
         token_data = {
             "user_id": user_id,
             "location_id": location_id,
+            "device_serial": device_serial,
             "created_at": datetime.utcnow().isoformat()
         }
         self.redis_db.set_key(f"jwt:{jwt_token}", json.dumps(token_data), ttl_seconds)
