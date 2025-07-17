@@ -3,7 +3,7 @@ import { Button } from "./ui/button";
 import { Home, Building } from "lucide-react";
 import Image from 'next/image';
 
-export function CoverageSection() {
+export default function CoverageSection() {
   const planOptions = [
     {
       icon: Home,

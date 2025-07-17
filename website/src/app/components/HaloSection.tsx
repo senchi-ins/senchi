@@ -3,7 +3,7 @@ import Image from 'next/image';
 import { Brain, AlertTriangle, TrendingDown, Clock, Wifi, Shield, Droplets, Activity, Settings } from "lucide-react";
 
 
-export function HaloSection() {
+export default function HaloSection() {
   const features = [
     {
       icon: Brain,

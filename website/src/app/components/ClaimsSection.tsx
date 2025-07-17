@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/
 import { Button } from "./ui/button";
 import { Phone, Camera, FileText, DollarSign, Clock, CheckCircle, AlertCircle, Smartphone } from "lucide-react";
 
-export function ClaimsSection() {
+export default function ClaimsSection() {
   const claimsProcess = [
     {
       step: 1,

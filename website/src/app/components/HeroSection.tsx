@@ -5,7 +5,7 @@ import { Shield, Zap, Heart, Thermometer, Droplets, Lock, Wifi, Battery, Trendin
 // import { addToWaitlist } from "@/utils/waitlist";
 import { useState } from "react";
 
-export function HeroSection() {
+export default function HeroSection() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<null | 'success' | 'error'>(null);
   const [loading, setLoading] = useState(false);

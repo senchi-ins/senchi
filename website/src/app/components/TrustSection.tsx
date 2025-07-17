@@ -1,7 +1,7 @@
 import { Shield, Award, Lock, Users, Star } from "lucide-react";
 import { Card, CardContent } from "./ui/card";
 
-export function TrustSection() {
+export default function TrustSection() {
   const certifications = [
     {
       icon: Shield,

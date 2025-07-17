@@ -7,7 +7,7 @@ import Image from 'next/image';
 // import { addToWaitlist } from "@/utils/waitlist";
 
 
-export function Footer() {
+export default function Footer() {
   return (
     <footer className="bg-senchi-footer border-t">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
