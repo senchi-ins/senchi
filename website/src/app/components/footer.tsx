@@ -1,8 +1,9 @@
 "use client";
 
-import { Heart, Mail, Phone, MapPin, Twitter, Linkedin, Instagram, Home, Key, Building, Users } from "lucide-react";
+import { Mail, MapPin, Twitter, Linkedin, Instagram, Home, Building } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
+import Image from 'next/image';
 // import { addToWaitlist } from "@/utils/waitlist";
 
 
@@ -15,7 +16,7 @@ export function Footer() {
           {/* Company Info */}
           <div className="space-y-4">
             <div className="flex items-center">
-              <img src={"/senchi.png"} alt="Senchi" className="h-8 w-auto" />
+              <Image src="/assets/senchi.png" alt="Senchi logo" width={32} height={32} className="h-8 w-auto" />
             </div>
             <p className="text-gray-600 max-w-sm"> 
               AI powered prediction meets charitable giving for complete protection.

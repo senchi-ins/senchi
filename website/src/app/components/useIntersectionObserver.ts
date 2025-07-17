@@ -9,35 +9,29 @@ interface UseIntersectionObserverOptions {
 }
 
 export function useIntersectionObserver(options: UseIntersectionObserverOptions = {}) {
-  const { threshold =0.1 rootMargin = 0px', triggerOnce = true } = options;
+  const { threshold = 0.1, rootMargin = '0px', triggerOnce = true } = options;
   const [isIntersecting, setIsIntersecting] = useState(false);
-  const [hasTriggered, setHasTriggered] = useState(false);
   const ref = useRef<HTMLElement>(null);
+  const observer = useRef<IntersectionObserver | null>(null);
 
   useEffect(() => {
     const element = ref.current;
     if (!element) return;
 
-    const observer = new IntersectionObserver(
+    observer.current = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting)[object Object]       setIsIntersecting(true);
-          if (triggerOnce && !hasTriggered)[object Object]            setHasTriggered(true);
-          }
-        } else if (!triggerOnce)[object Object]       setIsIntersecting(false);
-        }
+        if (entry.isIntersecting) setIsIntersecting(true);
+        else setIsIntersecting(false);
       },
-      {
-        threshold,
-        rootMargin,
-      }
+      { threshold: threshold ?? 0, root: null, rootMargin: rootMargin ?? '0px' }
     );
 
-    observer.observe(element);
+    observer.current.observe(element);
 
     return () => {
-      observer.unobserve(element);
+      observer.current?.unobserve(element);
     };
-  }, [threshold, rootMargin, triggerOnce, hasTriggered]);
+  }, [threshold, rootMargin, triggerOnce]);
 
   return { ref, isIntersecting };
 } 

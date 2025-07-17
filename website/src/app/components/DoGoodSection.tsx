@@ -1,35 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
-import { Button } from "./ui/button";
-import { Heart, Users, DollarSign, TrendingUp, Handshake, Globe } from "lucide-react";
+import { Heart, Users, Globe } from "lucide-react";
 
 export function DoGoodSection() {
-  const impactStats = [
-    {
-      icon: DollarSign,
-      value: "$2.3M",
-      label: "Total Donated",
-      description: "Contributed to various charitable causes"
-    },
-    {
-      icon: Users,
-      value: "47",
-      label: "Charities Supported",
-      description: "Local and global organizations helped"
-    },
-    {
-      icon: Heart,
-      value: "15k+",
-      label: "Lives Impacted",
-      description: "People helped through our donations"
-    },
-    {
-      icon: Globe,
-      value: "23",
-      label: "Communities",
-      description: "Cities where we've made a difference"
-    }
-  ];
-
   const focusAreas = [
     {
       icon: Users,

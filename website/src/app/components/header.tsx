@@ -3,6 +3,7 @@
 import { Button } from "./ui/button";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
+import Image from 'next/image';
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -14,7 +15,7 @@ export function Header() {
           {/* Logo */}
           <div className="flex items-center">
             <div className="flex items-center space-x-2">
-              <img src={"/senchi.png"} alt="Senchi" className="h-8 w-auto" />
+              <Image src="/assets/senchi.png" alt="Senchi logo" width={32} height={32} className="h-8 w-auto" />
             </div>
           </div>
 

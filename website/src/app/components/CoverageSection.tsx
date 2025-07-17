@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Home, Building } from "lucide-react";
+import Image from 'next/image';
 
 export function CoverageSection() {
   const planOptions = [
@@ -49,10 +50,12 @@ export function CoverageSection() {
             <Card key={index} className="border-gray-100 hover:border-senchi-primary/20 hover:shadow-lg transition-all duration-300">
               <CardHeader className="text-center">
                 <div className="w-32 h-32 mx-auto mb-4 flex items-center justify-center">
-                  <img 
-                    src={option.image} 
-                    alt={`${option.title} plan illustration`}
-                    className="w-32 h-32 object-contain"
+                  <Image
+                    src={option.image}
+                    alt={`${option.title} insurance illustration`}
+                    width={96}
+                    height={96}
+                    className="w-24 h-24 object-contain mx-auto mb-4"
                   />
                 </div>
                 <CardTitle className="text-2xl text-gray-900">

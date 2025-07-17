@@ -62,7 +62,7 @@ export function TrustSection() {
             Trusted Insurance Partner
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            As a fully licensed insurance carrier, we're committed to protecting your home 
+            As a fully licensed insurance carrier, we&apos;re committed to protecting your home 
             with the highest standards of security, compliance, and financial stability.
           </p>
         </div>
@@ -103,7 +103,7 @@ export function TrustSection() {
                     ))}
                   </div>
                   <blockquote className="text-gray-700 mb-4">
-                    "{testimonial.text}"
+                    &quot;{testimonial.text}&quot;
                   </blockquote>
                   <div className="border-t pt-4">
                     <div className="flex justify-between items-start">

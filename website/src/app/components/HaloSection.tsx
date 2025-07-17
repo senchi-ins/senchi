@@ -1,5 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
-import { Button } from "./ui/button";
+import Image from 'next/image';
 import { Brain, AlertTriangle, TrendingDown, Clock, Wifi, Shield, Droplets, Activity, Settings } from "lucide-react";
 
 
@@ -198,10 +198,11 @@ export function HaloSection() {
                 <CardHeader className="text-center">
                   <div className="w-32 h-32 mx-auto mb-4 flex items-center justify-center">
                     {sensor.image ? (
-                      <img 
+                      <Image 
                         src={sensor.image} 
                         alt={sensor.title}
-                        className="w-full h-full object-contain"
+                        width={128}
+                        height={128}
                       />
                     ) : (
                       <div className="w-full h-full bg-gray-100 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">

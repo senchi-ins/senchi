@@ -9,7 +9,11 @@ export async function POST(req: NextRequest) {
     }
     await addToWaitlist(email);
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'Server error' }, { status: 500 });
+  } catch (error: unknown) {
+    let message = 'Server error';
+    if (error && typeof error === 'object' && 'message' in error && typeof (error as { message?: unknown }).message === 'string') {
+      message = (error as { message: string }).message;
+    }
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 } 
