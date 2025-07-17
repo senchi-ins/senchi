@@ -16,7 +16,7 @@ export default function Footer() {
           {/* Company Info */}
           <div className="space-y-4">
             <div className="flex items-center">
-              <Image src="/senchi.png" alt="Senchi logo" width={1000} height={1000} className="h-8 w-auto" />
+              <Image src="/senchi.png" alt="Senchi logo" width={32} height={32} className="h-8 w-auto" />
             </div>
             <p className="text-gray-600 max-w-sm"> 
               AI powered prediction meets charitable giving for complete protection.

@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Heart, Users, Globe } from "lucide-react";
 
-export default function DoGoodSection() {
+export function DoGoodSection() {
   const focusAreas = [
     {
       icon: Users,

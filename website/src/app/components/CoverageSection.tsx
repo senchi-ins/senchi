@@ -53,9 +53,9 @@ export default function CoverageSection() {
                   <Image
                     src={option.image}
                     alt={`${option.title} insurance illustration`}
-                    width={128}
-                    height={128}
-                    className="w-50 h-50 object-contain mx-auto mb-4"
+                    width={96}
+                    height={96}
+                    className="w-24 h-24 object-contain mx-auto mb-4"
                   />
                 </div>
                 <CardTitle className="text-2xl text-gray-900">
