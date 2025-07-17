@@ -1,6 +1,6 @@
 import React from 'react'
-import Header from '@/app/components/header'
-import Footer from '@/app/components/footer'
+import Header from '@/app/components/Header'
+import Footer from '@/app/components/Footer'
 import Hero from './sections/hero'
 
 import { style } from '@/config'
