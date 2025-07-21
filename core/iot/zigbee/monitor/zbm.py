@@ -295,12 +295,8 @@ class Monitor:
                     friendly_name = device_data['friendly_name']
                     
                     # Create a minimal Device object for restoration
-                    # Map device_type to valid Device.type enum values
-                    device_type = device_data.get('device_type', 'unknown')
-                    if device_type == 'leak_sensor':
-                        device_type = 'EndDevice'  # Leak sensors are typically end devices
-                    elif device_type not in ['Coordinator', 'EndDevice', 'Router']:
-                        device_type = 'EndDevice'  # Default to EndDevice for unknown types
+                    # Use the device_type directly since it's already in the DeviceType enum
+                    device_type = device_data.get('device_type', 'EndDevice')
                     
                     device_info = {
                         'ieee_address': ieee_address,
@@ -464,7 +460,13 @@ class Monitor:
             #     continue
             print(f"About to create Device object for {device_data.get('ieee_address')}")
             try:
-                curr = Device(**device_data)
+                # Handle unknown device types by mapping them to a valid enum value
+                device_data_copy = device_data.copy()
+                if device_data_copy.get('type') == 'Unknown':
+                    device_data_copy['type'] = 'EndDevice'  # Default unknown devices to EndDevice
+                    logger.info(f"Mapping unknown device type to EndDevice for {device_data.get('ieee_address')}")
+                
+                curr = Device(**device_data_copy)
             except Exception as e:
                 # NOTE: Errors are sometimes "swallowed" by the asyncio loop
                 print(f"Error creating device: {e}")

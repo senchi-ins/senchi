@@ -1,3 +1,5 @@
 /data
 /logs
 /zigbee2mqtt
+
+*.p8

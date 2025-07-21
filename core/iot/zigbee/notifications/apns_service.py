@@ -8,23 +8,26 @@ from datetime import datetime
 import jwt
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ec
+from dotenv import load_dotenv
+import httpx
+
+load_dotenv()
 
 logger = logging.getLogger(__name__)
+
 
 class APNsService:
     """Apple Push Notification Service integration"""
     
     def __init__(self):
-        self.auth_key_path = os.getenv("APNS_AUTH_KEY_PATH")
+        self.auth_key = os.getenv("APNS_AUTH_KEY")
         self.key_id = os.getenv("APNS_KEY_ID")
         self.team_id = os.getenv("APNS_TEAM_ID")
-        self.bundle_id = os.getenv("APNS_BUNDLE_ID", "com.senchi.homemonitor")
+        self.bundle_id = os.getenv("APNS_BUNDLE_ID", "com.mdawes.senchi")
         
-        # APNs endpoints
-        self.sandbox_url = "https://api.sandbox.push.apple.com"
+        self.sandbox_url = "https://api.development.push.apple.com"
         self.production_url = "https://api.push.apple.com"
         
-        # Use sandbox for development, production for release
         self.is_production = os.getenv("APNS_PRODUCTION", "false").lower() == "true"
         self.base_url = self.production_url if self.is_production else self.sandbox_url
         
@@ -33,38 +36,28 @@ class APNsService:
         
         logger.info(f"APNs initialized - Production: {self.is_production}, Bundle ID: {self.bundle_id}")
     
-    def _load_auth_key(self) -> Optional[bytes]:
-        """Load the APNs authentication key"""
-        if not self.auth_key_path or not os.path.exists(self.auth_key_path):
-            logger.error(f"APNs auth key not found at: {self.auth_key_path}")
-            return None
-        
-        try:
-            with open(self.auth_key_path, 'rb') as key_file:
-                return key_file.read()
-        except Exception as e:
-            logger.error(f"Failed to load APNs auth key: {e}")
-            return None
     
     def _generate_auth_token(self) -> Optional[str]:
         """Generate JWT token for APNs authentication"""
-        auth_key_data = self._load_auth_key()
-        if not auth_key_data:
+        if not self.auth_key:
+            logger.error("APNs auth key not provided")
             return None
         
         try:
-            # Load the private key
+            # Load the private key from the PEM string
             private_key = serialization.load_pem_private_key(
-                auth_key_data,
+                self.auth_key.encode('utf-8'),
                 password=None
             )
             
             # Create JWT token
-            now = datetime.utcnow()
+            now = datetime.now()
             payload = {
                 'iss': self.team_id,
                 'iat': int(now.timestamp())
             }
+
+            print(payload)
             
             headers = {
                 'kid': self.key_id,
@@ -89,15 +82,8 @@ class APNsService:
             return None
     
     def _get_auth_token(self) -> Optional[str]:
-        """Get valid auth token, generating new one if needed"""
-        now = datetime.utcnow().timestamp()
-        
-        if (not self._auth_token or 
-            not self._token_expiry or 
-            now >= self._token_expiry):
-            return self._generate_auth_token()
-        
-        return self._auth_token
+        # TODO: Add caching of the token
+        return self._generate_auth_token()
     
     async def send_notification(
         self,
@@ -139,10 +125,12 @@ class APNsService:
         
         # Prepare headers
         headers = {
-            "Authorization": f"bearer {auth_token}",
+            "authorization": f"bearer {auth_token}",
             "apns-topic": self.bundle_id,
             "apns-push-type": "alert",
-            "Content-Type": "application/json"
+            "apns-priority": "10",
+            "apns-expiration": "0",
+            "content-type": "application/json"
         }
         
         # Add priority for high-priority notifications (like leaks)
@@ -150,30 +138,25 @@ class APNsService:
             headers["apns-priority"] = "10"
         
         url = f"{self.base_url}/3/device/{device_token}"
-        
+
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    url,
-                    headers=headers,
-                    json=payload,
-                    timeout=aiohttp.ClientTimeout(total=10)
-                ) as response:
-                    
-                    if response.status == 200:
-                        logger.info(f"APNs notification sent successfully to {device_token[:8]}...")
-                        return True
-                    else:
-                        response_text = await response.text()
-                        logger.error(f"APNs notification failed: {response.status} - {response_text}")
-                        
-                        # Handle specific APNs errors
-                        if response.status == 410:
-                            logger.warning(f"Device token {device_token[:8]}... is no longer valid")
-                        elif response.status == 400:
-                            logger.error(f"Invalid payload for device {device_token[:8]}...")
-                        
-                        return False
+            async with httpx.AsyncClient(http2=True, timeout=10) as client:
+                response = await client.post(url, headers=headers, json=payload)
+            if response.status_code == 200:
+                logger.info(f"APNs notification sent successfully to {device_token[:8]}...")
+                return True
+            else:
+                logger.error(f"APNs notification failed: {response.status_code} - {response.text}")
+                logger.error(f"APNs response headers: {dict(response.headers)}")
+                logger.error(f"APNs request URL: {url}")
+                logger.error(f"APNs request headers: {headers}")
+                logger.error(f"APNs request payload: {json.dumps(payload)}")
+                # Handle specific APNs errors
+                if response.status_code == 410:
+                    logger.warning(f"Device token {device_token[:8]}... is no longer valid")
+                elif response.status_code == 400:
+                    logger.error(f"Invalid payload for device {device_token[:8]}...")
+                return False
                         
         except Exception as e:
             logger.error(f"APNs request failed: {e}")
@@ -222,3 +205,6 @@ class APNsService:
 
 # Global APNs service instance
 apns_service = APNsService() 
+
+if __name__ == "__main__":
+    apns = APNsService()

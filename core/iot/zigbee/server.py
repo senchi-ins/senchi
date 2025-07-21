@@ -363,8 +363,8 @@ async def test_notification(request: TestNotificationRequest):
             device_token=request.device_token,
             title=request.title,
             body=request.body,
-            data={"type": "test", "timestamp": datetime.now().isoformat()},
-            category="TEST"
+            data={"type": "alert", "timestamp": datetime.now().isoformat()},
+            category="LEAK_ALERT"
         )
         
         return {
@@ -373,7 +373,8 @@ async def test_notification(request: TestNotificationRequest):
             "message": "Notification sent successfully" if success else "Failed to send notification"
         }
         
-    except ImportError:
+    except ImportError as e:
+        print(e)
         return {
             "success": False,
             "error": "APNs service not configured",

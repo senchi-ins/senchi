@@ -24,6 +24,9 @@ class DeviceType(str, Enum):
     COORDINATOR = "Coordinator"
     END_DEVICE = "EndDevice"
     ROUTER = "Router"
+    LEAK_SENSOR = "leak_sensor"
+    SHUTOFF_VALVE = "shutoff_valve"
+    FLOW_MONITOR = "flow_monitor"
 
 class InterviewState(str, Enum):
     SUCCESSFUL = "SUCCESSFUL"
