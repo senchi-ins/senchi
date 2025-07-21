@@ -7,6 +7,9 @@ const __dirname = dirname(__filename);
 
 const compat = new FlatCompat({
   baseDirectory: __dirname,
+  rules: {
+    'no-unused-vars': 'off',
+  },
 });
 
 const eslintConfig = [

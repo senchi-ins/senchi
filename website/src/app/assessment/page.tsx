@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from 'react'
-import Header from '../components/header'
+// import { Header } from '../components/Header'
 import Search from './search'
 import BespokeHouse from '../generated/bespokeHouse'
 
@@ -255,11 +255,11 @@ export default function Assessment() {
 
     // TODO: Uncomment this when the pipeline is ready
     runPipeline();
-  }, [enterPressed]);
+  }, [enterPressed, input]);
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
+      {/* <Header /> */}
       <div className="bg-senchi-background flex-1 w-full">
         <div className="max-w-7xl mx-auto px-4 md:px-16">
           {enterPressed && (

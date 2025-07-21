@@ -1,31 +1,305 @@
 @import "tailwindcss";
 
+
+@custom-variant dark (&:is(.dark *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --font-size: 14px;
+  --background: #F0EEE8;
+  --foreground: #1a1a1a;
+  --card: #ffffff;
+  --card-foreground: #1a1a1a;
+  --popover: #ffffff;
+  --popover-foreground: #1a1a1a;
+  --primary: #240DBF;
+  --primary-foreground: #ffffff;
+  --secondary: #EBE9FC;
+  --secondary-foreground: #240DBF;
+  --muted: #F0EEE8;
+  --muted-foreground: #6b7280;
+  --accent: #EBE9FC;
+  --accent-foreground: #240DBF;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: rgba(36, 13, 191, 0.1);
+  --input: transparent;
+  --input-background: #ffffff;
+  --switch-background: #cbced4;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --ring: #240DBF;
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --radius: 0.625rem;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #1a1a1a;
+  --sidebar-primary: #240DBF;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #EBE9FC;
+  --sidebar-accent-foreground: #240DBF;
+  --sidebar-border: rgba(36, 13, 191, 0.1);
+  --sidebar-ring: #240DBF;
+  --footer-bg: #F8F8FF;
+}
+
+.dark {
+  --background: #1a1a1a;
+  --foreground: #ffffff;
+  --card: #2a2a2a;
+  --card-foreground: #ffffff;
+  --popover: #2a2a2a;
+  --popover-foreground: #ffffff;
+  --primary: #240DBF;
+  --primary-foreground: #ffffff;
+  --secondary: #3a3a3a;
+  --secondary-foreground: #ffffff;
+  --muted: #3a3a3a;
+  --muted-foreground: #a1a1aa;
+  --accent: #3a3a3a;
+  --accent-foreground: #ffffff;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: rgba(255, 255, 255, 0.1);
+  --input: #3a3a3a;
+  --ring: #240DBF;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: #2a2a2a;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #240DBF;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #3a3a3a;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(255, 255, 255, 0.1);
+  --sidebar-ring: #240DBF;
+  --footer-bg: #2a2a2a;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --color-senchi-main: #240DBF;
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-input-background: var(--input-background);
+  --color-switch-background: var(--switch-background);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-footer-bg: var(--footer-bg);
+  --color-senchi-primary: #240DBF;
   --color-senchi-accent-light: #EBE9FC;
-  --color-senchi-accent-footer: #F8F8FF;
-  --color-senchi-background: #EFEEE7;
-  --color-senchi-text-main: #2B2C30;
+  --color-senchi-footer: #F8F8FF;
 }
 
-/* @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Smooth scrolling for the entire page */
+html {
+  scroll-behavior: smooth;
+  font-size: var(--font-size);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
   }
-} */
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  body {
+    @apply bg-background text-foreground;
+  }
 }
+
+/**
+ * Base typography. This is not applied to elements which have an ancestor with a Tailwind text class.
+ */
+@layer base {
+  :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) {
+    h1 {
+      font-size: var(--text-4xl);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.2;
+    }
+
+    h2 {
+      font-size: var(--text-3xl);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.3;
+    }
+
+    h3 {
+      font-size: var(--text-2xl);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.4;
+    }
+
+    h4 {
+      font-size: var(--text-xl);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.4;
+    }
+
+    p {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-normal);
+      line-height: 1.6;
+    }
+
+    label {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    button {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    input {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-normal);
+      line-height: 1.5;
+    }
+  }
+}
+
+/* Custom Senchi utilities */
+@layer utilities {
+  .bg-senchi-primary {
+    background-color: var(--color-senchi-primary);
+  }
+  
+  .bg-senchi-accent-light {
+    background-color: var(--color-senchi-accent-light);
+  }
+  
+  .bg-senchi-footer {
+    background-color: var(--color-senchi-footer);
+  }
+  
+  .text-senchi-primary {
+    color: var(--color-senchi-primary);
+  }
+  
+  .border-senchi-primary {
+    border-color: var(--color-senchi-primary);
+  }
+}
+
+/* Animation keyframes for section transitions */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Animation classes */
+.animate-fade-in-up {
+  animation: fadeInUp 0.8s ease-out forwards;
+}
+
+.animate-fade-in-left {
+  animation: fadeInLeft 0.8s ease-out forwards;
+}
+
+.animate-fade-in-right {
+  animation: fadeInRight 0.8s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.6s ease-out forwards;
+}
+
+/* Section transition classes */
+.section-transition {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.8s ease-out;
+}
+
+.section-transition.animate-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stagger animation delays for grid items */
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+.stagger-4 { animation-delay: 0.4s; }
+.stagger-5 { animation-delay: 0.5s; }
+.stagger-6 { animation-delay: 0.6s; }
