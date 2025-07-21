@@ -19,10 +19,10 @@ struct HomeDashboardView: View {
                     HomeTabContent()
                 }
             }
-            // Removed Divider() here to make the tab bar seamless
             MainTabBar(selectedTab: $selectedTab)
         }
         .background(Color.white.ignoresSafeArea())
+        .ignoresSafeArea(.keyboard, edges: .bottom)
     }
 }
 

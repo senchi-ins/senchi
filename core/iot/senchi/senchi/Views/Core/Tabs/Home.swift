@@ -57,51 +57,51 @@ struct HomeTabContent: View {
                 }
                 .padding(.horizontal, 4)
                 
-                // Test Buttons Section
-                VStack(spacing: 12) {
-                    Button("Debug Push Token") {
-                        pushManager.debugPushTokenStatus()
-                        testResult = "Debug info printed to console"
-                    }
-                    .buttonStyle(.bordered)
-                    // TODO: Delete
-                    Button("Test APS Environment") {
-                        Task {
-                            await pushManager.cleanPushNotificationTest()
-                        }
-                    }
-                    
-                    
-                    Button("Manual Register") {
-                        pushManager.manuallyRegisterForNotifications()
-                        testResult = "Manual registration triggered"
-                    }
-                    .buttonStyle(.bordered)
-                    
-                    Button("Test APNs Connectivity") {
-                        APNsConnectivityTest.testAPNsConnectivity()
-                        testResult = "APNs connectivity test started"
-                    }
-                    .buttonStyle(.bordered)
-                    
-                    Button("Test Push Token") {
-                        if let token = pushManager.pushToken {
-                            print("📱 Current push token: \(token)")
-                            // Copy to clipboard
-                            UIPasteboard.general.string = token
-                            testResult = "Token copied to clipboard!"
-                        } else {
-                            testResult = "No push token available"
-                        }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    
-                    if !testResult.isEmpty {
-                        Text(testResult)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                }
+//                // Test Buttons Section
+//                VStack(spacing: 12) {
+//                    Button("Debug Push Token") {
+//                        pushManager.debugPushTokenStatus()
+//                        testResult = "Debug info printed to console"
+//                    }
+//                    .buttonStyle(.bordered)
+//                    // TODO: Delete
+//                    Button("Test APS Environment") {
+//                        Task {
+//                            await pushManager.cleanPushNotificationTest()
+//                        }
+//                    }
+//                    
+//                    
+//                    Button("Manual Register") {
+//                        pushManager.manuallyRegisterForNotifications()
+//                        testResult = "Manual registration triggered"
+//                    }
+//                    .buttonStyle(.bordered)
+//                    
+//                    Button("Test APNs Connectivity") {
+//                        APNsConnectivityTest.testAPNsConnectivity()
+//                        testResult = "APNs connectivity test started"
+//                    }
+//                    .buttonStyle(.bordered)
+//                    
+//                    Button("Test Push Token") {
+//                        if let token = pushManager.pushToken {
+//                            print("📱 Current push token: \(token)")
+//                            // Copy to clipboard
+//                            UIPasteboard.general.string = token
+//                            testResult = "Token copied to clipboard!"
+//                        } else {
+//                            testResult = "No push token available"
+//                        }
+//                    }
+//                    .buttonStyle(.borderedProminent)
+//                    
+//                    if !testResult.isEmpty {
+//                        Text(testResult)
+//                            .font(.caption)
+//                            .foregroundColor(.secondary)
+//                    }
+//                }
 //                VStack(alignment: .leading, spacing: 12) {
 //                    Text("Development Tests")
 //                        .font(.headline)

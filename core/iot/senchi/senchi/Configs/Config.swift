@@ -5,7 +5,8 @@ import SwiftUI
 struct ApplicationConfig {
     static let wsURL: String =  "wss://senchi-mqtt.up.railway.app/ws"
     static let apiBase: String = "https://senchi-mqtt.up.railway.app"
-    static let restAPIBase: String = "http://localhost:8000"
+    // TODO: Change to prod when deployed
+    static let restAPIBase: String = "http://192.168.2.57:8000"
     // TODO: Change to production server once ready
 //    static let apiBase: String = "http://192.168.2.57:8000"
     static let timeout: TimeInterval = 10

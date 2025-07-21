@@ -13,6 +13,7 @@ struct MainTabBar: View {
         .padding(.vertical, 8)
         .background(Color.white)
         .overlay(Rectangle().frame(width: nil, height: 1, alignment: .top).foregroundColor(Color.gray.opacity(0.2)), alignment: .top)
+        .ignoresSafeArea(.keyboard, edges: .bottom)
     }
 }
 
