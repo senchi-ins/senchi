@@ -8,6 +8,7 @@ struct MainTabBar: View {
             TabBarButton(icon: "house.fill", label: "Home", selected: selectedTab == 0) { selectedTab = 0 }
             TabBarButton(icon: "heart.fill", label: "Health & Savings", selected: selectedTab == 1) { selectedTab = 1 }
             TabBarButton(icon: "gearshape.fill", label: "Settings", selected: selectedTab == 2) { selectedTab = 2 }
+            TabBarButton(icon: "shield.fill", label: "External", selected: selectedTab == 3) { selectedTab = 3 }
         }
         .padding(.vertical, 8)
         .background(Color.white)

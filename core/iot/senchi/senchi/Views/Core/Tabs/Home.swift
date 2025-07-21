@@ -1,11 +1,46 @@
 
 import SwiftUI
 import Foundation
+import UIKit
 
 struct HomeTabContent: View {
     @StateObject private var webSocketManager = WebSocketManager()
+    @EnvironmentObject var userSettings: UserSettings
+    @EnvironmentObject var pushManager: PushNotificationManager
     @State private var savingsAmount: Double = 0
     @State private var homeHealthScore: Double = 1.0
+    @State private var testResult: String = ""
+    @State private var isTesting: Bool = false
+    
+    private func getGreeting() -> String {
+        let hour = Calendar.current.component(.hour, from: Date())
+        
+        switch hour {
+        case 5..<12:
+            return "Good morning"
+        case 12..<17:
+            return "Good afternoon"
+        case 17..<22:
+            return "Good evening"
+        default:
+            return "Good evening"
+        }
+    }
+    
+    private func getUserName() -> String {
+        // First try UserSettings (from onboarding)
+        if !userSettings.userName.isEmpty {
+            return userSettings.userName
+        }
+        
+        // Then try UserDefaults (from login)
+        if let storedName = UserDefaults.standard.string(forKey: "user_full_name"), !storedName.isEmpty {
+            return storedName
+        }
+        
+        // TODO: Remove this once we have a default user name
+        return ""
+    }
     
     var body: some View {
         ScrollView {
@@ -22,10 +57,123 @@ struct HomeTabContent: View {
                 }
                 .padding(.horizontal, 4)
                 
+                // Test Buttons Section
+                VStack(spacing: 12) {
+                    Button("Debug Push Token") {
+                        pushManager.debugPushTokenStatus()
+                        testResult = "Debug info printed to console"
+                    }
+                    .buttonStyle(.bordered)
+                    // TODO: Delete
+                    Button("Test APS Environment") {
+                        Task {
+                            await pushManager.cleanPushNotificationTest()
+                        }
+                    }
+                    
+                    
+                    Button("Manual Register") {
+                        pushManager.manuallyRegisterForNotifications()
+                        testResult = "Manual registration triggered"
+                    }
+                    .buttonStyle(.bordered)
+                    
+                    Button("Test APNs Connectivity") {
+                        APNsConnectivityTest.testAPNsConnectivity()
+                        testResult = "APNs connectivity test started"
+                    }
+                    .buttonStyle(.bordered)
+                    
+                    Button("Test Push Token") {
+                        if let token = pushManager.pushToken {
+                            print("📱 Current push token: \(token)")
+                            // Copy to clipboard
+                            UIPasteboard.general.string = token
+                            testResult = "Token copied to clipboard!"
+                        } else {
+                            testResult = "No push token available"
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    
+                    if !testResult.isEmpty {
+                        Text(testResult)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+//                VStack(alignment: .leading, spacing: 12) {
+//                    Text("Development Tests")
+//                        .font(.headline)
+//                        .foregroundColor(.black)
+//                    
+//                    HStack(spacing: 12) { 
+//                        Button(action: {
+//                            Task {
+//                                isTesting = true
+//                                isTesting = false
+//                            }
+//                        }) {
+//                            HStack(spacing: 4) {
+//                                if isTesting {
+//                                    ProgressView()
+//                                        .scaleEffect(0.8)
+//                                } else {
+//                                    Image(systemName: "wrench.and.screwdriver")
+//                                }
+//                                Text("Test Device Setup")
+//                            }
+//                            .foregroundColor(.white)
+//                            .font(.subheadline)
+//                            .padding(.horizontal, 12)
+//                            .padding(.vertical, 8)
+//                            .background(SenchiColors.senchiBlue)
+//                            .cornerRadius(8)
+//                        }
+//                        .disabled(isTesting)
+//                        
+//                        Button(action: {
+//                            Task {
+//                                isTesting = true
+//                                isTesting = false
+//                            }
+//                        }) {
+//                            HStack(spacing: 4) {
+//                                if isTesting {
+//                                    ProgressView()
+//                                        .scaleEffect(0.8)
+//                                } else {
+//                                    Image(systemName: "envelope.fill")
+//                                }
+//                                Text("Clean Redis")
+//                            }
+//                            .foregroundColor(.white)
+//                            .font(.subheadline)
+//                            .padding(.horizontal, 12)
+//                            .padding(.vertical, 8)
+//                            .background(SenchiColors.senchiGreen)
+//                            .cornerRadius(8)
+//                        }
+//                        .disabled(isTesting)
+//                    }
+//                    
+//                    if !testResult.isEmpty {
+//                        Text(testResult)
+//                            .font(.caption)
+//                            .foregroundColor(testResult.hasPrefix("✅") ? .green : .red)
+//                            .padding(8)
+//                            .background(Color.gray.opacity(0.1))
+//                            .cornerRadius(6)
+//                    }
+//                }
+//                .padding()
+//                .background(RoundedRectangle(cornerRadius: 14).stroke(Color.gray.opacity(0.15)))
+//                
                 // Greeting
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Good morning, werwer")
+                        // TODO: Change default and set up in db
+                        Text("\(getGreeting()), \(getUserName())")
                             .font(.title3).fontWeight(.semibold)
                             .foregroundColor(.black)
                         Text("Your home is protected")

@@ -22,8 +22,9 @@ struct HomeMonitorApp: App {
                 .environmentObject(authManager)
                 .environmentObject(pushManager)
                 .onAppear {
-                    // Connect managers
                     pushManager.setAuthManager(authManager)
+                    appDelegate.pushNotificationManager = pushManager
+                    UIApplication.shared.delegate = appDelegate
                     
                     // Verify setup on launch
                     Task {

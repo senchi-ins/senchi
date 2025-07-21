@@ -5,6 +5,8 @@ import SwiftUI
 
 class UserSettings: ObservableObject {
     @Published var loggedIn: Bool = true
+    @Published var isOnboarded: Bool = false
+    @Published var userName: String = ""
     
     // TODO: Add other variables here in the future
 }

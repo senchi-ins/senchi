@@ -6,10 +6,14 @@ import SwiftUI
 struct TokenSetupRequest: Codable {
     let deviceSerial: String
     let pushToken: String?
+    let email: String?
+    let fullName: String?
     
     enum CodingKeys: String, CodingKey {
         case deviceSerial = "device_serial"
         case pushToken = "push_token"
+        case email = "email"
+        case fullName = "full_name"
     }
 }
 
@@ -30,26 +34,6 @@ struct PushTokenUpdate: Codable {
     
     enum CodingKeys: String, CodingKey {
         case pushToken = "push_token"
-    }
-}
-
-enum AuthError: Error, LocalizedError {
-    case invalidURL
-    case serverError(String)
-    case keychainError(String)
-    case pushNotificationDenied
-    
-    var errorDescription: String? {
-        switch self {
-        case .invalidURL:
-            return "Invalid server URL"
-        case .serverError(let message):
-            return "Server error: \(message)"
-        case .keychainError(let message):
-            return "Security error: \(message)"
-        case .pushNotificationDenied:
-            return "Push notifications are required for leak alerts"
-        }
     }
 }
 

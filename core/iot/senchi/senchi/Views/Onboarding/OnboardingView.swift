@@ -2,6 +2,7 @@ import SwiftUI
 
 struct OnboardingViewMain: View {
     @EnvironmentObject var authManager: AuthManager
+    @EnvironmentObject var userSettings: UserSettings
     
     @State private var fullName: String = ""
     @State private var email: String = ""
@@ -13,6 +14,7 @@ struct OnboardingViewMain: View {
     @State private var alertMessage = ""
     @State private var deviceSerial: String = ""
     @State private var isLoading = false
+    @State private var showLoginView = false
     
     private let totalSteps: Int = 4
     
@@ -48,6 +50,9 @@ struct OnboardingViewMain: View {
             } message: {
                 Text(alertMessage)
             }
+            .sheet(isPresented: $showLoginView) {
+                LoginView()
+            }
             .overlay(
                 Group {
                     if isLoading {
@@ -80,13 +85,20 @@ struct OnboardingViewMain: View {
                     onSignIn: {
                         let generator = UIImpactFeedbackGenerator(style: .medium)
                         generator.impactOccurred()
+                        userSettings.isOnboarded = true
                         signIn()
+                    },
+                    onLogin: {
+                        let generator = UIImpactFeedbackGenerator(style: .medium)
+                        generator.impactOccurred()
+                        userSettings.isOnboarded = true
+                        showLoginView = true
                     }
                 )
             case 2:
                 OnboardingStep2QRCodeView(
                     onQRCodeScanned: { code in
-                        deviceSerial = code
+                        deviceSerial = code  // Use the actual device serial from QR code
                     },
                     onManualConnect: {
                         // Handle manual connect
@@ -94,7 +106,7 @@ struct OnboardingViewMain: View {
                     onConnected: {
                         let generator = UIImpactFeedbackGenerator(style: .medium)
                         generator.impactOccurred()
-                        setupDevice()
+                        withAnimation { currentStep = 3 }
                     },
                     onNextStep: {
                         // This will be handled by onConnected
@@ -108,7 +120,10 @@ struct OnboardingViewMain: View {
                 )
             case 4:
                 OnboardingStep4Confirmation(
+                    deviceSerial: deviceSerial,
                     onGoToDashboard: {
+                        setupDevice()
+                        userSettings.isOnboarded = true
                         withAnimation { showDashboard = true }
                     }
                 )
@@ -138,6 +153,8 @@ struct OnboardingViewMain: View {
                 )
                 
                 await MainActor.run {
+                    // Store the user name for use throughout the app
+                    userSettings.userName = fullName
                     isLoading = false
                     alertMessage = "Account created successfully!"
                     showingAlert = true
@@ -193,11 +210,13 @@ struct OnboardingViewMain: View {
         
         Task {
             do {
-                try await authManager.setupDevice(serialNumber: deviceSerial)
+                // Now setup device with the actual device serial from QR code and user's email
+                try await authManager.setupDevice(serialNumber: deviceSerial, email: email, fullName: fullName)
                 
                 await MainActor.run {
                     isLoading = false
-                    withAnimation { currentStep = 3 }
+                    // Device setup is now complete, go to dashboard
+                    withAnimation { showDashboard = true }
                 }
             } catch {
                 await MainActor.run {

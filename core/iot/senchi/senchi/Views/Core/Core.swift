@@ -13,6 +13,8 @@ struct HomeDashboardView: View {
                     HealthSavings()
                 case 2:
                     AccountSettings()
+                case 3:
+                    External()
                 default:
                     HomeTabContent()
                 }

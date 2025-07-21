@@ -19,11 +19,16 @@ class AppDelegate: NSObject, UIApplicationDelegate, ObservableObject {
     
     func application(_ application: UIApplication,
                      didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        print("✅ AppDelegate: didRegisterForRemoteNotificationsWithDeviceToken called!")
+        print("✅ Device token data length: \(deviceToken.count) bytes")
         pushNotificationManager.handleDeviceToken(deviceToken)
+        print(deviceToken)
     }
     
     func application(_ application: UIApplication,
                      didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        print("❌ AppDelegate: didFailToRegisterForRemoteNotificationsWithError called!")
+        print("❌ Error: \(error.localizedDescription)")
         pushNotificationManager.handleRegistrationError(error)
     }
 }

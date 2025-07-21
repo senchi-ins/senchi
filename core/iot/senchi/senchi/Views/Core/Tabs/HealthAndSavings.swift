@@ -2,8 +2,8 @@
 import SwiftUI
 
 struct HealthSavings: View {
-    @State private var selectedTab: Tab = .health
-    enum Tab { case health, savings }
+    // MARK: - Beta Placeholder (Original implementation commented out below)
+    
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
@@ -15,44 +15,64 @@ struct HealthSavings: View {
                         .font(.subheadline).foregroundColor(.gray)
                 }
                 .padding(.top, 8)
-                // Tab Switcher
-                HStack(spacing: 0) {
-                    Button(action: { selectedTab = .health }) {
-                        Text("Health")
-                            .fontWeight(.semibold)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
-                            .background(selectedTab == .health ? Color.white : Color.clear)
-                            .padding()
-                            .foregroundColor(selectedTab == .health ? SenchiColors.senchiBlue : .gray)
+                
+                // Beta Placeholder
+                VStack(spacing: 16) {
+                    Image(systemName: "chart.line.uptrend.xyaxis")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 60, height: 60)
+                        .foregroundColor(.gray.opacity(0.5))
+                    
+                    Text("Coming Soon")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.black)
+                    
+                    Text("Health monitoring and savings tracking features will be available in the next update.")
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
+                        .multilineTextAlignment(.center)
+                    
+                    VStack(spacing: 8) {
+                        HStack {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundColor(.green)
+                            Text("Real-time home health monitoring")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                        }
+                        
+                        HStack {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundColor(.green)
+                            Text("Insurance savings calculations")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                        }
+                        
+                        HStack {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundColor(.green)
+                            Text("Claims prevention tracking")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                        }
                     }
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    Button(action: { selectedTab = .savings }) {
-                        Text("Savings")
-                            .fontWeight(.semibold)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
-                            .background(selectedTab == .savings ? Color.white : Color.clear)
-                            .foregroundColor(selectedTab == .savings ? SenchiColors.senchiBlue : .gray)
-                    }
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .padding(.top, 8)
                 }
-                .background(Color(.systemGray6))
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-                .padding(.vertical, 4)
-                // Content
-                if selectedTab == .health {
-                    HealthTabContent()
-                } else {
-                    SavingsTabContent()
-                }
+                .frame(maxWidth: .infinity)
+                .padding(40)
+                .background(Color.gray.opacity(0.05))
+                .cornerRadius(16)
             }
             .padding(20)
-            .background(RoundedRectangle(cornerRadius: 14).stroke(Color.gray.opacity(0.15)))
         }
     }
 }
 
+/*
+// MARK: - Original Implementation (Commented out for beta)
 private struct HealthTabContent: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -129,7 +149,9 @@ private struct HealthTabContent: View {
         }
     }
 }
+*/
 
+/*
 private struct HealthBarRow: View {
     var label: String
     var percent: Double
@@ -146,7 +168,9 @@ private struct HealthBarRow: View {
         }
     }
 }
+*/
 
+/*
 private struct SavingsTabContent: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -222,7 +246,9 @@ private struct SavingsTabContent: View {
         }
     }
 }
+*/
 
+/*
 private struct ClaimRow: View {
     var title: String
     var date: String
@@ -259,6 +285,7 @@ private struct SavingsBarRow: View {
         }
     }
 }
+*/
 
 #Preview {
     HealthSavings()

@@ -24,7 +24,7 @@ class WebSocketManager: ObservableObject {
     private var timer: Timer?
     
     init() {
-        print("WebSocketManager initialized")
+//        print("WebSocketManager initialized")
         setupWebSocket()
     }
     
@@ -121,7 +121,7 @@ class WebSocketManager: ObservableObject {
     private func receiveMessage() {
         print("Setting up message receiver...")
         webSocket?.receive { [weak self] result in
-            print("Received WebSocket result: \(result)")
+            // print("Received WebSocket result: \(result)")
             DispatchQueue.main.async {
                 switch result {
                 case .success(let message):
@@ -150,10 +150,10 @@ class WebSocketManager: ObservableObject {
     private func handleMessage(_ message: URLSessionWebSocketTask.Message) {
         switch message {
         case .string(let text):
-            print("Received text message: \(text)")
+            // print("Received text message: \(text)")
             handleTextMessage(text)
         case .data(let data):
-            print("Received data message: \(data)")
+            // print("Received data message: \(data)")
             if let text = String(data: data, encoding: .utf8) {
                 handleTextMessage(text)
             }
@@ -170,7 +170,7 @@ class WebSocketManager: ObservableObject {
         
         do {
             let message = try JSONDecoder().decode(WebSocketMessage.self, from: data)
-            print("Decoded message: \(message)")
+            // print("Decoded message: \(message)")
             
             switch message.type {
             case "device_update":
@@ -183,13 +183,13 @@ class WebSocketManager: ObservableObject {
                 print("Unknown message type: \(message.type)")
             }
         } catch {
-            print("Failed to decode WebSocket message: \(error)")
-            print("Raw message: \(text)")
+            // print("Failed to decode WebSocket message: \(error)")
+            // print("Raw message: \(text)")
         }
     }
     
     private func updateDevice(deviceId: String, payload: DeviceUpdatePayload) {
-        print("Updating device \(deviceId) with payload: \(payload)")
+        // print("Updating device \(deviceId) with payload: \(payload)")
         
         // Find the device in our array and update it
         if let index = devices.firstIndex(where: { $0.id == deviceId }) {

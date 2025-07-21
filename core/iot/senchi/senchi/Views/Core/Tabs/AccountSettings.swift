@@ -1,16 +1,14 @@
 
 import SwiftUI
 
-
 struct AccountSettings: View {
+    // MARK: - Beta Placeholder (Original implementation commented out below)
+    
     @EnvironmentObject private var userSettings: UserSettings
     
-    @State private var pushNotifications = true
-    @State private var emailAlerts = true
-    @State private var maintenanceReminders = true
-    @State private var weeklyReports = false
     var body: some View {
-        ScrollView {
+        NavigationView {
+            ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 // Header
                 VStack(alignment: .leading, spacing: 4) {
@@ -20,100 +18,92 @@ struct AccountSettings: View {
                         .font(.subheadline).foregroundColor(.gray)
                 }
                 .padding(.top, 8)
-                // Account Section
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "person.circle").foregroundColor(.gray)
-                        Text("Account").font(.headline).foregroundColor(.black)
-                    }
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Michael Anthony Dawes").fontWeight(.semibold).foregroundColor(.black)
-                            Text("qweq").font(.caption).foregroundColor(.gray)
+                
+                // Beta Placeholder
+                VStack(spacing: 16) {
+                    Image(systemName: "gearshape.fill")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 60, height: 60)
+                        .foregroundColor(.gray.opacity(0.5))
+                    
+                    Text("Settings Coming Soon")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.black)
+                    
+                    Text("Account management, notifications, and activity logs will be available in the next update.")
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
+                        .multilineTextAlignment(.center)
+                    
+                    VStack(spacing: 8) {
+                        HStack {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundColor(.green)
+                            Text("Account profile management")
+                                .font(.caption)
+                                .foregroundColor(.gray)
                         }
+                        
+                        HStack {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundColor(.green)
+                            Text("Notification preferences")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                        }
+                        
+                        HStack {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundColor(.green)
+                            Text("Activity logs and history")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                        }
+                        
+                        HStack {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundColor(.green)
+                            Text("Support and help center")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                        }
+                    }
+                    .padding(.top, 8)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(40)
+                .background(Color.gray.opacity(0.05))
+                .cornerRadius(16)
+                
+                // Push Token Extractor (Temporary for testing)
+                NavigationLink(destination: PushTokenExtractor()) {
+                    HStack {
+                        Image(systemName: "bell.badge")
+                        Text("Push Token Extractor").fontWeight(.semibold)
                         Spacer()
                         Image(systemName: "chevron.right").foregroundColor(.gray)
                     }
-                    Divider()
-                    HStack {
-                        Text("Plan").font(.subheadline).foregroundColor(.gray)
-                        Spacer()
-                        Text("HomeGuard Pro")
-                            .font(.caption)
-                            .fontWeight(.bold)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 4)
-                            .background(SenchiColors.senchiBlue)
-                            .foregroundColor(.white)
-                            .cornerRadius(8)
-                    }
-                    HStack {
-                        Text("Member since").font(.subheadline).foregroundColor(.gray)
-                        Spacer()
-                        Text("January 2024").font(.subheadline).foregroundColor(.black)
-                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.blue)
+                    .foregroundColor(.white)
+                    .cornerRadius(8)
                 }
-                .padding()
-                .background(Color.white)
-                .cornerRadius(14)
-                .background(RoundedRectangle(cornerRadius: 14).stroke(Color.gray.opacity(0.15)))
-                // Notifications Section
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "bell").foregroundColor(.gray)
-                        Text("Notifications").font(.headline).foregroundColor(.black)
-                    }
-                    Text("Control how you receive alerts and updates")
-                        .font(.subheadline).foregroundColor(.gray)
-                    ToggleRow(title: "Push Notifications", subtitle: "Receive alerts on your device", isOn: $pushNotifications)
-                    ToggleRow(title: "Email Alerts", subtitle: "Critical alerts via email", isOn: $emailAlerts)
-                    ToggleRow(title: "Maintenance Reminders", subtitle: "Scheduled maintenance notifications", isOn: $maintenanceReminders)
-                    ToggleRow(title: "Weekly Reports", subtitle: "Summary of your home's health", isOn: $weeklyReports)
-                }
-                .padding()
-                .background(Color.white)
-                .cornerRadius(14)
-                .background(RoundedRectangle(cornerRadius: 14).stroke(Color.gray.opacity(0.15)))
-                // Activity Log Section
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "clock").foregroundColor(.gray)
-                        Text("Activity Log").font(.headline).foregroundColor(.black)
-                    }
-                    Text("Recent alerts and system events")
-                        .font(.subheadline).foregroundColor(.gray)
-                    // TODO: Replact this with live data
-                    VStack(spacing: 10) {
-                        ActivityLogRow(icon: "exclamationmark.triangle.fill", title: "High humidity detected in basement", subtitle: "Basement Moisture sensor reported 68% humidity", date: "7/11/2024 06:30 AM", type: .warning)
-                        ActivityLogRow(icon: "wrench.and.screwdriver.fill", title: "HVAC filter replacement due", subtitle: "Scheduled maintenance reminder", date: "7/10/2024 05:00 AM", type: .info)
-                        ActivityLogRow(icon: "drop.fill", title: "Water leak detected in kitchen", subtitle: "Kitchen Water Sensor triggered leak alarm", date: "7/9/2024 10:45 AM", type: .critical)
-                        ActivityLogRow(icon: "bolt.horizontal.fill", title: "New device connected", subtitle: "Main Circuit Monitor successfully added to network", date: "7/8/2024 12:20 PM", type: .info)
-                        ActivityLogRow(icon: "thermometer.sun.fill", title: "Temperature spike in living room", subtitle: "Living Room Sensor detected temperature above normal range", date: "7/7/2024 09:15 AM", type: .warning)
-                    }
-                }
-                .padding()
-                .background(Color.white)
-                .cornerRadius(14)
-                .background(RoundedRectangle(cornerRadius: 14).stroke(Color.gray.opacity(0.15)))
-                // Support Section
-                VStack(alignment: .leading, spacing: 0) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "questionmark.circle").foregroundColor(.gray)
-                        Text("Support").font(.headline).foregroundColor(.black)
-                    }
-                    SettingsLinkRow(title: "Help Center")
-                    SettingsLinkRow(title: "Contact Support")
-                    SettingsLinkRow(title: "Privacy Policy")
-                    SettingsLinkRow(title: "Terms of Service")
-                }
-                .padding()
-                .background(Color.white)
-                .cornerRadius(14)
-                .background(RoundedRectangle(cornerRadius: 14).stroke(Color.gray.opacity(0.15)))
-                // Sign Out
+                
+                // Sign Out (Kept for beta)
                 Button(action: {
-                    // TODO: Properly handle sign out
-                    userSettings.loggedIn = false
+                    Task {
+                        // Clear the keychain by calling logout on AuthManager
+                        let authManager = await AuthManager()
+                        authManager.logout()
+                        
+                        // Update user settings
+                        userSettings.loggedIn = false
+                        
+                        print("✅ Sign out completed - keychain cleared and user logged out")
+                    }
                 }) {
                     HStack {
                         Image(systemName: "arrow.right.square.fill")
@@ -121,21 +111,25 @@ struct AccountSettings: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(SenchiColors.senchiRed)
+                    .background(Color.red)
                     .foregroundColor(.white)
                     .cornerRadius(8)
                 }
+                
                 // Version
-                Text("HomeGuard v\(ApplicationConfig.version)")
+                Text("HomeGuard v0.0.1")
                     .font(.caption2).foregroundColor(.gray)
                     .frame(maxWidth: .infinity, alignment: .center)
             }
             .padding(20)
+            }
+            .background(Color.white.ignoresSafeArea())
         }
-        .background(SenchiColors.senchiBackground.ignoresSafeArea())
     }
 }
 
+/*
+// MARK: - Original Implementation (Commented out for beta)
 private struct ToggleRow: View {
     var title: String
     var subtitle: String
@@ -151,7 +145,9 @@ private struct ToggleRow: View {
         }
     }
 }
+*/
 
+/*
 private struct ActivityLogRow: View {
     enum LogType { case warning, critical, info }
     var icon: String
@@ -193,7 +189,9 @@ private struct ActivityLogRow: View {
         }
     }
 }
+*/
 
+/*
 private struct LabelTag: View {
     var text: String
     var color: Color
@@ -220,6 +218,7 @@ private struct SettingsLinkRow: View {
         .padding(.vertical, 8)
     }
 }
+*/
 
 #Preview {
     AccountSettings()

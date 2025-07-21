@@ -294,18 +294,6 @@ struct OnboardingStep2QRCodeView: View {
             return
         }
         
-        // Create a redis key with the serial no. and the corresponding zigbee path
-        let prefix = "rpi:"
-        let key = wifiInfo.password
-        let value = "rpi-zigbee-\(wifiInfo.password.suffix(8))"
-        Task {
-            do {
-                try await setKey(prefix: prefix, key: key, value: value, ttl: 360)
-            } catch {
-                print("Failed to add key: \(error.localizedDescription)")
-            }
-        }
-        
         deviceSerial = wifiInfo.password
         scannedSSID = wifiInfo.ssid
         scannedPassword = wifiInfo.password

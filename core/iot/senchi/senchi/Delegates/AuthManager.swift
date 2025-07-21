@@ -1,13 +1,47 @@
-//
-//  AuthManager.swift
-//  senchi
-//
-//  Created by Michael Dawes on 2025-07-14.
-//
-
+    
 import SwiftUI
 import Foundation
 import Security
+
+// MARK: - Response Types
+struct UserInfoResponse: Codable {
+    let user_id: String
+    let location_id: String
+    let device_serial: String
+    let full_name: String?
+    let iat: Double?
+    let exp: Double
+    let created_at: String?
+}
+
+enum AuthError: Error, LocalizedError {
+    case invalidURL
+    case serverError(String)
+    case networkError(Error)
+    case keychainError(String)
+    case pushNotificationDenied(Error)
+    
+    var errorDescription: String? {
+        switch self {
+        case .invalidURL:
+            return "Invalid URL"
+        case .serverError(let message):
+            return message
+        case .networkError(let error):
+            return "Network error: \(error.localizedDescription)"
+        case .keychainError(let message):
+            return "Keychain error: \(message)"
+        case .pushNotificationDenied(let error):
+            return "Push notification permission denied: \(error.localizedDescription)"
+        }
+    }
+}
+
+struct LoginResponse: Codable {
+    let message: String
+    let token: String
+    let user_info: UserInfoResponse
+}
 
 @MainActor
 class AuthManager: ObservableObject {
@@ -83,7 +117,7 @@ class AuthManager: ObservableObject {
         }
     }
     
-    func setupDevice(serialNumber: String) async throws {
+    func setupDevice(serialNumber: String, email: String? = nil, fullName: String? = nil) async throws {
         isLoading = true
         errorMessage = nil
         
@@ -93,11 +127,15 @@ class AuthManager: ObservableObject {
             // Setup device with server
             let tokenResponse = try await performDeviceSetup(
                 serialNumber: serialNumber,
-                pushToken: nil as String? // Will be updated later when received
+                pushToken: nil as String?, // Will be updated later when received
+                email: email,
+                fullName: fullName
             )
             
             // Store credentials securely
             try storeCredentials(token: tokenResponse.jwtToken, locationId: tokenResponse.locationId)
+            
+            // Email -> token mapping is now handled server-side
             
             // Update state
             currentToken = tokenResponse.jwtToken
@@ -113,12 +151,60 @@ class AuthManager: ObservableObject {
         }
     }
     
-    private func performDeviceSetup(serialNumber: String, pushToken: String?) async throws -> TokenResponse {
+    func loginWithEmail(email: String) async throws {
+        isLoading = true
+        errorMessage = nil
+        
+        defer { isLoading = false }
+        
+        do {
+            // Retrieve token and user info from Redis using email
+            let result = try await retrieveTokenByEmail(email: email)
+            
+            if let result = result {
+                let token = result.token
+                let userInfo = result.userInfo
+                
+                // Validate the token with the server
+                let isValid = try await validateTokenWithServer(token)
+                
+                if isValid {
+                    // Store credentials securely
+                    try storeCredentials(token: token, locationId: userInfo.location_id)
+                    
+                    // Update state
+                    currentToken = token
+                    locationId = userInfo.location_id
+                    isAuthenticated = true
+                    
+                    // Store user name if available
+                    if let fullName = userInfo.full_name {
+                        // You can store this in UserDefaults or pass it to UserSettings
+                        UserDefaults.standard.set(fullName, forKey: "user_full_name")
+                        print("Stored user name: \(fullName)")
+                    }
+                    
+                    print("Login successful for: \(email)")
+                } else {
+                    throw AuthError.serverError("Invalid or expired token")
+                }
+            } else {
+                throw AuthError.serverError("No account found for this email")
+            }
+            
+        } catch {
+            errorMessage = error.localizedDescription
+            print("Login failed: \(error)")
+            throw error
+        }
+    }
+    
+    private func performDeviceSetup(serialNumber: String, pushToken: String?, email: String?, fullName: String?) async throws -> TokenResponse {
         guard let url = URL(string: "\(ApplicationConfig.apiBase)/api/auth/setup") else {
             throw AuthError.invalidURL
         }
         
-        let request = TokenSetupRequest(deviceSerial: serialNumber, pushToken: pushToken)
+        let request = TokenSetupRequest(deviceSerial: serialNumber, pushToken: pushToken, email: email, fullName: fullName)
         
         var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = "POST"
@@ -204,6 +290,102 @@ class AuthManager: ObservableObject {
         }
         
         return 200...299 ~= httpResponse.statusCode
+    }
+    
+    private func retrieveTokenByEmail(email: String) async throws -> (token: String, userInfo: UserInfoResponse)? {
+        // Use server endpoint to retrieve token by email
+        guard let url = URL(string: "\(ApplicationConfig.apiBase)/api/auth/login") else {
+            throw AuthError.invalidURL
+        }
+        
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let requestBody = ["email": email]
+        urlRequest.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
+        
+        let (data, response) = try await URLSession.shared.data(for: urlRequest)
+        
+        guard let httpResponse = response as? HTTPURLResponse,
+              200...299 ~= httpResponse.statusCode else {
+            let errorMessage = String(data: data, encoding: .utf8) ?? "Unknown error"
+            throw AuthError.serverError("Login failed: \(errorMessage)")
+        }
+        
+        // Debug: Print the response data
+        let responseString = String(data: data, encoding: .utf8) ?? "No data"
+        print("🔍 Login response: \(responseString)")
+        
+        do {
+            let loginResponse = try JSONDecoder().decode(LoginResponse.self, from: data)
+            print("✅ Login response decoded successfully")
+            return (token: loginResponse.token, userInfo: loginResponse.user_info)
+        } catch let decodingError as DecodingError {
+            print("❌ Decoding error: \(decodingError)")
+            switch decodingError {
+            case .keyNotFound(let key, let context):
+                print("❌ Missing key: \(key.stringValue) at path: \(context.codingPath)")
+            case .typeMismatch(let type, let context):
+                print("❌ Type mismatch: expected \(type) at path: \(context.codingPath)")
+            case .valueNotFound(let type, let context):
+                print("❌ Value not found: expected \(type) at path: \(context.codingPath)")
+            case .dataCorrupted(let context):
+                print("❌ Data corrupted: \(context)")
+            @unknown default:
+                print("❌ Unknown decoding error")
+            }
+            print("❌ Response data: \(responseString)")
+            throw AuthError.serverError("Failed to decode login response: \(decodingError.localizedDescription)")
+        } catch {
+            print("❌ Other error: \(error)")
+            print("❌ Response data: \(responseString)")
+            throw AuthError.serverError("Failed to decode login response: \(error.localizedDescription)")
+        }
+    }
+    
+    private func storeEmailTokenMapping(email: String, token: String) async throws {
+        // Store email -> token mapping in Redis
+        do {
+            try await setKey(prefix: "email", key: email, value: token, ttl: 60 * 60 * 24 * 30) // 30 days
+            print("Stored email -> token mapping for: \(email)")
+        } catch {
+            print("Error storing email -> token mapping: \(error)")
+            // Don't throw here as this is not critical for device setup
+        }
+    }
+    
+    private func getUserInfoFromToken(_ token: String) async throws -> (locationId: String, deviceSerial: String) {
+        guard let url = URL(string: "\(ApplicationConfig.apiBase)/api/auth/verify") else {
+            throw AuthError.invalidURL
+        }
+        
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "GET"
+        urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        let (data, response) = try await URLSession.shared.data(for: urlRequest)
+        
+        guard let httpResponse = response as? HTTPURLResponse,
+              200...299 ~= httpResponse.statusCode else {
+            throw AuthError.serverError("Failed to get user info")
+        }
+        
+        // Debug: Print the verify response
+        let responseString = String(data: data, encoding: .utf8) ?? "No data"
+        print("🔍 Verify response: \(responseString)")
+        
+        // The verify endpoint returns a different structure, so let's decode it properly
+        struct VerifyResponse: Codable {
+            let valid: Bool
+            let user_id: String
+            let location_id: String
+            let device_serial: String
+            let expires_at: Double
+        }
+        
+        let verifyResponse = try JSONDecoder().decode(VerifyResponse.self, from: data)
+        return (locationId: verifyResponse.location_id, deviceSerial: verifyResponse.device_serial)
     }
     
     // MARK: - Secure Storage

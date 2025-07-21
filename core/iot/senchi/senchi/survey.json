@@ -4,7 +4,7 @@
         "question": "Are all major systems (e.g. HVAC, water heater, furnace) elevated at least 1 foot above the ground?",
         "risk": ["Flooding", "Earthquake"],
         "importance": ["High", "Medium"],
-        "requires_photo": false,
+        "requires_photo": true,
         "rubric": {
           "Yes": 1,
           "No": 0

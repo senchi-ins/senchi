@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct SignInView: View {
+    @EnvironmentObject private var userSettings: UserSettings
     @Binding var email: String
     @Binding var password: String
     @FocusState.Binding var focusedField: OnboardingViewMain.Field?

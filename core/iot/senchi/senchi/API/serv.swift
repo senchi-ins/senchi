@@ -1,5 +1,6 @@
 
 import Foundation
+import SwiftUI
 
 
 struct SetKeyResponse: Codable {
@@ -103,6 +104,14 @@ func permitJoin(duration: Int = 60) async throws -> String {
     request.httpMethod = "POST"
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
     request.timeoutInterval = 10
+    
+    // Add JWT token to Authorization header
+    let authManager = await AuthManager()
+    if let token = await authManager.currentToken {
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+    } else {
+        throw RedisAPIError.httpError(401, "No authentication token available")
+    }
     
     do {
         let (data, response) = try await URLSession.shared.data(for: request)
