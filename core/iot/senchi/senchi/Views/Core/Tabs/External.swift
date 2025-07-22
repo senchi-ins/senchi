@@ -5,6 +5,7 @@ import Photos
 
 struct External: View {
     @EnvironmentObject var userSettings: UserSettings
+    @EnvironmentObject var authManager: AuthManager
     @State private var answers: [UUID: SurveyAnswer] = [:]
     @State private var showSubmitAlert = false
     @State private var currentQuestionIndex = 0
@@ -283,8 +284,6 @@ struct External: View {
             }
         }
     }
-    
-    // FIXED: Separated permission methods for better debugging
     private func requestCameraAccess(questionID: UUID) {
         let status = AVCaptureDevice.authorizationStatus(for: .video)
         print("Camera status: \(status.rawValue)")
@@ -412,10 +411,14 @@ struct External: View {
         }
         
         // Submit to backend
-        let url = URL(string: "\(ApplicationConfig.restAPIBase)/api/v1/external/submit/\(UUID().uuidString)")!
+        let url = URL(string: "\(ApplicationConfig.restAPIBase)/api/v1/external/submit")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        // Add Authorization header if token is available
+        if let token = authManager.currentToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
         
         do {
             request.httpBody = try JSONEncoder().encode(userAnswers)

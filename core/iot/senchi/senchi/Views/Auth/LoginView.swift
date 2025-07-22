@@ -7,6 +7,7 @@ struct LoginView: View {
     @State private var showAlert: Bool = false
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var authManager: AuthManager
+    @EnvironmentObject var userSettings: UserSettings
     
     var body: some View {
         NavigationView {
@@ -112,13 +113,16 @@ struct LoginView: View {
         
         do {
             try await authManager.loginWithEmail(email: email)
-            dismiss()
         } catch {
             errorMessage = error.localizedDescription
             showAlert = true
         }
         
+        userSettings.isOnboarded = true
         isLoading = false
+        print(userSettings.isOnboarded)
+        print(authManager.isAuthenticated)
+        dismiss()
     }
 }
 

@@ -18,7 +18,7 @@ struct HomeMonitorApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .environmentObject(UserSettings())
+                .environmentObject(userSettings)
                 .environmentObject(authManager)
                 .environmentObject(pushManager)
                 .onAppear {

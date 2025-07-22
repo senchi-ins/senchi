@@ -91,7 +91,6 @@ struct OnboardingViewMain: View {
                     onLogin: {
                         let generator = UIImpactFeedbackGenerator(style: .medium)
                         generator.impactOccurred()
-                        userSettings.isOnboarded = true
                         showLoginView = true
                     }
                 )

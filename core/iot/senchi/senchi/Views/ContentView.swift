@@ -11,10 +11,11 @@ struct ContentView: View {
     
     var body: some View {
         Group {
-            if authManager.isAuthenticated || userSettings.isOnboarded {
-                HomeDashboardView()
-            } else {
+            // TODO: Change back to &&
+            if !authManager.isAuthenticated || !userSettings.isOnboarded {
                 OnboardingViewMain()
+            } else {
+                HomeDashboardView()
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .showLeakAlert)) { notification in

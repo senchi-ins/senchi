@@ -79,6 +79,8 @@ class AuthManager: ObservableObject {
             currentToken = "demo_token_\(UUID().uuidString)"
             locationId = "demo_location_\(UUID().uuidString)"
             
+            UserDefaults.standard.set(email, forKey: "user_email")
+            
             print("Sign in successful for: \(email)")
             
         } catch {
@@ -151,6 +153,70 @@ class AuthManager: ObservableObject {
         }
     }
     
+    func refreshToken() async throws {
+//        guard let currentToken = self.currentToken else {
+//            throw AuthError.keychainError("No token to refresh!")
+//        }
+        if currentToken == nil {
+            currentToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiYjViNDI0NjMtN2FjNC00N2JhLWFhOTYtMzRjOWY5NmI1ZTM2IiwibG9jYXRpb25faWQiOiJycGktemlnYmVlLTM2ZjIwZTY0IiwiZGV2aWNlX3NlcmlhbCI6IjE3NTI2MjA1MzZmMjBlNjQiLCJpYXQiOjE3NTI2ODYzMDIuMTUzOTM4LCJleHAiOjE3NTUyNzgzMDIuMTUzOTM4fQ.rBJ6Dn5AhL75dL2Jssgo8lBtEGesV2QGnQrk1LFaZHY"
+        }
+
+        // Decode JWT to check expiration
+        let segments = currentToken!.split(separator: ".")
+        guard segments.count == 3,
+              let payloadData = Data(base64Encoded: String(segments[1]).base64URLToBase64()),
+              let payload = try? JSONSerialization.jsonObject(with: payloadData) as? [String: Any],
+              let exp = payload["exp"] as? Double else {
+            throw AuthError.keychainError("Invalid JWT format")
+        }
+
+        let expirationDate = Date(timeIntervalSince1970: exp)
+        let now = Date()
+
+        if expirationDate > now {
+            print("✅ Token is still valid until \(expirationDate)")
+            return // Token is still valid, nothing to do
+        }
+
+        print("🔄 Token expired at \(expirationDate), refreshing...")
+
+        guard let email = UserDefaults.standard.string(forKey: "user_email"),
+              let password = UserDefaults.standard.string(forKey: "user_password") else {
+            throw AuthError.keychainError("No credentials available to refresh token")
+        }
+
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+
+        // Call the login endpoint
+        guard let url = URL(string: "\(ApplicationConfig.restAPIBase)/api/v1/auth/login") else {
+            throw AuthError.invalidURL
+        }
+
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let body = ["email": email, "password": password]
+        urlRequest.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await URLSession.shared.data(for: urlRequest)
+        guard let httpResponse = response as? HTTPURLResponse,
+              200...299 ~= httpResponse.statusCode else {
+            let errorMessage = String(data: data, encoding: .utf8) ?? "Unknown error"
+            print("Failed to refresh token: \(errorMessage)")
+            throw AuthError.serverError("Token refresh failed: \(errorMessage)")
+        }
+
+        // Parse the response and update the token
+        let loginResponse = try JSONDecoder().decode(LoginResponse.self, from: data)
+        self.currentToken = loginResponse.token
+        self.locationId = loginResponse.user_info.location_id
+        self.isAuthenticated = true
+        try storeCredentials(token: loginResponse.token, locationId: loginResponse.user_info.location_id)
+        print("Token refreshed successfully from server")
+    }
+    
     func loginWithEmail(email: String) async throws {
         isLoading = true
         errorMessage = nil
@@ -186,7 +252,9 @@ class AuthManager: ObservableObject {
                     
                     print("Login successful for: \(email)")
                 } else {
-                    throw AuthError.serverError("Invalid or expired token")
+                    // throw AuthError.serverError("Invalid or expired token")
+                    try await refreshToken()
+                    return
                 }
             } else {
                 throw AuthError.serverError("No account found for this email")
@@ -199,6 +267,8 @@ class AuthManager: ObservableObject {
         }
     }
     
+    // TODO: Update the apiBase to zigbeeAPIBase to clarify which server its running on
+    // NOTE: some JWTs will have the device serial in the payload (initial setup) while later it will not
     private func performDeviceSetup(serialNumber: String, pushToken: String?, email: String?, fullName: String?) async throws -> TokenResponse {
         guard let url = URL(string: "\(ApplicationConfig.apiBase)/api/auth/setup") else {
             throw AuthError.invalidURL
@@ -259,13 +329,17 @@ class AuthManager: ObservableObject {
     // MARK: - Token Validation
     
     func verifyToken() async -> Bool {
-        guard let token = currentToken else { return false }
-        
+        print("🔍 verifyToken called. Current token: \(String(describing: currentToken))")
+        guard let token = currentToken else {
+            print("❌ No token found in verifyToken")
+            return false
+        }
         do {
             let isValid = try await validateTokenWithServer(token)
             if !isValid {
                 logout()
             }
+            print("Token validated: \(isValid)")
             return isValid
         } catch {
             print("❌ Token verification failed: \(error)")
@@ -275,12 +349,13 @@ class AuthManager: ObservableObject {
     }
     
     private func validateTokenWithServer(_ token: String) async throws -> Bool {
-        guard let url = URL(string: "\(ApplicationConfig.apiBase)/api/auth/verify") else {
+        // TODO: Only use the central server for verification
+        guard let url = URL(string: "\(ApplicationConfig.restAPIBase)/api/v1/auth/verify") else {
             throw AuthError.invalidURL
         }
         
         var urlRequest = URLRequest(url: url)
-        urlRequest.httpMethod = "GET"
+        urlRequest.httpMethod = "POST"
         urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         
         let (_, response) = try await URLSession.shared.data(for: urlRequest)
@@ -473,5 +548,18 @@ class AuthManager: ObservableObject {
         currentToken = nil
         locationId = nil
         isAuthenticated = false
+    }
+}
+
+extension String {
+    func base64URLToBase64() -> String {
+        var base64 = self
+            .replacingOccurrences(of: "-", with: "+")
+            .replacingOccurrences(of: "_", with: "/")
+        let padding = 4 - base64.count % 4
+        if padding < 4 {
+            base64 += String(repeating: "=", count: padding)
+        }
+        return base64
     }
 }
