@@ -56,6 +56,7 @@ class RecommendationEngine:
         """
         return self.top_recommendations[:limit]
 
+    # TODO: Delete this function
     def format_recommendations(self, recommendations: List[Dict], show_limit: Optional[int] = None) -> str:
         """
         Format the recommendations into a human-readable string.
@@ -95,6 +96,7 @@ class RecommendationEngine:
                     
         return "\n".join(output)
 
+# TODO: Delete this function
 def main():
     """Example usage of RecommendationEngine."""
     from grader import RiskGrader

@@ -1,15 +1,38 @@
+
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from config import settings
-from api.v1.api import api_router
+from contextlib import asynccontextmanager
 import uvicorn
 
+from config import settings
+from api.v1.api import api_router
+from db.pg import PostgresDB
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    db = PostgresDB()
+    try:
+        app.state.db = db
+        db.execute_query("""
+        CREATE TABLE IF NOT EXISTS assessment_responses (
+            id SERIAL PRIMARY KEY,
+            user_id VARCHAR(255) NOT NULL,
+            response JSONB NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        """)
+    except Exception as e:
+        print(f"Error initializing database: {e}")
+        raise e
+    yield
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
     description=settings.DESCRIPTION,
-    openapi_url=f"{settings.API_PREFIX}/openapi.json"
+    openapi_url=f"{settings.API_PREFIX}/openapi.json",
+    lifespan=lifespan
 )
 
 app.add_middleware(

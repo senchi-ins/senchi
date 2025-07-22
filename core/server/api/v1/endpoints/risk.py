@@ -29,21 +29,17 @@ async def get_risk():
 async def upload_file_endpoint(
         address: str,
         bucket: str = "senchi-gen-dev",
-        zoom: int = 21, 
+        zoom: int = 21,
         file_type: str = "png",
     ):
         try:
-            # Calculate optimal heading
             camera_data = await get_camera_position(address)
-            heading = int(camera_data.heading)  # Convert to int for the API
+            heading = int(camera_data.heading)
             
-            # Get Street View image
             response = get_streetview_image(address, heading, zoom)
             object_name = address + "_" + str(heading)
 
-            # Hash the object name to avoid leaking sensitive information
             object_name = hashlib.sha256(object_name.encode()).hexdigest()
-            # object_name = "house_testing"
             sv_success = upload_file_from_bytes(
                 stream=response["sv_response"],
                 bucket=bucket,

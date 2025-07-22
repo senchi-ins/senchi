@@ -271,6 +271,7 @@ class StreetViewLabeller:
             'labeled_recommendations': labeled_recommendations
         }
 
+# TODO: Delete this function
 def main():
     """Example usage of StreetViewLabeller."""
     from recommendations import RecommendationEngine

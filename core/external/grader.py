@@ -176,6 +176,7 @@ class RiskGrader:
             )
         }
 
+# TODO: Delete this function
 def main():
     """Example usage of RiskGrader."""
     grader = RiskGrader()

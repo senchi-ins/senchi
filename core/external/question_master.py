@@ -21,6 +21,9 @@ class QuestionMaster:
             self.questions_data = json.load(f)
             
         # Pre-process questions by risk category for faster lookup
+        # TODO: Is this needed? Can I just read in the json and use as is?
+        # TODO: Rather than getting questions by risk, filter the questions based on the 
+        # specific risk in the persons area (since we already need location data) using the `*.csv` files
         self.questions_by_risk = {}
         for question in self.questions_data['risk_questions']:
             for risk_type, importance in zip(question['risk'], question['importance']):
@@ -32,6 +35,7 @@ class QuestionMaster:
                     'rubric': question['rubric']
                 })
 
+    # TODO: Delete this function, relevant questions are now filtered based on the risk in the persons area
     def get_relevant_questions(self, risk_assessment: Dict[str, Optional[str]]) -> List[Dict]:
         """
         Generate a list of unique relevant questions based on high-risk events.
@@ -120,6 +124,7 @@ class QuestionMaster:
         
         return high_risk_questions
 
+# TODO: Delete this function
 def main():
     """Example usage of QuestionMaster."""
     # Initialize the classes
