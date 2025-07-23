@@ -99,7 +99,6 @@ export default function Search({ input, setInput, setEnterPressed }: SearchProps
           style={{
             width: "100%",
             padding: "16px 20px",
-            marginBottom: 20,
             borderRadius: 12,
             border: `2px solid ${SENCHI_MAIN}`,
             outline: "none",
@@ -135,7 +134,7 @@ export default function Search({ input, setInput, setEnterPressed }: SearchProps
             borderTop: "none",
             borderRadius: "0 0 12px 12px",
             boxShadow: "0 4px 16px rgba(36,13,191,0.08)",
-            marginTop: 15,
+            marginTop: 0,
             zIndex: 10,
             position: "absolute",
             width: "100%",
@@ -143,7 +142,7 @@ export default function Search({ input, setInput, setEnterPressed }: SearchProps
             minWidth: "100%",
             maxHeight: 220,
             overflowY: "auto",
-            top: 140,
+            top: 120,
           }}
         >
           {suggestions.map((s, i) => (

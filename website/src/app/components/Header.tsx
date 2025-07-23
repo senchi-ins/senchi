@@ -1,9 +1,10 @@
 'use client'
 
 import { Button } from "./ui/button";
-import { Menu, X } from "lucide-react";
+import { Menu, X, ArrowRight } from "lucide-react";
 import { useState } from "react";
 import Image from 'next/image';
+import Link from 'next/link';
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -30,6 +31,12 @@ export default function Header() {
             <a href="#do-good" className="text-gray-600 hover:text-senchi-primary transition-colors">
               Do Good
             </a>
+            <Button asChild className="bg-senchi-primary hover:bg-senchi-primary/90 text-white px-4 py-2" size="sm">
+              <Link href="/ext-assessment" className="flex items-center gap-2">
+                Take our external assessment
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </Button>
           </nav>
 
           {/* Mobile menu button */}
@@ -69,6 +76,23 @@ export default function Header() {
               >
                 Do Good
               </a>
+              <Button
+                asChild
+                className="mt-4 w-full bg-senchi-primary hover:bg-senchi-primary/90 text-white px-4 py-2"
+                size="sm"
+              >
+                {/* TODO Update to be in line with the desktop version */}
+                <a
+                  href="https://senchi.ca/external-assessment"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Take our external assessment
+                  <ArrowRight className="w-4 h-4" />
+                </a>
+              </Button>
             </div>
           </div>
         )}
