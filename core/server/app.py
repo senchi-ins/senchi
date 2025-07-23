@@ -11,20 +11,20 @@ from db.pg import PostgresDB
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    db = PostgresDB()
-    try:
-        app.state.db = db
-        db.execute_query("""
-        CREATE TABLE IF NOT EXISTS assessment_responses (
-            id SERIAL PRIMARY KEY,
-            user_id VARCHAR(255) NOT NULL,
-            response JSONB NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-        """)
-    except Exception as e:
-        print(f"Error initializing database: {e}")
-        raise e
+    # db = PostgresDB()
+    # try:
+    #     app.state.db = db
+    #     db.execute_query("""
+    #     CREATE TABLE IF NOT EXISTS assessment_responses (
+    #         id SERIAL PRIMARY KEY,
+    #         user_id VARCHAR(255) NOT NULL,
+    #         response JSONB NOT NULL,
+    #         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    #     )
+    #     """)
+    # except Exception as e:
+    #     print(f"Error initializing database: {e}")
+    #     raise e
     yield
 
 app = FastAPI(

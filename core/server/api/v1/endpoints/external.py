@@ -86,6 +86,63 @@ async def upload_photo(
         )
     return {"photo_url": photo_url}
 
+@router.post("/submit-web")
+async def submit_assessment(
+    answers: List[UserAnswer],
+) -> AssessmentResponse:
+    """
+    Submit answers to risk assessment questions and get recommendations on the website.
+    """
+    try:
+        formatted_answers = []
+        # Use the correct questions list from question_master
+        questions_data = services['question_master'].questions_data["risk_questions"]
+        for answer in answers:
+            # Match the question by its text
+            question_data = next(
+                (q for q in questions_data if q["question"] == answer.question),
+                None
+            )
+            if not question_data:
+                continue
+            photo_score_adjustment = 0
+            if question_data.get("requires_photo", False) and answer.photos:
+                for photo_url in answer.photos:
+                    validation_result = services['photo_validator'].validate_photo(
+                        photo_url,
+                        question_data["risk"][0],  # Use primary risk type
+                        answer.answer
+                    )
+                    photo_score_adjustment += validation_result.get("score_adjustment", 0)
+            formatted_answers.append({
+                "question": answer.question,
+                "risk_type": question_data["risk"][0],  # Use primary risk type
+                "importance": question_data["importance"][0],  # Use primary importance
+                "answer": answer.answer,
+                "rubric": question_data["rubric"],
+                "risk_level": "Very High",  # This should come from the assess-location step
+                "photos": answer.photos,
+                "photo_score_adjustment": photo_score_adjustment
+            })
+        # Calculate scores with photo validation adjustments
+        results = services['grader'].calculate_score(formatted_answers)
+        # Generate recommendations
+        recommendations = services['recommendation_engine'].get_improvement_recommendations(results)
+        assessment_response = AssessmentResponse(
+            total_score=results["total_score"],
+            points_earned=results["points_earned"],
+            points_possible=results["points_possible"],
+            breakdown=results["breakdown"],
+            recommendations=recommendations
+        )
+        return assessment_response
+    except Exception as e:
+        print(e)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error processing answers: {str(e)}"
+        ) 
+
 @router.post("/submit")
 async def submit_assessment(
     answers: List[UserAnswer],
