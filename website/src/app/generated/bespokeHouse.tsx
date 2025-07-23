@@ -5,7 +5,7 @@ import { Canvas } from '@react-three/fiber'
 import { OrbitControls, useGLTF, Html } from '@react-three/drei'
 import { motion, AnimatePresence } from 'framer-motion'
 import dotenv from 'dotenv'
-import { AnalyzeHouseResponse, proxyGLB } from '@/utils/api'
+import { AnalyzeHouseResponse } from '@/utils/api'
 import { fallback_url } from '@/utils/fallback'
 
 dotenv.config()
