@@ -32,7 +32,8 @@ class Settings(BaseSettings):
         "https://api.senchi.ca",
         "http://api.senchi.ca",
         "https://www.senchi.ca",
-        "http://www.senchi.ca"
+        "http://www.senchi.ca",
+        "https://survey.senchi.ca"
     ]
     ALLOWED_CREDENTIALS: bool = True
     ALLOWED_HEADERS: List[str] = ["*"]
