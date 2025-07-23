@@ -5,7 +5,7 @@ import { Canvas } from '@react-three/fiber'
 import { OrbitControls, useGLTF, Html } from '@react-three/drei'
 import { motion, AnimatePresence } from 'framer-motion'
 import dotenv from 'dotenv'
-import { AnalyzeHouseResponse, proxyGLB } from '@/utils/api'
+import { AnalyzeHouseResponse } from '@/utils/api'
 import { fallback_url } from '@/utils/fallback'
 
 dotenv.config()
@@ -47,7 +47,7 @@ export default function BespokeHouse({ imageURL, labellingResponse = defaultLabe
   const getRenderURL = useCallback(async () => {
     if (imageURL !== fallback_url) {
       try {
-        const simpleProxyURL = await proxyGLB(imageURL);
+        const simpleProxyURL = "/3D/sample_house.glb";
         return simpleProxyURL;
       } catch (error) {
         console.warn('Failed to proxy GLB, using fallback:', error);

@@ -1,0 +1,69 @@
+services:
+  # NOTE: Same as the iot branch since it will be the same db in prod
+  postgres:
+    image: postgres:15-alpine
+    container_name: senchi-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=home_automation
+      - POSTGRES_USER=homeuser
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-defaultpass}
+      - TZ=${TZ:-America/Toronto}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U homeuser -d home_automation"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  senchi-api-v1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: senchi-api-v1
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://homeuser:${DB_PASSWORD:-defaultpass}@postgres:5432/home_automation
+      - SECRET_KEY=${SECRET_KEY:-defaultsecret}
+      - ENVIRONMENT=${ENVIRONMENT:-dev}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - TZ=${TZ:-America/Toronto}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - GOOGLE_SV_API_KEY=${GOOGLE_SV_API_KEY}
+      - GOOGLE_MAPS_API_KEY=${GOOGLE_MAPS_API_KEY}
+      - TRIPPO_API_KEY=${TRIPPO_API_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+      # - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      # - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      # - AWS_REGION=${AWS_REGION}
+      # - AWS_S3_REGION_NAME=${AWS_S3_REGION_NAME}
+      # - AWS_S3_SIGNATURE_VERSION=${AWS_S3_SIGNATURE_VERSION}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - APNS_AUTH_KEY=${APNS_AUTH_KEY}
+      - APNS_KEY_ID=${APNS_KEY_ID}
+      - APNS_TEAM_ID=${APNS_TEAM_ID}
+      - APNS_BUNDLE_ID=${APNS_BUNDLE_ID}
+      - APNS_PRODUCTION=${APNS_PRODUCTION}
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./configuration.yml:/app/configuration.yml:ro
+    depends_on:
+      - postgres
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  postgres_data:

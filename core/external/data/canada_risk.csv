@@ -1,0 +1,73 @@
+Province,Region,Flooding,Cold Wave / Severe Winter Weather,Hail,Wildfire,Wind,Earthquake
+BC,Capital Regional District,Relatively High,Relatively Moderate,Relatively Low,Relatively Moderate,Relatively High,Very High
+BC,Cariboo,Relatively Moderate,Relatively High,Relatively Moderate,Very High,Relatively Moderate,Relatively Low
+BC,Central Okanagan,Relatively Moderate,Relatively Moderate,Relatively Moderate,Relatively High,Relatively Moderate,Relatively Low
+BC,Columbia-Shuswap,Relatively High,Relatively High,Relatively Moderate,Relatively High,Relatively Moderate,Relatively Low
+BC,Comox Valley,Relatively High,Relatively Moderate,Relatively Low,Relatively Moderate,Relatively High,Very High
+BC,Cowichan Valley,Relatively High,Relatively Moderate,Relatively Low,Relatively Moderate,Relatively High,Very High
+BC,Fraser Valley,Very High,Relatively Moderate,Relatively Low,Relatively Moderate,Relatively High,Very High
+BC,Metro Vancouver,Relatively High,Relatively Moderate,Relatively Low,Relatively Moderate,Relatively High,Very High
+BC,Nanaimo,Relatively High,Relatively Moderate,Relatively Low,Relatively Moderate,Relatively High,Very High
+BC,North Okanagan,Relatively Moderate,Relatively High,Relatively Moderate,Relatively High,Relatively Moderate,Relatively Low
+BC,Okanagan-Similkameen,Relatively Moderate,Relatively Moderate,Relatively Moderate,Relatively High,Relatively Moderate,Relatively Low
+BC,Peace River,Relatively High,Very High,Relatively Moderate,Relatively High,Relatively High,Relatively Low
+BC,Squamish-Lillooet,Relatively High,Relatively Moderate,Relatively Low,Relatively High,Relatively High,Very High
+BC,Strathcona,Relatively High,Relatively Moderate,Relatively Low,Relatively Moderate,Relatively High,Very High
+BC,Thompson-Nicola,Relatively Moderate,Relatively High,Relatively Moderate,Very High,Relatively Moderate,Relatively Low
+AB,Cypress County,Relatively Moderate,Relatively High,Very High,Relatively Moderate,Relatively High,Relatively Low
+AB,Grande Prairie County No. 1,Relatively Moderate,Very High,Relatively High,Relatively High,Relatively High,Relatively Low
+AB,Lethbridge County,Relatively High,Relatively High,Very High,Relatively Moderate,Very High,Relatively Low
+AB,Strathcona County,Relatively Moderate,Relatively High,Relatively High,Relatively Moderate,Relatively High,Relatively Low
+AB,Wood Buffalo,Relatively High,Very High,Relatively Moderate,Very High,Relatively High,Relatively Low
+ON,Essex County,Relatively High,Relatively Moderate,Relatively Moderate,Relatively Low,Relatively High,Relatively Low
+ON,Frontenac County,Relatively High,Relatively High,Relatively Moderate,Relatively Low,Relatively High,Relatively Moderate
+ON,Greater Sudbury,Relatively Moderate,Relatively High,Relatively Moderate,Relatively High,Relatively Moderate,Relatively Low
+ON,Hamilton,Relatively High,Relatively Moderate,Relatively Moderate,Relatively Low,Relatively High,Relatively Low
+ON,Middlesex County,Relatively High,Relatively Moderate,Relatively Moderate,Relatively Low,Relatively Moderate,Relatively Low
+ON,Ottawa,Very High,Relatively High,Relatively Moderate,Relatively Moderate,Relatively High,Relatively Moderate
+ON,Regional Municipality of Durham,Relatively High,Relatively Moderate,Relatively Moderate,Relatively Low,Relatively High,Relatively Low
+ON,Regional Municipality of Niagara,Relatively High,Relatively Moderate,Relatively Moderate,Relatively Low,Relatively High,Relatively Low
+ON,Regional Municipality of Peel,Relatively High,Relatively Moderate,Relatively Moderate,Relatively Low,Relatively High,Relatively Low
+ON,Simcoe County,Relatively Moderate,Relatively High,Relatively Moderate,Relatively Moderate,Relatively High,Relatively Low
+ON,Toronto,Very High,Relatively Moderate,Relatively Moderate,Relatively Low,Relatively High,Relatively Low
+ON,Wellington County,Relatively High,Relatively Moderate,Relatively Moderate,Relatively Low,Relatively Moderate,Relatively Low
+QC,Abitibi-Témiscamingue,Relatively Moderate,Very High,Relatively Moderate,Relatively High,Relatively Moderate,Relatively Low
+QC,Bas-Saint-Laurent,Relatively High,Relatively High,Relatively Low,Relatively Moderate,Relatively High,Relatively Moderate
+QC,Capitale-Nationale,Relatively High,Relatively High,Relatively Moderate,Relatively Moderate,Relatively High,Relatively High
+QC,Estrie,Relatively High,Relatively Moderate,Relatively Moderate,Relatively Low,Relatively Moderate,Relatively Low
+QC,Laval,Very High,Relatively Moderate,Relatively Moderate,Relatively Low,Relatively Moderate,Relatively Moderate
+QC,Mauricie,Relatively High,Relatively High,Relatively Moderate,Relatively Moderate,Relatively Moderate,Relatively Moderate
+QC,Montréal,Very High,Relatively Moderate,Relatively Moderate,Relatively Low,Relatively High,Relatively Moderate
+QC,Montérégie,Relatively High,Relatively Moderate,Relatively Moderate,Relatively Low,Relatively Moderate,Relatively Moderate
+QC,Outaouais,Very High,Relatively High,Relatively Moderate,Relatively Moderate,Relatively Moderate,Relatively Moderate
+QC,Saguenay–Lac-Saint-Jean,Relatively High,Very High,Relatively Low,Relatively High,Relatively High,Relatively High
+NS,Annapolis County,Relatively High,Relatively Moderate,Relatively Low,Relatively Moderate,Very High,Relatively Low
+NS,Cape Breton Regional Municipality,Relatively High,Relatively High,Relatively Low,Relatively Moderate,Very High,Relatively Low
+NS,Colchester County,Relatively High,Relatively Moderate,Relatively Low,Relatively Moderate,Very High,Relatively Low
+NS,Cumberland County,Relatively High,Relatively Moderate,Relatively Low,Relatively Moderate,Very High,Relatively Low
+NS,Halifax Regional Municipality,Very High,Relatively Moderate,Relatively Low,Relatively High,Very High,Relatively Low
+NS,Kings County,Relatively High,Relatively Moderate,Relatively Low,Relatively Moderate,Very High,Relatively Low
+NS,Pictou County,Relatively High,Relatively Moderate,Relatively Low,Relatively Moderate,Very High,Relatively Low
+NB,Bathurst,Relatively High,Relatively High,Relatively Low,Relatively Moderate,Very High,Relatively Low
+NB,Fredericton,Very High,Relatively High,Relatively Low,Relatively Moderate,Relatively High,Relatively Low
+NB,Fundy Albert,Relatively High,Relatively Moderate,Relatively Low,Relatively Moderate,Very High,Relatively Low
+NB,Miramichi,Relatively High,Relatively High,Relatively Low,Relatively Moderate,Relatively High,Relatively Low
+NB,Moncton,Relatively High,Relatively Moderate,Relatively Low,Relatively Moderate,Very High,Relatively Low
+NB,Saint Andrews,Relatively High,Relatively Moderate,Relatively Low,Relatively Moderate,Very High,Relatively Low
+NB,Sussex,Relatively High,Relatively Moderate,Relatively Low,Relatively Moderate,Relatively High,Relatively Low
+MB,Altona,Very High,Very High,Relatively High,Relatively Moderate,Relatively High,Relatively Low
+MB,Brandon,Relatively High,Very High,Relatively High,Relatively Moderate,Relatively High,Relatively Low
+MB,City Of Portage La Prairie,Very High,Very High,Relatively High,Relatively Moderate,Relatively High,Relatively Low
+MB,Flin Flon,Relatively Moderate,Very High,Relatively Moderate,Relatively High,Relatively Moderate,Relatively Low
+MB,Steinbach,Very High,Very High,Relatively High,Relatively Moderate,Relatively High,Relatively Low
+MB,The Pas,Relatively High,Very High,Relatively Moderate,Relatively High,Relatively Moderate,Relatively Low
+MB,Winnipeg,Very High,Very High,Relatively High,Relatively Moderate,Relatively High,Relatively Low
+SK,Orkney No. 244,Relatively Moderate,Very High,Relatively High,Relatively Moderate,Relatively High,Relatively Low
+NT,Dehcho Region,Relatively High,Very High,Relatively Low,Very High,Relatively High,Relatively Low
+NT,Inuvik Region,Relatively High,Very High,Relatively Low,Relatively High,Relatively High,Relatively Low
+NT,North Slave Region,Relatively High,Very High,Relatively Low,Very High,Relatively High,Relatively Low
+NT,Sahtu Region,Relatively High,Very High,Relatively Low,Very High,Relatively High,Relatively Low
+NT,South Slave Region,Relatively High,Very High,Relatively Low,Very High,Relatively High,Relatively Low
+NU,Kitikmeot Region,Relatively Moderate,Very High,Relatively Low,Relatively Low,Relatively High,Relatively Low
+NU,Kivalliq Region,Relatively Moderate,Very High,Relatively Low,Relatively Low,Relatively High,Relatively Low
+NU,Qikiqtaaluk Region,Relatively Moderate,Very High,Relatively Low,Relatively Low,Relatively High,Relatively Low
