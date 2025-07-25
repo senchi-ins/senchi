@@ -9,12 +9,6 @@ class TokenRequest(BaseModel):
     email: Optional[str] = None
     full_name: Optional[str] = None
 
-class TokenResponse(BaseModel):
-    jwt_token: str
-    expires_at: str
-    user_info: UserInfoResponse
-
-
 class LoginRequest(BaseModel):
     email: str
     password: str
@@ -27,3 +21,8 @@ class UserInfoResponse(BaseModel):
     iat: Optional[float] = None
     exp: float
     created_at: Optional[str] = None
+
+class TokenResponse(BaseModel):
+    jwt_token: str
+    expires_at: str
+    user_info: UserInfoResponse
