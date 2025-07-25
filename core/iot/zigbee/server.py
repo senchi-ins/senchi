@@ -179,6 +179,7 @@ async def get_devices(
     property_name = device_request.property_name
     
     cache_key = f"devices:{user_id}:{property_name}"
+    print(f"Cache key: {cache_key}")
     cached_devices = app_state.get("devices", {}).get(cache_key)
     
     if cached_devices and "timestamp" in cached_devices:
@@ -187,13 +188,19 @@ async def get_devices(
             print(f"Returning cached devices: {cached_devices['devices']}")
             return cached_devices["devices"]
     
+    print(f"Fetching devices from database for user: {user_id}, property: {property_name}")
     devices = app_state.get("pg_db").get_user_devices(user_id, property_name)
+    print(f"Database returned devices: {devices}")
     
-    app_state["devices"][cache_key] = {
-        "devices": devices,
-        "timestamp": datetime.now().timestamp()
-    }
-    print(f"Devices: {devices}")
+    # Only cache if we got actual results
+    if devices:
+        app_state["devices"][cache_key] = {
+            "devices": devices,
+            "timestamp": datetime.now().timestamp()
+        }
+        print(f"Cached {len(devices)} devices")
+    else:
+        print("No devices found, not caching empty result")
     
     return devices
 
