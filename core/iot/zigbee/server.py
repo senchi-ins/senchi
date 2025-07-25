@@ -184,12 +184,10 @@ async def get_devices(
     if cached_devices and "timestamp" in cached_devices:
         cache_age = datetime.now().timestamp() - cached_devices["timestamp"]
         if cache_age < 300:  # 5 minutes
+            print(f"Returning cached devices: {cached_devices['devices']}")
             return cached_devices["devices"]
     
     devices = app_state.get("pg_db").get_user_devices(user_id, property_name)
-    
-    if "devices" not in app_state:
-        app_state["devices"] = {}
     
     app_state["devices"][cache_key] = {
         "devices": devices,
