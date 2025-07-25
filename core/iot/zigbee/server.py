@@ -392,55 +392,113 @@ async def websocket_endpoint(
     # token: str = Query(...)
 ):
     # TODO: Validate the token
-    # logger.info(f"WebSocket connection attempt for user_id: {user_id}")
-    # logger.info(f"Token received: {token[:50]}...")
+    logger.info(f"WebSocket connection attempt for user_id: {user_id}")
     
     # Validate JWT
     # user_info = await notification_router.validate_token(token)
 
     await websocket.accept()
+    logger.info(f"WebSocket connection accepted for user: {user_id}")
+    
     # Store connection by user_id
     if user_id not in app_state["websocket_connections"]:
         app_state["websocket_connections"][user_id] = []
     app_state["websocket_connections"][user_id].append(websocket)
+    logger.info(f"WebSocket connection stored for user: {user_id}")
 
     try:
         # Send initial state: fetch user's devices from database
         # For now, use "main" as default property - this should be configurable
-        user_devices = app_state.get("pg_db").get_user_devices(user_id, "main")
+        try:
+            # Use simpler query for testing
+            user_devices = app_state.get("pg_db").get_user_devices_simple(user_id)
+            logger.info(f"Fetched {len(user_devices) if user_devices else 0} devices for user: {user_id}")
+        except Exception as db_error:
+            logger.error(f"Database error fetching devices for user {user_id}: {db_error}")
+            user_devices = []
         
         # Send initial device state
-        for device in user_devices:
-            message = {
-                "type": "device_update",
-                "device_id": device.get("ieee_address") or device.get("serial_number"),
-                "data": {
-                    "friendly_name": device.get("friendly_name"),
-                    "device_type": device.get("device_type"),
-                    "last_seen": device.get("last_seen"),
-                    "status": "active" if device.get("last_seen") else "inactive"
-                },
-                "timestamp": datetime.now().isoformat()
-            }
-            await websocket.send_text(json.dumps(message))
+        if user_devices:
+            for device in user_devices:
+                try:
+                    message = {
+                        "type": "device_update",
+                        "device_id": device.get("ieee_address") or device.get("serial_number"),
+                        "data": {
+                            "friendly_name": device.get("friendly_name"),
+                            "device_type": device.get("device_type"),
+                            "last_seen": device.get("last_seen"),
+                            "status": "active" if device.get("last_seen") else "inactive"
+                        },
+                        "timestamp": datetime.now().isoformat()
+                    }
+                    await websocket.send_text(json.dumps(message))
+                    logger.info(f"Sent initial device state for device: {device.get('friendly_name')}")
+                except Exception as send_error:
+                    logger.error(f"Error sending device state for device {device.get('friendly_name')}: {send_error}")
+        else:
+            # Send empty state message
+            try:
+                message = {
+                    "type": "connection_established",
+                    "user_id": user_id,
+                    "device_count": 0,
+                    "timestamp": datetime.now().isoformat()
+                }
+                await websocket.send_text(json.dumps(message))
+                logger.info(f"Sent connection established message for user: {user_id}")
+            except Exception as send_error:
+                logger.error(f"Error sending connection established message: {send_error}")
 
         # Keep connection alive and handle incoming messages
+        logger.info(f"WebSocket connection established and ready for user: {user_id}")
         while True:
-            message = await websocket.receive_text()
-            # Handle any incoming messages if needed
-            # For now, just keep the connection alive
+            try:
+                message = await websocket.receive_text()
+                logger.info(f"Received message from user {user_id}: {message[:100]}...")
+                
+                # Parse the message
+                try:
+                    message_data = json.loads(message)
+                    message_type = message_data.get("type", "")
+                    
+                    if message_type == "heartbeat":
+                        # Send heartbeat response
+                        response = {
+                            "type": "heartbeat_response",
+                            "timestamp": datetime.now().isoformat()
+                        }
+                        await websocket.send_text(json.dumps(response))
+                        logger.debug(f"Sent heartbeat response to user: {user_id}")
+                    else:
+                        logger.info(f"Received unknown message type '{message_type}' from user: {user_id}")
+                        
+                except json.JSONDecodeError as json_error:
+                    logger.warning(f"Invalid JSON received from user {user_id}: {json_error}")
+                except Exception as parse_error:
+                    logger.error(f"Error parsing message from user {user_id}: {parse_error}")
+                    
+            except WebSocketDisconnect:
+                logger.info(f"WebSocket disconnected normally for user: {user_id}")
+                break
+            except Exception as receive_error:
+                logger.error(f"Error receiving message from user {user_id}: {receive_error}")
+                break
             
     except WebSocketDisconnect:
-        app_state["websocket_connections"][user_id].remove(websocket)
-        if not app_state["websocket_connections"][user_id]:
-            del app_state["websocket_connections"][user_id]
         logger.info(f"WebSocket disconnected for user: {user_id}")
     except Exception as e:
         logger.error(f"WebSocket error for user {user_id}: {e}")
-        if user_id in app_state["websocket_connections"]:
-            app_state["websocket_connections"][user_id].remove(websocket)
-            if not app_state["websocket_connections"][user_id]:
-                del app_state["websocket_connections"][user_id]
+    finally:
+        # Clean up connection
+        try:
+            if user_id in app_state["websocket_connections"]:
+                app_state["websocket_connections"][user_id].remove(websocket)
+                if not app_state["websocket_connections"][user_id]:
+                    del app_state["websocket_connections"][user_id]
+                logger.info(f"WebSocket connection cleaned up for user: {user_id}")
+        except Exception as cleanup_error:
+            logger.error(f"Error cleaning up WebSocket connection for user {user_id}: {cleanup_error}")
 
 @app.get("/health")
 async def health_check():
