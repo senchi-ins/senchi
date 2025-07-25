@@ -410,8 +410,7 @@ async def websocket_endpoint(
         # Send initial state: fetch user's devices from database
         # For now, use "main" as default property - this should be configurable
         try:
-            # Use simpler query for testing
-            user_devices = app_state.get("pg_db").get_user_devices_simple(user_id)
+            user_devices = app_state.get("pg_db").get_user_devices(user_id, "main")
             logger.info(f"Fetched {len(user_devices) if user_devices else 0} devices for user: {user_id}")
         except Exception as db_error:
             logger.error(f"Database error fetching devices for user {user_id}: {db_error}")
