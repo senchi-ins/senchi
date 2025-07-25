@@ -178,5 +178,7 @@ class PostgresDB:
             cur.execute(query, (email,))
             result = cur.fetchone()
             if result:
+                print(f"Found password hash for {email}: {result['password_hash']}")
                 return result['password_hash']
+            print(f"No password hash found for {email}")
             return None
