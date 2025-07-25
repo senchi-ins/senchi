@@ -786,23 +786,76 @@ class Monitor:
         return True
 
     async def broadcast_device_update(self, device_id: str, payload: Dict):
-        message = {
-            "type": "device_update",
-            "device_id": device_id,
-            "data": payload,
-            "timestamp": datetime.now().isoformat()
-        }
-        
-        # Remove disconnected clients
-        disconnected = []
-        for websocket in self.app_state["websocket_connections"]:
-            try:
-                await websocket.send_text(json.dumps(message))
-            except:
-                disconnected.append(websocket)
-        
-        for client in disconnected:
-            self.app_state["websocket_connections"].remove(client)
+        """Broadcast device updates to connected WebSocket clients for the device owner"""
+        try:
+            # Get device info to find the owner
+            device = self.app_state["devices"].get(device_id)
+            if not device:
+                logger.warning(f"Device {device_id} not found for broadcast")
+                return
+            
+            # Get device owner from database
+            pg_db = self.app_state.get("pg_db")
+            if not pg_db:
+                logger.warning("PostgreSQL database not available for device owner lookup")
+                return
+            
+            # Find the device owner by looking up the device in the database
+            # This assumes the device_id is the ieee_address
+            owner_query = """
+            SELECT DISTINCT d.owner_user_id 
+            FROM zb_devices d
+            JOIN device_mappings dm ON d.serial_number = dm.device_serial
+            WHERE dm.ieee_address = %s
+            """
+            
+            owner_result = pg_db.execute_query(owner_query, (device_id,))
+            if not owner_result:
+                logger.warning(f"No owner found for device {device_id}")
+                return
+            
+            owner_user_id = owner_result[0][0]
+            
+            # Create the message
+            message = {
+                "type": "device_update",
+                "device_id": device_id,
+                "data": {
+                    "friendly_name": getattr(device, 'friendly_name', None),
+                    "device_type": getattr(device, 'type', None),
+                    "last_seen": getattr(device, 'last_seen', None),
+                    "status": "active",
+                    "battery": payload.get("battery"),
+                    "water_leak": payload.get("water_leak"),
+                    "linkquality": payload.get("linkquality"),
+                    **payload  # Include all other payload data
+                },
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            # Send to all connected WebSocket clients for this user
+            if owner_user_id in self.app_state.get("websocket_connections", {}):
+                disconnected_clients = []
+                for websocket in self.app_state["websocket_connections"][owner_user_id]:
+                    try:
+                        await websocket.send_text(json.dumps(message))
+                    except Exception as e:
+                        logger.error(f"Failed to send device update to WebSocket: {e}")
+                        disconnected_clients.append(websocket)
+                
+                # Clean up disconnected clients
+                for websocket in disconnected_clients:
+                    try:
+                        self.app_state["websocket_connections"][owner_user_id].remove(websocket)
+                    except ValueError:
+                        pass  # Already removed
+                
+                # Remove empty user connections
+                if not self.app_state["websocket_connections"][owner_user_id]:
+                    del self.app_state["websocket_connections"][owner_user_id]
+                    
+        except Exception as e:
+            logger.error(f"Error broadcasting device update for {device_id}: {e}")
 
     def start(self):
 

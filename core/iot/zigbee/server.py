@@ -344,6 +344,47 @@ async def permit_join(
         raise HTTPException(status_code=500, detail=f"Failed to publish permit join: {str(e)}")
     
 
+def broadcast_device_update(user_id: str, device_data: dict):
+    """Broadcast device updates to connected WebSocket clients for a specific user"""
+    if user_id not in app_state.get("websocket_connections", {}):
+        return
+    
+    message = {
+        "type": "device_update",
+        "device_id": device_data.get("ieee_address") or device_data.get("serial_number"),
+        "data": {
+            "friendly_name": device_data.get("friendly_name"),
+            "device_type": device_data.get("device_type"),
+            "last_seen": device_data.get("last_seen"),
+            "status": device_data.get("status", "active"),
+            "battery": device_data.get("battery"),
+            "water_leak": device_data.get("water_leak"),
+            "linkquality": device_data.get("linkquality")
+        },
+        "timestamp": datetime.now().isoformat()
+    }
+    
+    # Send to all connected WebSocket clients for this user
+    disconnected_clients = []
+    for websocket in app_state["websocket_connections"][user_id]:
+        try:
+            asyncio.create_task(websocket.send_text(json.dumps(message)))
+        except Exception as e:
+            logger.error(f"Failed to send device update to WebSocket: {e}")
+            disconnected_clients.append(websocket)
+    
+    # Clean up disconnected clients
+    for websocket in disconnected_clients:
+        try:
+            app_state["websocket_connections"][user_id].remove(websocket)
+        except ValueError:
+            pass  # Already removed
+    
+    # Remove empty user connections
+    if not app_state["websocket_connections"][user_id]:
+        del app_state["websocket_connections"][user_id]
+
+
 @app.websocket("/ws/{user_id}")
 async def websocket_endpoint(
     websocket: WebSocket, 
@@ -364,25 +405,42 @@ async def websocket_endpoint(
     app_state["websocket_connections"][user_id].append(websocket)
 
     try:
-        # Send initial state: only this user's devices if possible
-        for device_id, device in app_state["devices"].items():
-            # If device has a user_id attribute, filter by user_id
-            if hasattr(device, "user_id") and str(device.user_id) != user_id:
-                continue
+        # Send initial state: fetch user's devices from database
+        # For now, use "main" as default property - this should be configurable
+        user_devices = app_state.get("pg_db").get_user_devices(user_id, "main")
+        
+        # Send initial device state
+        for device in user_devices:
             message = {
                 "type": "device_update",
-                "device_id": device_id,
-                "data": device.status,
+                "device_id": device.get("ieee_address") or device.get("serial_number"),
+                "data": {
+                    "friendly_name": device.get("friendly_name"),
+                    "device_type": device.get("device_type"),
+                    "last_seen": device.get("last_seen"),
+                    "status": "active" if device.get("last_seen") else "inactive"
+                },
                 "timestamp": datetime.now().isoformat()
             }
             await websocket.send_text(json.dumps(message))
 
+        # Keep connection alive and handle incoming messages
         while True:
-            await websocket.receive_text()
+            message = await websocket.receive_text()
+            # Handle any incoming messages if needed
+            # For now, just keep the connection alive
+            
     except WebSocketDisconnect:
         app_state["websocket_connections"][user_id].remove(websocket)
         if not app_state["websocket_connections"][user_id]:
             del app_state["websocket_connections"][user_id]
+        logger.info(f"WebSocket disconnected for user: {user_id}")
+    except Exception as e:
+        logger.error(f"WebSocket error for user {user_id}: {e}")
+        if user_id in app_state["websocket_connections"]:
+            app_state["websocket_connections"][user_id].remove(websocket)
+            if not app_state["websocket_connections"][user_id]:
+                del app_state["websocket_connections"][user_id]
 
 @app.get("/health")
 async def health_check():
