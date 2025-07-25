@@ -18,7 +18,16 @@ import time
 import uvicorn
 import pandas as pd
 from pydantic import BaseModel
-from fastapi import FastAPI, HTTPException, Header, WebSocket, WebSocketDisconnect, Depends, Query
+from fastapi import (
+    FastAPI, 
+    HTTPException, 
+    Header, 
+    WebSocket, 
+    WebSocketDisconnect, 
+    Depends, 
+    Request,
+    Query
+)
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
@@ -160,11 +169,34 @@ async def root():
 
 # TODO: Add a specific user id for the devices
 @app.post("/devices")
-async def get_devices(request: DeviceRequest):
+async def get_devices(
+    device_request: DeviceRequest,
+    # token: str = Query(...)
+):
     """Get all devices for a specific user"""
     # TODO: Validate the token
-    # Filter devices by user_id if needed
-    return list(app_state["devices"].values())
+    user_id = device_request.user_id
+    property_name = device_request.property_name
+    
+    cache_key = f"devices:{user_id}:{property_name}"
+    cached_devices = app_state.get("devices", {}).get(cache_key)
+    
+    if cached_devices and "timestamp" in cached_devices:
+        cache_age = datetime.now().timestamp() - cached_devices["timestamp"]
+        if cache_age < 300:  # 5 minutes
+            return cached_devices["devices"]
+    
+    devices = app_state.get("pg_db").get_user_devices(user_id, property_name)
+    
+    if "devices" not in app_state:
+        app_state["devices"] = {}
+    
+    app_state["devices"][cache_key] = {
+        "devices": devices,
+        "timestamp": datetime.now().timestamp()
+    }
+    
+    return devices
 
 
 @app.post("/api/auth/setup", response_model=TokenResponse)

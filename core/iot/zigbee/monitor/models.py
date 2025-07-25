@@ -49,7 +49,7 @@ class DeviceDefinition(BaseModel):
 class DeviceRequest(BaseModel):
     # Get all devices for a user at (optionally) a specific property
     user_id: str
-    property_id: Optional[str] = None
+    property_name: str = "main"
 
 class DeviceEndpoint(BaseModel):
     bindings: List[Any]

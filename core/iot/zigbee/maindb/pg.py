@@ -54,3 +54,17 @@ class PostgresDB:
         WHERE device_serial = %s AND ieee_address = %s
         """
         return self.execute_insert(query, (device_serial, ieee_address))
+    
+    def get_user_devices(self, user_id: str, property_name: str = "main"):
+        """Get all devices for a given user_id"""
+        # TODO: Add property_id to the query
+        query = """
+        SELECT ieee_address, friendly_name, device_type, model, manufacturer, last_seen
+        FROM zb_users JOIN zb_devices ON zb_users.id = zb_devices.owner_user_id
+        JOIN device_mappings ON zb_devices.serial_number = device_mappings.device_serial
+        JOIN zb_properties ON zb_properties.id = zb_devices.property_id
+        JOIN zb_user_properties ON zb_user_properties.user_id = zb_users.id
+        WHERE zb_users.id = %s AND zb_properties.name = %s
+        ORDER BY last_seen DESC
+        """
+        return self.execute_query(query, (user_id, property_name))
