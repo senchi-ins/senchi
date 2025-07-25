@@ -195,6 +195,7 @@ async def get_devices(
         "devices": devices,
         "timestamp": datetime.now().timestamp()
     }
+    print(f"Devices: {devices}")
     
     return devices
 
@@ -241,7 +242,6 @@ async def login_with_email(request: LoginRequest):
         email = request.email
         # Get token from Redis using email
         token = redis_db.get_key(f"email:{email}")
-        print(f"Token for email {email}: {token}")
         
         if not token:
             raise HTTPException(status_code=404, detail="No account found for this email")
@@ -277,7 +277,7 @@ class RedisSetRequest(BaseModel):
 
 @app.post("/redis/set")
 def set_redis_key(request: RedisSetRequest):
-    print(f"Setting key: {request.key} with value: {request.value[:50]}... and ttl: {request.ttl}")
+    # print(f"Setting key: {request.key} with value: {request.value[:50]}... and ttl: {request.ttl}")
     logger.info(f"Setting key: {request.key} with ttl: {request.ttl}")
     redis_db.set_key(request.key, request.value, request.ttl)
     return {"message": "Key set successfully"}
@@ -295,7 +295,6 @@ async def permit_join(
     """Allow new devices to join for the authenticated user's location"""
     logger.info(f"Permit join requested for {duration} seconds by user {current_user.get('user_id')}. MQTT connected: {mqtt_monitor.connected}")
     logger.info(f"Full user token data: {current_user}")
-    print(f"Full user token data: {current_user}")
     
     if not mqtt_monitor.connected:
         print(f"MQTT not connected. Broker: {settings.MQTT_BROKER}:{settings.MQTT_PORT}")
