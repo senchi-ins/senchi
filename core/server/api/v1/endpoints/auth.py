@@ -46,9 +46,7 @@ async def create_user_token(
         email = login_request.email
         password = str(login_request.password)
         try:
-            user_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, email))
-
-            first_name, hashed_password = request.app.state.db.get_hashed_password(email)
+            user_id, first_name, hashed_password = request.app.state.db.get_hashed_password(email)
             if not hashed_password:
                 raise HTTPException(status_code=404, detail="User not found, please create an account")
             

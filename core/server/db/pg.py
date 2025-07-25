@@ -172,12 +172,12 @@ class PostgresDB:
     # Get methods
     def get_hashed_password(self, email: str) -> Optional[tuple[str, str]]:
         query = """
-        SELECT full_name, password_hash FROM zb_users WHERE email = %s
+        SELECT id, full_name, password_hash FROM zb_users WHERE email = %s
         """
         with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(query, (email,))
             result = cur.fetchone()
             if result:
                 first_name, _ = result['full_name'].split(' ', 1)
-                return (first_name, result['password_hash'])
+                return (result['id'], first_name, result['password_hash'])
             return None
