@@ -13,3 +13,7 @@ class TokenResponse(BaseModel):
     jwt_token: str
     expires_at: str
     location_id: Optional[str] = None
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str

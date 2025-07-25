@@ -11,7 +11,7 @@ from fastapi import APIRouter, HTTPException, Depends, Body, Request
 from typing import List, Optional
 from pydantic import BaseModel
 
-from schemas.auth import TokenRequest, TokenResponse
+from schemas.auth import TokenRequest, TokenResponse, LoginRequest
 
 
 logger = logging.getLogger(__name__)
@@ -31,8 +31,7 @@ async def get_verification():
 # TODO: Make this a util function and make this endpoint auth/login using email and password
 @router.post("/login")
 async def create_user_token(
-    email: str,
-    password: str,
+    login_request: LoginRequest,
     request: Request,
     push_token: Optional[str] = None, # TODO: Is this needed?
     # refresh_token: Optional[str] = None, # TODO: Add refresh token to the payload rather than using a password
@@ -44,6 +43,8 @@ async def create_user_token(
 
         TODO: Consolidate the server into a monolith to simplify the codebase
         """
+        email = login_request.email
+        password = login_request.password
         try:
             user_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, email))
 
