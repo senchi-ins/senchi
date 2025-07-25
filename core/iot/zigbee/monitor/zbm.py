@@ -95,10 +95,8 @@ class Monitor:
             try:
                 jwt_keys = redis_db.conn.keys("jwt:*")
                 device_serials = set()
-                print(f"JWT keys found: {len(jwt_keys)}")
                 
                 if not jwt_keys:
-                    print("No JWT keys found in Redis")
                     logger.warning("No JWT keys found in Redis, subscribing to default topics")
                     self._subscribe_to_default_topics()
                     return
@@ -108,12 +106,10 @@ class Monitor:
                         # Skip keys that end with :topic (these are topic mappings, not JWT data)
                         key_str = key.decode()
                         if key_str.endswith(':topic'):
-                            print(f"Skipping topic mapping key: {key_str}")
                             continue
                         
                         # Get the JWT token from the key
                         jwt_token = key_str.split(":", 1)[1]
-                        print(f"Processing JWT token: {jwt_token[:50]}...")
                         
                         # Get the JWT data
                         jwt_data = redis_db.get_key(f"jwt:{jwt_token}")
@@ -125,10 +121,8 @@ class Monitor:
                             try:
                                 import json
                                 data = json.loads(jwt_data)
-                                print(f"JWT data: {data}")
                             except json.JSONDecodeError as e:
                                 logger.warning(f"Invalid JSON in JWT data for token {jwt_token[:20]}...: {e}")
-                                print(f"Invalid JSON in JWT data for token {jwt_token[:20]}...: {e}")
                                 continue
                             
                             # Try to get device_serial from different possible fields
@@ -145,12 +139,10 @@ class Monitor:
                             
                             if device_serial:
                                 device_serials.add(device_serial)
-                                print(f"Added device serial: {device_serial}")
                             else:
-                                print(f"No device serial found in JWT data: {data}")
+                                logger.warning(f"No device serial found in JWT data: {data}")
                     except Exception as e:
                         logger.warning(f"Error processing JWT key {key}: {e}")
-                        print(f"Error processing JWT key {key}: {e}")
                         continue
                 
                 # Subscribe to topics for each device serial
@@ -165,15 +157,12 @@ class Monitor:
                         f"{base_topic}/bridge/response/device/remove",
                     ]
                     
-                    print(f"Subscribing to topics for device serial: {device_serial}")
                     for topic in topics:
                         try:
                             self.client.subscribe(topic)
                             logger.info(f"Subscribed to topic: {topic}")
-                            print(f"✅ Subscribed to topic: {topic}")
                         except Exception as e:
                             logger.error(f"Failed to subscribe to {topic}: {e}")
-                            print(f"❌ Failed to subscribe to {topic}: {e}")
                 
                 if not device_serials:
                     logger.warning("No device serials found in Redis, subscribing to default topics")

@@ -13,8 +13,9 @@ class PostgresDB:
     def execute_query(self, query, params=None):
         with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(query, params)
-            print(f"Query: {cur.fetchall()}")
-            return cur.fetchall()
+            result = cur.fetchall()
+            print(f"Query: {result}")
+            return result
     
     def execute_insert(self, query, params=None):
         with self.conn.cursor() as cur:
