@@ -46,6 +46,11 @@ class DeviceDefinition(BaseModel):
     exposes: Optional[List[Dict[str, Any]]] = None
     options: Optional[List[Dict[str, Any]]] = None
 
+class DeviceRequest(BaseModel):
+    # Get all devices for a user at (optionally) a specific property
+    user_id: str
+    property_id: Optional[str] = None
+
 class DeviceEndpoint(BaseModel):
     bindings: List[Any]
     clusters: Dict[str, List[str]]

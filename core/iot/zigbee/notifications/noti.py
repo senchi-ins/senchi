@@ -16,6 +16,7 @@ class NotificationRouter:
     def __init__(self, redis_db: RedisDB):
         self.redis_db = redis_db
     
+    # TODO: Use the existing token created on the central server
     async def create_user_token(self, device_serial: str, push_token: Optional[str] = None, email: Optional[str] = None, full_name: Optional[str] = None) -> TokenResponse:
         """Create JWT token for a user during device setup"""
         try:

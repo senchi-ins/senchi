@@ -18,7 +18,7 @@ import time
 import uvicorn
 import pandas as pd
 from pydantic import BaseModel
-from fastapi import FastAPI, HTTPException, Header, WebSocket, WebSocketDisconnect, Depends
+from fastapi import FastAPI, HTTPException, Header, WebSocket, WebSocketDisconnect, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
@@ -32,6 +32,7 @@ from monitor.models import (
     NOTIFICATION_TYPES,
     LocationSetupRequest,
     SetupResponse,
+    DeviceRequest,
 )
 from monitor.zbm import Monitor
 from monitor.utils import get_all_model_fields
@@ -43,7 +44,7 @@ logger = logging.getLogger(__name__)
 
 app_state = {
     "devices": {},
-    "websocket_connections": [],
+    "websocket_connections": {}, # Changed to dict keyed by user_id
     "mqtt_client": None,
     "notification_config": None,
     "active_leaks": set(),
@@ -54,7 +55,7 @@ def init_db():
     """
     Initialize the database connection.
 
-    Note: Currently uses pd.df and writed to a csv file.
+    Note: Currently uses pd.df and written to a csv file.
     """
     # 2 tables are needed:
     # 1. devices
@@ -157,9 +158,11 @@ async def root():
     }
 
 
+# TODO: Add a specific user id for the devices
 @app.get("/devices")
-async def get_devices():
+async def get_devices(request: DeviceRequest):
     """Get all devices"""
+    # TODO: Validate the token
     return list(app_state["devices"].values())
 
 
@@ -185,6 +188,7 @@ async def update_push_token(
 @app.get("/api/auth/verify")
 async def verify_token(current_user: dict = Depends(get_current_user)):
     """Verify if token is valid"""
+    # TODO: Update to use actual token
     return {
         "valid": True,
         "user_id": current_user["user_id"],
@@ -307,13 +311,26 @@ async def permit_join(
         raise HTTPException(status_code=500, detail=f"Failed to publish permit join: {str(e)}")
     
 
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
+@app.websocket("/ws/{user_id}")
+async def websocket_endpoint(websocket: WebSocket, user_id: str, token: str = Query(...)):
+    # Validate JWT
+    user_info = await notification_router.validate_token(token)
+    if not user_info or str(user_info.get("user_id")) != user_id:
+        await websocket.close(code=1008)  # Policy Violation
+        return
+
     await websocket.accept()
-    app_state["websocket_connections"].append(websocket)
-    
+    # Store connection by user_id
+    if user_id not in app_state["websocket_connections"]:
+        app_state["websocket_connections"][user_id] = []
+    app_state["websocket_connections"][user_id].append(websocket)
+
     try:
+        # Send initial state: only this user's devices if possible
         for device_id, device in app_state["devices"].items():
+            # If device has a user_id attribute, filter by user_id
+            if hasattr(device, "user_id") and str(device.user_id) != user_id:
+                continue
             message = {
                 "type": "device_update",
                 "device_id": device_id,
@@ -321,12 +338,13 @@ async def websocket_endpoint(websocket: WebSocket):
                 "timestamp": datetime.now().isoformat()
             }
             await websocket.send_text(json.dumps(message))
-        
+
         while True:
             await websocket.receive_text()
-            
     except WebSocketDisconnect:
-        app_state["websocket_connections"].remove(websocket)
+        app_state["websocket_connections"][user_id].remove(websocket)
+        if not app_state["websocket_connections"][user_id]:
+            del app_state["websocket_connections"][user_id]
 
 @app.get("/health")
 async def health_check():
@@ -363,7 +381,7 @@ async def test_notification(request: TestNotificationRequest):
             device_token=request.device_token,
             title=request.title,
             body=request.body,
-            data={"type": "alert", "timestamp": datetime.now().isoformat()},
+            data={"type": "Alert", "timestamp": datetime.now().isoformat()},
             category="LEAK_ALERT"
         )
         
