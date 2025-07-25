@@ -312,13 +312,19 @@ async def permit_join(
     
 
 @app.websocket("/ws/{user_id}")
-async def websocket_endpoint(websocket: WebSocket, user_id: str, token: str = Query(...)):
+async def websocket_endpoint(
+    websocket: WebSocket, 
+    user_id: str, 
+    # token: str = Query(...)
+):
+    # TODO: Validate the token
+    # logger.info(f"WebSocket connection attempt for user_id: {user_id}")
+    # logger.info(f"Token received: {token[:50]}...")
+    
     # Validate JWT
-    user_info = await notification_router.validate_token(token)
-    if not user_info or str(user_info.get("user_id")) != user_id:
-        await websocket.close(code=1008)  # Policy Violation
-        return
+    # user_info = await notification_router.validate_token(token)
 
+    logger.info(f"WebSocket connection accepted for user_id: {user_id}")
     await websocket.accept()
     # Store connection by user_id
     if user_id not in app_state["websocket_connections"]:
