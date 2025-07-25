@@ -44,7 +44,7 @@ async def create_user_token(
         TODO: Consolidate the server into a monolith to simplify the codebase
         """
         email = login_request.email
-        password = login_request.password
+        password = str(login_request.password)
         try:
             user_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, email))
 
