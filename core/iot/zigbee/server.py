@@ -159,10 +159,11 @@ async def root():
 
 
 # TODO: Add a specific user id for the devices
-@app.get("/devices")
+@app.post("/devices")
 async def get_devices(request: DeviceRequest):
-    """Get all devices"""
+    """Get all devices for a specific user"""
     # TODO: Validate the token
+    # Filter devices by user_id if needed
     return list(app_state["devices"].values())
 
 
@@ -324,7 +325,6 @@ async def websocket_endpoint(
     # Validate JWT
     # user_info = await notification_router.validate_token(token)
 
-    logger.info(f"WebSocket connection accepted for user_id: {user_id}")
     await websocket.accept()
     # Store connection by user_id
     if user_id not in app_state["websocket_connections"]:
