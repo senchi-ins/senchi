@@ -6,7 +6,7 @@ import logging
 import uuid
 from datetime import datetime, timedelta
 
-from server.api.v1.utils.utils import decode_jwt
+from server.api.v1.utils.utils import decode_jwt, hash_password, verify_password
 from fastapi import APIRouter, HTTPException, Depends, Body, Request
 from typing import List, Optional
 from pydantic import BaseModel
@@ -31,8 +31,10 @@ async def get_verification():
 # TODO: Make this a util function and make this endpoint auth/login using email and password
 @router.post("/login")
 async def create_user_token(
-    push_token: Optional[str] = None,
-    email: Optional[str] = None,
+    email: str,
+    password: str,
+    request: Request,
+    push_token: Optional[str] = None, # TODO: Is this needed?
     # refresh_token: Optional[str] = None, # TODO: Add refresh token to the payload rather than using a password
 ) -> TokenResponse:
         """Create JWT token for a user during device setup
@@ -44,6 +46,11 @@ async def create_user_token(
         """
         try:
             user_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, email))
+
+            hashed_password = request.app.state.db.get_hashed_password(email)
+            verified = verify_password(password, hashed_password)
+            if not verified:
+                raise HTTPException(status_code=401, detail="Invalid password")
             
             now = datetime.now()
             expires = now + timedelta(hours=int(os.getenv("JWT_EXPIRY_HOURS")))
@@ -92,6 +99,5 @@ async def verify_auth(request: Request):
         raise HTTPException(status_code=401, detail="Invalid token")
 
     user_id = decoded_jwt["user_id"]
-    print(f"User ID: {user_id}")
 
     return {"message": "verification model activated"}

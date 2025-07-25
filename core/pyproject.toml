@@ -34,7 +34,8 @@ dependencies = [
     "botocore>=1.38.38",
     "trimesh>=4.0.0",
     "psycopg2-binary>=2.9.10",
-    "pyjwt>=2.10.1"
+    "pyjwt>=2.10.1",
+    "bcrypt>=4.3.0",
 ]
 
 [tool.uv.workspace]

@@ -87,3 +87,93 @@ class PostgresDB:
         """
         resp = psycopg2.extras.Json(response)
         return self.execute_insert(query, (user_id, resp))
+
+    def insert_user(
+            self, 
+            email: str, 
+            password_hash: str, 
+            full_name: str, 
+            user_type: str = 'individual', 
+            is_active: bool = True,
+        ) -> bool:
+        """
+        Insert a new user into the users table.
+        """
+        query = """
+        INSERT INTO zb_users (email, password_hash, full_name, user_type, is_active)
+        VALUES (%s, %s, %s, %s, %s)
+        """
+        params = (email, password_hash, full_name, user_type, is_active)
+        return self.execute_insert(query, params)
+
+    def insert_property(
+            self,
+            name: str,
+            address: str = None,
+            property_type: str = 'residential',
+            description: str = None,
+            timezone: str = 'UTC',
+            is_active: bool = True,
+        ) -> bool:
+        """
+        Insert a new property into the properties table.
+        """
+        query = """
+        INSERT INTO zb_properties (name, address, property_type, description, timezone, is_active)
+        VALUES (%s, %s, %s, %s, %s, %s)
+        """
+        params = (name, address, property_type, description, timezone, is_active)
+        return self.execute_insert(query, params)
+
+    def insert_user_property(
+            self,
+            user_id: str,
+            property_id: str,
+            role: str = 'manager', # TODO: Update this later?
+            added_by: str = None,
+        ) -> bool:
+        """
+        Insert a new user-property relationship into the user_properties table.
+        """
+        query = """
+        INSERT INTO zb_user_properties (user_id, property_id, role, added_by)
+        VALUES (%s, %s, %s, %s)
+        ON CONFLICT (user_id, property_id) DO NOTHING
+        """
+        params = (user_id, property_id, role, added_by)
+        return self.execute_insert(query, params)
+
+    def insert_device(
+            self,
+            serial_number: str,
+            owner_user_id: str,
+            device_name: str = None,
+            property_id: str = None,
+            location_description: str = None,
+            wifi_ssid: str = None,
+            device_status: str = 'inactive',
+            firmware_version: str = None,
+            last_seen: datetime = None,
+        ) -> bool:
+        """
+        Insert a new device into the devices table.
+        """
+        query = """
+        INSERT INTO zb_devices (
+            serial_number, device_name, owner_user_id, property_id, location_description, wifi_ssid, device_status, firmware_version, last_seen
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """
+        params = (
+            serial_number, device_name, owner_user_id, property_id, location_description, wifi_ssid, device_status, firmware_version, last_seen
+        )
+        return self.execute_insert(query, params)
+    
+    # Get methods
+    def get_hashed_password(self, email: str) -> str:
+        """
+        Get the hashed password for a given email.
+        """
+        query = """
+        SELECT password_hash FROM zb_users WHERE email = %s
+        """
+        return self.execute_query(query, (email,))
