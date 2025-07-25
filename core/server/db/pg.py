@@ -170,15 +170,14 @@ class PostgresDB:
         return self.execute_insert(query, params)
     
     # Get methods
-    def get_hashed_password(self, email: str) -> Optional[str]:
+    def get_hashed_password(self, email: str) -> Optional[tuple[str, str]]:
         query = """
-        SELECT password_hash FROM zb_users WHERE email = %s
+        SELECT full_name, password_hash FROM zb_users WHERE email = %s
         """
         with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(query, (email,))
             result = cur.fetchone()
             if result:
-                print(f"Found password hash for {email}: {result['password_hash']}")
-                return result['password_hash']
-            print(f"No password hash found for {email}")
+                first_name, _ = result['full_name'].split(' ', 1)
+                return (first_name, result['password_hash'])
             return None

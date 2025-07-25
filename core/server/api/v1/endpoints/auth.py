@@ -11,7 +11,7 @@ from fastapi import APIRouter, HTTPException, Depends, Body, Request
 from typing import List, Optional
 from pydantic import BaseModel
 
-from schemas.auth import TokenRequest, TokenResponse, LoginRequest
+from schemas.auth import TokenRequest, TokenResponse, LoginRequest, UserInfoResponse
 
 
 logger = logging.getLogger(__name__)
@@ -48,7 +48,7 @@ async def create_user_token(
         try:
             user_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, email))
 
-            hashed_password = request.app.state.db.get_hashed_password(email)
+            first_name, hashed_password = request.app.state.db.get_hashed_password(email)
             if not hashed_password:
                 raise HTTPException(status_code=404, detail="User not found, please create an account")
             
@@ -69,9 +69,19 @@ async def create_user_token(
             
             jwt_token = jwt.encode(jwt_payload, os.getenv("JWT_SECRET"), algorithm=os.getenv("JWT_ALGORITHM"))
 
+            user_info = UserInfoResponse(
+                user_id=user_id,
+                location_id=None, # TODO: Add location_id
+                device_serial=None, # TODO: Add device_serial
+                full_name=first_name,
+                iat=now.timestamp(),
+                exp=expires.timestamp(),
+                created_at=now.isoformat()
+            )
             return TokenResponse(
                 jwt_token=jwt_token,
                 expires_at=expires.isoformat(),
+                user_info=user_info,
             )
             
         except Exception as e:
