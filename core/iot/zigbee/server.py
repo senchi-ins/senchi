@@ -205,6 +205,7 @@ async def get_devices(
     return devices
 
 
+# TODO: Delete, now on central server
 @app.post("/api/auth/setup", response_model=TokenResponse)
 async def setup_device_auth(request: TokenRequest):
     """Generate JWT token during device setup"""
@@ -224,6 +225,7 @@ async def update_push_token(
     await notification_router.update_push_token(current_user["jwt_token"], push_token)
     return {"message": "Push token updated successfully"}
 
+# TODO: Delete, now on central server
 @app.get("/api/auth/verify")
 async def verify_token(current_user: dict = Depends(get_current_user)):
     """Verify if token is valid"""
@@ -240,6 +242,7 @@ async def verify_token(current_user: dict = Depends(get_current_user)):
 class LoginRequest(BaseModel):
     email: str
 
+# TODO: Delete, now on central server
 @app.post("/api/auth/login")
 async def login_with_email(request: LoginRequest):
     """Login with email to retrieve stored token"""
@@ -287,6 +290,7 @@ def set_redis_key(request: RedisSetRequest):
     redis_db.set_key(request.key, request.value, request.ttl)
     return {"message": "Key set successfully"}
 
+# TODO: Delete
 @app.get("/redis/get")
 def get_redis_key(key: str):
     value = redis_db.get_key(key)

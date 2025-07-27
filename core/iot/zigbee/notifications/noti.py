@@ -16,7 +16,7 @@ class NotificationRouter:
     def __init__(self, redis_db: RedisDB):
         self.redis_db = redis_db
     
-    # TODO: Use the existing token created on the central server
+    # TODO: Delete
     async def create_user_token(self, device_serial: str, push_token: Optional[str] = None, email: Optional[str] = None, full_name: Optional[str] = None) -> TokenResponse:
         """Create JWT token for a user during device setup"""
         try:
@@ -63,6 +63,7 @@ class NotificationRouter:
             logger.error(f"Failed to create user token: {e}")
             raise HTTPException(status_code=500, detail="Token creation failed")
     
+    # TODO: Delete
     async def _store_token_mappings(self, user_id: str, location_id: str, jwt_token: str, 
                                    push_token: Optional[str], email: Optional[str], expires: datetime, device_serial: str, full_name: Optional[str] = None):
         # ttl_seconds = int((expires - datetime.now()).total_seconds())
@@ -210,6 +211,7 @@ class NotificationRouter:
             # Fallback to logging
             logger.info(f"Notification (failed to send): {notification.title} - {notification.body}")
     
+    # TODO: Delete
     async def validate_token(self, token: str) -> Optional[Dict[str, Any]]:
         """Validate JWT token and return user info"""
         try:
@@ -232,6 +234,7 @@ class NotificationRouter:
             logger.error(f"Token validation error: {e}")
             return None
     
+    # TODO: Periodically check / invalidate tokens that are expired
     async def update_push_token(self, jwt_token: str, new_push_token: str):
         """Update user's push notification token"""
         try:
