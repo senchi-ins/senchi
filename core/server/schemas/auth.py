@@ -9,6 +9,13 @@ class TokenRequest(BaseModel):
     email: Optional[str] = None
     full_name: Optional[str] = None
 
+class RegisterRequest(BaseModel):
+    email: str
+    password: str
+    full_name: str
+    device_serial: str
+    push_token: Optional[str] = None
+
 class LoginRequest(BaseModel):
     email: str
     password: str

@@ -11,7 +11,12 @@ from fastapi import APIRouter, HTTPException, Depends, Body, Request
 from typing import List, Optional
 from pydantic import BaseModel
 
-from schemas.auth import TokenRequest, TokenResponse, LoginRequest, UserInfoResponse
+from schemas.auth import (
+    TokenResponse,
+    LoginRequest,
+    UserInfoResponse,
+    RegisterRequest
+)
 
 
 logger = logging.getLogger(__name__)
@@ -27,6 +32,85 @@ class VerifyAuthRequest(BaseModel):
 @router.get("/")
 async def get_verification():
     return {"message": "verification model activated"}
+
+@router.post("/register")
+async def register_user(
+    register_request: RegisterRequest,
+    request: Request,
+) -> TokenResponse:
+    """
+    Register a new user
+
+    TODO: Add a verification step to the registration process
+    """
+    email = register_request.email
+    password = str(register_request.password)
+    full_name = register_request.full_name
+    device_serial = register_request.device_serial
+    push_token = register_request.push_token
+
+    # TODO: Allow user to configure property name and address on signup
+    property_name = "Main"
+    address = None
+    first_name, _ = full_name.split(' ', 1)
+
+    # TODO: Make this customizable
+    ttl = 3600
+    
+    # 1. Add a user to zb_users, 2. Add the property to zb_properties, 3. Add the user-property relationship to zb_user_properties
+    # 4. Add the device to zb_devices
+    try:
+        password_hash = hash_password(password)
+        user_id = request.app.state.db.insert_user(email, password_hash, full_name)
+        property_id = request.app.state.db.insert_user_property(property_name, address)
+        request.app.state.db.insert_user_property_relationship(user_id, property_id, user_id)
+        request.app.state.db.insert_user_device(user_id, device_serial)
+
+        # TODO: Also store and set up the push notification token
+        # TODO: Verify the push token is valid / available at this point
+        request.app.state.redis_db.set_key(f"user:{user_id}:push_token", push_token, ttl=ttl)
+
+        # Used for quick lookup of the topic for the push notification
+        location_id = f"rpi-zigbee-{device_serial[-8:]}"
+        topic = f"zigbee2mqtt/senchi-{device_serial}/#"
+        key = f"user:{user_id}:{location_id}"
+        request.app.state.redis_db.set_key(key, topic, ttl=ttl)
+
+        # Store the location id in redis for backwards compatibility
+        request.app.state.redis_db.set_key(f"location:{location_id}:users", user_id, ttl=ttl)
+
+        now = datetime.now()
+        expires = now + timedelta(hours=int(os.getenv("JWT_EXPIRY_HOURS")))
+        
+        jwt_payload = {
+            "user_id": user_id,
+            "email": email,
+            "push_token": push_token,
+            "iat": now.timestamp(),
+            "exp": expires.timestamp()
+        }
+        
+        jwt_token = jwt.encode(jwt_payload, os.getenv("JWT_SECRET"), algorithm=os.getenv("JWT_ALGORITHM"))
+
+        user_info = UserInfoResponse(
+            user_id=user_id,
+            location_id=property_id,
+            device_serial=device_serial,
+            full_name=first_name,
+            iat=now.timestamp(),
+            exp=expires.timestamp(),
+            created_at=now.isoformat()
+        )
+        return TokenResponse(
+            jwt_token=jwt_token,
+            expires_at=expires.isoformat(),
+            user_info=user_info,
+        )
+    except Exception as e:
+        logger.error(f"Failed to register user: {e}")
+        raise HTTPException(status_code=500, detail="Registration failed")
+    
+    
 
 # TODO: Make this a util function and make this endpoint auth/login using email and password
 @router.post("/login")
