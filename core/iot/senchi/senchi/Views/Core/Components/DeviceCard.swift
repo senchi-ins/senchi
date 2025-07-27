@@ -13,8 +13,8 @@ struct DeviceCardView: View {
                     .foregroundColor(getIconColor())
                     .frame(width: 28, height: 28)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(getDeviceType()).fontWeight(.semibold).foregroundColor(.black)
-                    Text("id: \(getDeviceName())").font(.caption).foregroundColor(.gray)
+                    Text(getDeviceName()).fontWeight(.semibold).foregroundColor(.black)
+                    Text("\(getDeviceType())").font(.caption).foregroundColor(.gray)
                 }
                 Spacer()
                 
@@ -84,10 +84,10 @@ struct DeviceCardView: View {
     }
     
     private func getDeviceType() -> String {
-        return device.definition?.description ?? device.model_id ?? "Unknown Device"
+        let rawType = device.type
+        return rawType.replacingOccurrences(of: "_", with: " ")
+                      .localizedCapitalized
     }
-    
-
     
     private func hasAlert() -> Bool {
         return device.water_leak == true || device.battery_low == true

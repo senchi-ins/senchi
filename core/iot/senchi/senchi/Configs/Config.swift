@@ -3,17 +3,28 @@ import SwiftUI
 
 
 struct ApplicationConfig {
-    static let wsURL: String =  "wss://senchi-mqtt.up.railway.app/ws"
-    static let apiBase: String = "https://senchi-mqtt.up.railway.app"
-    // TODO: Change to prod when deployed
-    static let restAPIBase: String = "http://192.168.2.57:8000"
-    // TODO: Change to production server once ready
-//    static let apiBase: String = "http://192.168.2.57:8000"
+    // Websocket which monitors MQTT service
+    static let wsURL: String =  "wss://senchi-mqtt.up.railway.app"
+    // static let wsURL: String =  "ws://192.168.2.57:8080"
+    
+    // API for ONLY zigbee related services
+    static let zbAPIBase: String = "https://senchi-mqtt.up.railway.app"
+    
+    // Main API which includes auth, etc.
+    static let restAPIBase: String = "https://api.senchi.ca"
+    
+    // IP address for development
+    // static let restAPIBase: String = "http://192.168.2.57:8000"
+    
+    // General config
     static let timeout: TimeInterval = 10
+    static let hubName: String = "HomeGuard Hub"
+    static let version: String = "0.0.2"
+    
+    // Raspberry pi config settings
+    // TODO: Confirm this URL is consistent across Pis
     static let setupURL: String = "http://10.42.0.1"
     static let setupPort: String = "80"
-    static let hubName: String = "HomeGuard Hub"
-    static let version: String = "0.0.1"
 }
 
 struct SenchiColors {

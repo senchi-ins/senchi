@@ -1,18 +1,22 @@
 
 import SwiftUI
 import Foundation
-import UIKit
 
 struct HomeTabContent: View {
-    @StateObject private var webSocketManager = WebSocketManager()
     @EnvironmentObject var userSettings: UserSettings
     @EnvironmentObject var pushManager: PushNotificationManager
-    // TODO: Remove auth manager
     @EnvironmentObject var authManager: AuthManager
+    @StateObject private var webSocketManager = WebSocketManager(userId: "")
     @State private var savingsAmount: Double = 0
     @State private var homeHealthScore: Double = 1.0
     @State private var testResult: String = ""
     @State private var isTesting: Bool = false
+    @State private var selectedProperty: String = "main"
+    @State private var showingPropertySelector = false
+    
+    init() {
+        // Initialize with empty user ID - will be updated when available
+    }
     
     private func getGreeting() -> String {
         let hour = Calendar.current.component(.hour, from: Date())
@@ -44,6 +48,20 @@ struct HomeTabContent: View {
         return ""
     }
     
+    private func formatPropertyName(_ propertyName: String) -> String {
+        return propertyName.replacingOccurrences(of: "_", with: " ")
+            .split(separator: " ")
+            .map { $0.capitalized }
+            .joined(separator: " ")
+    }
+    
+    private func initializeWebSocketManager() {
+        // Get user_id from userInfo if available
+        if let userInfo = userSettings.userInfo, !userInfo.user_id.isEmpty {
+            webSocketManager.updateUserId(userInfo.user_id)
+        }
+    }
+    
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
@@ -58,121 +76,7 @@ struct HomeTabContent: View {
                     Spacer()
                 }
                 .padding(.horizontal, 4)
-                
-//                // Test Buttons Section
-                VStack(spacing: 12) {
-                    Button("Test jwt validation") {
-                        Task {
-                            await authManager.verifyToken()
-                        }
-                        testResult = "Debug info printed to console"
-                    }
-                    .buttonStyle(.bordered)
-                    // TODO: Delete
-                    Button("Test APS Environment") {
-                        Task {
-                            await pushManager.cleanPushNotificationTest()
-                        }
-                    }
-                    
-                    
-                    Button("Manual Register") {
-                        pushManager.manuallyRegisterForNotifications()
-                        testResult = "Manual registration triggered"
-                    }
-                    .buttonStyle(.bordered)
-                    
-                    Button("Test APNs Connectivity") {
-                        APNsConnectivityTest.testAPNsConnectivity()
-                        testResult = "APNs connectivity test started"
-                    }
-                    .buttonStyle(.bordered)
-                    
-                    Button("Test Push Token") {
-                        if let token = pushManager.pushToken {
-                            print("📱 Current push token: \(token)")
-                            // Copy to clipboard
-                            UIPasteboard.general.string = token
-                            testResult = "Token copied to clipboard!"
-                        } else {
-                            testResult = "No push token available"
-                        }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    
-                    if !testResult.isEmpty {
-                        Text(testResult)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                }
-//                VStack(alignment: .leading, spacing: 12) {
-//                    Text("Development Tests")
-//                        .font(.headline)
-//                        .foregroundColor(.black)
-//                    
-//                    HStack(spacing: 12) { 
-//                        Button(action: {
-//                            Task {
-//                                isTesting = true
-//                                isTesting = false
-//                            }
-//                        }) {
-//                            HStack(spacing: 4) {
-//                                if isTesting {
-//                                    ProgressView()
-//                                        .scaleEffect(0.8)
-//                                } else {
-//                                    Image(systemName: "wrench.and.screwdriver")
-//                                }
-//                                Text("Test Device Setup")
-//                            }
-//                            .foregroundColor(.white)
-//                            .font(.subheadline)
-//                            .padding(.horizontal, 12)
-//                            .padding(.vertical, 8)
-//                            .background(SenchiColors.senchiBlue)
-//                            .cornerRadius(8)
-//                        }
-//                        .disabled(isTesting)
-//                        
-//                        Button(action: {
-//                            Task {
-//                                isTesting = true
-//                                isTesting = false
-//                            }
-//                        }) {
-//                            HStack(spacing: 4) {
-//                                if isTesting {
-//                                    ProgressView()
-//                                        .scaleEffect(0.8)
-//                                } else {
-//                                    Image(systemName: "envelope.fill")
-//                                }
-//                                Text("Clean Redis")
-//                            }
-//                            .foregroundColor(.white)
-//                            .font(.subheadline)
-//                            .padding(.horizontal, 12)
-//                            .padding(.vertical, 8)
-//                            .background(SenchiColors.senchiGreen)
-//                            .cornerRadius(8)
-//                        }
-//                        .disabled(isTesting)
-//                    }
-//                    
-//                    if !testResult.isEmpty {
-//                        Text(testResult)
-//                            .font(.caption)
-//                            .foregroundColor(testResult.hasPrefix("✅") ? .green : .red)
-//                            .padding(8)
-//                            .background(Color.gray.opacity(0.1))
-//                            .cornerRadius(6)
-//                    }
-//                }
-//                .padding()
-//                .background(RoundedRectangle(cornerRadius: 14).stroke(Color.gray.opacity(0.15)))
-//                
+  
                 // Greeting
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 4) {
@@ -180,15 +84,39 @@ struct HomeTabContent: View {
                         Text("\(getGreeting()), \(getUserName())")
                             .font(.title3).fontWeight(.semibold)
                             .foregroundColor(.black)
-                        Text("Your home is protected")
+                        Text("\(formatPropertyName(selectedProperty)) is protected")
                             .font(.subheadline)
                             .foregroundColor(.gray)
                     }
                     Spacer()
-                    ZStack {
-                        Circle().fill(SenchiColors.senchiBlue.opacity(0.08)).frame(width: 36, height: 36)
-                        Image(systemName: "shield.fill")
-                            .foregroundColor(SenchiColors.senchiBlue)
+                    HStack(spacing: 12) {
+//                        ZStack {
+//                            Circle().fill(SenchiColors.senchiBlue.opacity(0.08)).frame(width: 36, height: 36)
+//                            Image(systemName: "shield.fill")
+//                                .foregroundColor(SenchiColors.senchiBlue)
+//                        }
+                        
+                        // Property Selector Button
+                        Button(action: {
+                            showingPropertySelector = true
+                        }) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "building.2.fill")
+                                    .foregroundColor(SenchiColors.senchiBlue)
+                                    .font(.caption)
+                                Text(formatPropertyName(selectedProperty))
+                                    .font(.caption)
+                                    .foregroundColor(SenchiColors.senchiBlue)
+                                    .lineLimit(1)
+                                Image(systemName: "chevron.down")
+                                    .font(.caption2)
+                                    .foregroundColor(SenchiColors.senchiBlue)
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(SenchiColors.senchiBlue.opacity(0.1))
+                            .cornerRadius(8)
+                        }
                     }
                 }
                 // Health Score
@@ -299,9 +227,103 @@ struct HomeTabContent: View {
             webSocketManager.reconnect()
         }
         .onAppear {
+            initializeWebSocketManager()
+            
             webSocketManager.fetchDevices()
             Task {
                 savingsAmount = await calculateSavings()
+            }
+        }
+        .onReceive(userSettings.$userInfo) { newUserInfo in
+            // Setup WebSocket when userInfo becomes available
+            if newUserInfo != nil {
+                initializeWebSocketManager()
+            }
+        }
+        .sheet(isPresented: $showingPropertySelector) {
+            PropertySelectorView(
+                selectedProperty: $selectedProperty,
+                onPropertySelected: { newProperty in
+                    selectedProperty = newProperty
+                    // Update WebSocket manager with new property
+                    webSocketManager.updateProperty(newProperty)
+                }
+            )
+        }
+    }
+}
+
+struct PropertySelectorView: View {
+    @Binding var selectedProperty: String
+    let onPropertySelected: (String) -> Void
+    @EnvironmentObject var userSettings: UserSettings
+    @Environment(\.dismiss) private var dismiss
+    
+    private func formatPropertyName(_ propertyName: String) -> String {
+        return propertyName.replacingOccurrences(of: "_", with: " ")
+            .split(separator: " ")
+            .map { $0.capitalized }
+            .joined(separator: " ")
+    }
+    `
+    private var properties: [String] {
+        getProperties(userId: (userSettings.userInfo?.user_id ?? "") as String)
+    }
+    
+    var body: some View {
+        NavigationView {
+            List {
+                ForEach(properties, id: \.self) { property in
+                    Button(action: {
+                        onPropertySelected(property)
+                        dismiss()
+                    }) {
+                        HStack(spacing: 12) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(formatPropertyName(property))
+                                    .font(.headline)
+                                    .foregroundColor(.primary)
+                                Text("Property description")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            Spacer()
+                            if property == selectedProperty {
+                                Image(systemName: "checkmark")
+                                    .foregroundColor(SenchiColors.senchiBlue)
+                                    .font(.headline)
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+                
+                Section {
+                    Button(action: {
+                        // TODO: Add new property functionality
+                        print("Add new property")
+                    }) {
+                        HStack(spacing: 12) {
+                            Image(systemName: "plus.circle.fill")
+                                .foregroundColor(SenchiColors.senchiBlue)
+                                .font(.headline)
+                            Text("Add New Property")
+                                .foregroundColor(SenchiColors.senchiBlue)
+                                .font(.headline)
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+            }
+            .navigationTitle("Select Property")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
             }
         }
     }

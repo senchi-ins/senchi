@@ -144,7 +144,6 @@ struct External: View {
                         HStack(spacing: 8) {
                             Pill(text: q.risk_type, color: SenchiColors.senchiBlue)
                             Pill(text: q.importance, color: q.importance.contains("High") ? SenchiColors.senchiRed : .gray)
-                            Pill(text: q.risk_level, color: .gray)
                         }
                         // Question
                         Text(q.question)

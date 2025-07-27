@@ -8,7 +8,6 @@ struct OnboardingStep1AccountView: View {
     
     @FocusState.Binding var focusedField: OnboardingViewMain.Field?
     var onCreateAccount: () -> Void
-    var onSignIn: () -> Void
     var onLogin: () -> Void
     
     var body: some View {
@@ -95,13 +94,6 @@ struct OnboardingStep1AccountView: View {
             .padding(.top, 8)
             
             HStack(spacing: 16) {
-                Button(action: onSignIn) {
-                    Text("Sign In")
-                        .font(.footnote)
-                        .foregroundColor(.black)
-                }
-                .buttonStyle(NoHighlightButtonStyle())
-                
                 Button(action: onLogin) {
                     Text("Login with Email")
                         .font(.footnote)

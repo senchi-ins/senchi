@@ -43,7 +43,7 @@ enum RedisAPIError: Error, LocalizedError {
 func setKey(prefix: String, key: String, value: String, ttl: Int = 0) async throws -> String {
     let fullKey = "\(prefix):\(key)"
         
-    guard var urlComponents = URLComponents(string: "\(ApplicationConfig.apiBase)/redis/set") else {
+    guard var urlComponents = URLComponents(string: "\(ApplicationConfig.zbAPIBase)/redis/set") else {
         throw RedisAPIError.invalidURL
     }
     
@@ -88,7 +88,7 @@ func setKey(prefix: String, key: String, value: String, ttl: Int = 0) async thro
 
 // Permit join function
 func permitJoin(duration: Int = 60) async throws -> String {
-    guard var urlComponents = URLComponents(string: "\(ApplicationConfig.apiBase)/zigbee/permit-join") else {
+    guard var urlComponents = URLComponents(string: "\(ApplicationConfig.zbAPIBase)/zigbee/permit-join") else {
         throw RedisAPIError.invalidURL
     }
     
@@ -139,7 +139,7 @@ func getKey(prefix: String, key: String) async throws -> String  {
 
     let fullKey = "\(prefix):\(key)"
 
-    guard var urlComponents = URLComponents(string: "\(ApplicationConfig.apiBase)/redis/get") else {
+    guard var urlComponents = URLComponents(string: "\(ApplicationConfig.zbAPIBase)/redis/get") else {
         throw RedisAPIError.invalidURL
     }
     
@@ -189,3 +189,17 @@ func calculateSavings() async -> Double {
     // For now, return 0
     return 0.0
 }
+
+func addProprty(userId: String, propertyName: String) async -> Bool {
+    // TODO: Add to API
+    return true
+}
+
+func getProperties(userId: String) -> [String] {
+    // TODO: Add API call
+    let properties = ["main", "vacation_home"]
+    
+    return properties
+}
+
+
