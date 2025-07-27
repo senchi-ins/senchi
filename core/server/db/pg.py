@@ -5,7 +5,7 @@ from psycopg2.extras import RealDictCursor
 import os
 from datetime import datetime
 import logging
-from typing import Optional
+from typing import Any, Optional
 
 DATABASE_URL = os.getenv('DATABASE_URL')
 
@@ -16,6 +16,14 @@ class PostgresDB:
 
     def close(self):
         self.conn.close()
+
+    def execute_with_return(self, query, params=None) -> Any:
+        with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+            try:
+                cur.execute(query, params)
+                return cur.fetchone()
+            except Exception as e:
+                logging.error(f"Error executing query: {e}")
     
     def execute_query(self, query, params=None) -> bool:
         with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -103,9 +111,72 @@ class PostgresDB:
         query = """
         INSERT INTO zb_users (email, password_hash, full_name, user_type, is_active)
         VALUES (%s, %s, %s, %s, %s)
+        RETURNING id
         """
         params = (email, password_hash, full_name, user_type, is_active)
+        return self.execute_with_return(query, params)
+    
+    def insert_user_property(
+            self,
+            property_name: str,
+            address: str = None,
+            property_type: str = 'residential',
+            description: str = None,
+            timezone: str = 'UTC',
+            is_active: bool = True,
+        ) -> bool:
+        """
+        Insert a new property into the properties table.
+        """
+        query = """
+        INSERT INTO zb_properties (name, address, property_type, description, timezone, is_active)
+        VALUES (%s, %s, %s, %s, %s, %s)
+        """
+        params = (property_name, address, property_type, description, timezone, is_active)
         return self.execute_insert(query, params)
+    
+    def insert_user_property_relationship(
+            self,
+            user_id: str,
+            property_id: str,
+            added_by: str,
+            role: str = 'owner', # TODO: Update this later?
+        ) -> bool:
+        """
+        Insert a new user-property relationship into the user_properties table.
+        """
+        query = """
+        INSERT INTO zb_user_properties (user_id, property_id, role, added_by)
+        VALUES (%s, %s, %s, %s)
+        """
+        params = (user_id, property_id, role, added_by)
+        return self.execute_insert(query, params)
+
+    def insert_user_device(
+            self, 
+            user_id: str, 
+            device_serial: str,
+            property_id: str,
+            device_name: str = None,
+            location_description: str = None,
+            wifi_ssid: str = None,
+            device_status: str = 'active',
+            firmware_version: str = "0.0.1",
+            last_seen: datetime = datetime.now(),
+        ) -> bool:
+        """
+        Insert a new user-device relationship into the zb_devices table.
+        """
+        query = """
+        INSERT INTO zb_devices (
+            owner_user_id, serial_number, device_name, property_id, location_description, wifi_ssid, device_status, firmware_version, last_seen
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        RETURNING owner_user_id
+        """
+        params = (
+            user_id, device_serial, device_name, property_id, location_description, wifi_ssid, device_status, firmware_version, last_seen
+        )
+        return self.execute_with_return(query, params)
 
     def insert_property(
             self,
