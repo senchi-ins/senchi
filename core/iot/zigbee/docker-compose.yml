@@ -1,0 +1,98 @@
+
+services:
+  # Central MQTT broker
+  # This allows multiple zigbee devices to connect to the same broker
+  mosquitto:
+    image: eclipse-mosquitto:latest
+    ports:
+      - "1883:1883"    # MQTT
+      - "9001:9001"    # WebSocket MQTT
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ./mosquitto_passwd:/mosquitto/config/passwd
+      - mqtt_data:/mosquitto/data
+      - mqtt_logs:/mosquitto/log
+    restart: unless-stopped
+    networks:
+      - mqtt_network
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - mqtt_network
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: senchi-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=home_automation
+      - POSTGRES_USER=homeuser
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-defaultpass}
+      - TZ=${TZ:-America/Toronto}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - mqtt_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U homeuser -d home_automation"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  senchi-zigbee-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: senchi-zigbee-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://homeuser:${DB_PASSWORD:-defaultpass}@postgres:5432/home_automation
+      - MQTT_BROKER=mosquitto
+      - MQTT_PORT=${MQTT_PORT:-1883}
+      - SECRET_KEY=${SECRET_KEY}
+      - ENVIRONMENT=${ENVIRONMENT:-dev}
+      - MQTT_USERNAME=${MQTT_USERNAME:-senchi-main}
+      - MQTT_PASSWORD=${MQTT_PASSWORD:-senchi-dev-pswd}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - TZ=${TZ:-America/Toronto}
+      - REDIS_URL=${REDIS_URL}
+      - APNS_AUTH_KEY=${APNS_AUTH_KEY}
+      - APNS_KEY_ID=${APNS_KEY_ID}
+      - APNS_TEAM_ID=${APNS_TEAM_ID}
+      - APNS_BUNDLE_ID=${APNS_BUNDLE_ID}
+      - APNS_PRODUCTION=${APNS_PRODUCTION}
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./configuration.yml:/app/configuration.yml:ro
+    depends_on:
+      - mosquitto
+      - redis
+      - postgres
+    networks:
+      - mqtt_network
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  mqtt_data:
+  mqtt_logs:
+  postgres_data:
+
+networks:
+  mqtt_network:
+    driver: bridge

@@ -1,0 +1,15 @@
+[project]
+name = "iot"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "bleak>=1.0.0",
+    "dotenv>=0.9.9",
+    "fastapi>=0.115.13",
+    "homeassistant>=0.45.1",
+    "pandas>=2.3.0",
+    "pydantic>=2.11.7",
+    "uvicorn>=0.34.3",
+]

@@ -1,0 +1,47 @@
+{
+  "mac_address": "ECD25189-92D0-6712-8C02-86B4D17BA636",
+  "connection_info": {
+    "mtu_size": 247,
+    "is_connected": true,
+    "address": "ECD25189-92D0-6712-8C02-86B4D17BA636"
+  },
+  "services": {
+    "cba20d00-224d-11e6-9fb8-0002a5d5c51b": {
+      "uuid": "cba20d00-224d-11e6-9fb8-0002a5d5c51b",
+      "description": "Unknown",
+      "characteristics": {
+        "cba20003-224d-11e6-9fb8-0002a5d5c51b": {
+          "uuid": "cba20003-224d-11e6-9fb8-0002a5d5c51b",
+          "description": "Unknown",
+          "properties": [
+            "notify"
+          ],
+          "descriptors": [
+            {
+              "uuid": "00002902-0000-1000-8000-00805f9b34fb",
+              "description": "Client Characteristic Configuration"
+            }
+          ],
+          "data": null,
+          "data_interpretation": null,
+          "notification_active": true
+        },
+        "cba20002-224d-11e6-9fb8-0002a5d5c51b": {
+          "uuid": "cba20002-224d-11e6-9fb8-0002a5d5c51b",
+          "description": "Unknown",
+          "properties": [
+            "write-without-response",
+            "write"
+          ],
+          "descriptors": [],
+          "data": null,
+          "data_interpretation": null
+        }
+      }
+    }
+  },
+  "characteristics": {},
+  "notifications": {},
+  "pairing_status": "core_bluetooth_limitation",
+  "raw_data_captured": []
+}
