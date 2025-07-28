@@ -61,11 +61,18 @@ async def register_user(
     # 4. Add the device to zb_devices
     try:
         password_hash = hash_password(password)
-        user_id = request.app.state.db.insert_user(email, password_hash, full_name)
-        property_id = request.app.state.db.insert_property(property_name, address)
+        user_result = request.app.state.db.insert_user(email, password_hash, full_name)
+        user_id = user_result['id'] if user_result else None
+        
+        property_result = request.app.state.db.insert_property(property_name, address)
+        property_id = property_result['id'] if property_result else None
         print(f"property_id: {property_id}")
-        request.app.state.db.insert_user_property_relationship(user_id, property_id, user_id)
-        request.app.state.db.insert_user_device(user_id, device_serial, property_id)
+        
+        if user_id and property_id:
+            request.app.state.db.insert_user_property_relationship(user_id, property_id, user_id)
+            request.app.state.db.insert_user_device(user_id, device_serial, property_id)
+        else:
+            raise HTTPException(status_code=500, detail="Failed to create user or property")
 
         # TODO: Also store and set up the push notification token
         # TODO: Verify the push token is valid / available at this point
