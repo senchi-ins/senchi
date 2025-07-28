@@ -32,7 +32,7 @@ class Monitor:
 
         # TODO: Can this just be defined here?
         self.app_state = initial_app_state
-        
+
         self.db = db
 
     def on_connect(
@@ -72,11 +72,13 @@ class Monitor:
                 device_serials = self.db.index.tolist()
             else:
                 device_serials = self.db.get_device_serials()
+                print(f"Device serials: {device_serials}")
                 
                 # Subscribe to topics for each device serial
                 for device_serial in device_serials:
+                    print(f"Device serial: {device_serial}")
                     # Use the correct topic format: zigbee2mqtt/senchi-{device_serial}/*
-                    base_topic = f"zigbee2mqtt/senchi-{device_serial.serial_number}"
+                    base_topic = f"zigbee2mqtt/senchi-{device_serial}"
                     
                     topics = [
                         f"{base_topic}/bridge/health",

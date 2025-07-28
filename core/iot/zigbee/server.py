@@ -232,18 +232,6 @@ async def get_devices(
         # Return empty list on error
         return []
 
-
-# TODO: Delete, now on central server
-@app.post("/api/auth/setup", response_model=TokenResponse)
-async def setup_device_auth(request: TokenRequest):
-    """Generate JWT token during device setup"""
-    return await notification_router.create_user_token(
-        device_serial=request.device_serial,
-        push_token=request.push_token,
-        email=request.email,
-        full_name=request.full_name
-    )
-
 @app.post("/api/auth/push-token")
 async def update_push_token(
     push_token: str,
