@@ -36,6 +36,9 @@ class Settings(BaseSettings):
     # Security
     SECRET_KEY: str = os.environ.get("API_SECRET_KEY", "")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # 8 days
+    
+    # Central API Configuration
+    CENTRAL_API_BASE: str = os.environ.get("CENTRAL_API_BASE", "https://api.senchi.ca")
         
     ZIGBEE2MQTT_DEVICE: str = os.environ.get("ZIGBEE2MQTT_DEVICE", "")
     ZIGBEE_CHANNEL: int = int(os.environ.get("ZIGBEE_CHANNEL", 11))

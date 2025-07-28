@@ -149,12 +149,37 @@ async def get_current_user(authorization: str = Header(None)):
         raise HTTPException(status_code=401, detail="Missing or invalid authorization header")
     
     token = authorization.replace("Bearer ", "")
-    user_info = await notification_router.validate_token(token)
     
-    if not user_info:
+    # Validate token against central server instead of local Redis
+    try:
+        import httpx
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            # Call central server's verify endpoint
+            verify_url = f"{settings.CENTRAL_API_BASE}/api/v1/auth/verify"
+            headers = {"Authorization": f"Bearer {token}"}
+            
+            response = await client.post(verify_url, headers=headers)
+            
+            if response.status_code == 200:
+                user_data = response.json()
+                # Extract user info from the response
+                user_info = {
+                    "user_id": user_data.get("user_id"),
+                    "location_id": user_data.get("location_id"),
+                    "device_serial": user_data.get("device_serial"),
+                    "full_name": user_data.get("full_name"),
+                    "exp": user_data.get("expires_at")
+                }
+                return user_info
+            else:
+                raise HTTPException(status_code=401, detail="Invalid or expired token")
+                
+    except httpx.RequestError as e:
+        logger.error(f"Error validating token with central server: {e}")
+        raise HTTPException(status_code=503, detail="Authentication service unavailable")
+    except Exception as e:
+        logger.error(f"Unexpected error during token validation: {e}")
         raise HTTPException(status_code=401, detail="Invalid or expired token")
-    
-    return user_info
 
 @app.get("/")
 async def root():
