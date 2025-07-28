@@ -391,15 +391,15 @@ class Monitor:
             logger.info(f"Current devices in app_state: {existing_devices}")
             logger.info(f"Checking if {ieee_address} in app_state: {ieee_address in self.app_state['devices']}")
             
+            # Always store device mapping in database, regardless of app_state
+            device_serial = self._extract_device_serial_from_topic()
+            logger.info(f"Storing device mapping for {ieee_address} with serial {device_serial}")
+            self._store_device_mapping(device_serial, curr)
+            
             if ieee_address not in self.app_state["devices"]:
                 print(f"Adding new device: {ieee_address}")
                 logger.info(f"Adding new device to app_state: {ieee_address}")
                 self.app_state["devices"][ieee_address] = curr
-                
-                # Store device mapping in database
-                device_serial = self._extract_device_serial_from_topic()
-                logger.info(f"Storing device mapping for {ieee_address} with serial {device_serial}")
-                self._store_device_mapping(device_serial, curr)
                 
                 try:
                     # Subscribe to device updates using the correct topic format
@@ -418,7 +418,7 @@ class Monitor:
                     self.loop
                 )
             else:
-                logger.info(f"Device {ieee_address} already exists in app_state, skipping database storage")
+                logger.info(f"Device {ieee_address} already exists in app_state, but still stored in database")
                 if ieee_address in self.app_state["devices"]:
                     existing_device = self.app_state["devices"][ieee_address]
                     for field, value in curr.dict(exclude_unset=True).items():
