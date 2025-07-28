@@ -179,7 +179,7 @@ async def create_user_token(
             raise HTTPException(status_code=500, detail="Token creation failed")
 
 @router.post("/verify")
-async def verify_auth(request: Request):
+async def verify_auth(request: Request) -> TokenResponse:
     auth_header = request.headers.get("Authorization")
     
     if not auth_header:
@@ -203,5 +203,23 @@ async def verify_auth(request: Request):
         raise HTTPException(status_code=401, detail="Invalid token")
 
     user_id = decoded_jwt["user_id"]
+    now = datetime.now()
+    expires = now + timedelta(hours=int(os.getenv("JWT_EXPIRY_HOURS")))
+    device_serial = request.app.state.db.get_device_serial(user_id)
+    location_id = f"rpi-zigbee-{device_serial[-8:]}"
 
-    return {"message": "verification model activated"}
+    user_info = UserInfoResponse(
+        user_id=user_id,
+        location_id=location_id,
+        device_serial=device_serial,
+        full_name=None,
+        iat=now.timestamp(),
+        exp=expires.timestamp(),
+        created_at=now.isoformat()
+    )
+
+    return TokenResponse(
+        jwt_token=token,
+        expires_at=expires.isoformat(),
+        user_info=user_info,
+    )

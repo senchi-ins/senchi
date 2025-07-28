@@ -235,3 +235,10 @@ class PostgresDB:
                 first_name, _ = result['full_name'].split(' ', 1)
                 return (result['id'], first_name, result['password_hash'])
             return None
+    
+    def get_device_serial(self, user_id: str) -> Optional[str]:
+        # TODO: Add property_id to the query
+        query = """
+        SELECT device_serial FROM zb_user_devices WHERE owner_user_id = %s
+        """
+        return self.execute_with_return(query, (user_id,))
