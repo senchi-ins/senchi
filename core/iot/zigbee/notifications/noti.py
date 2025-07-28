@@ -27,6 +27,7 @@ class NotificationRouter:
             location_id = topic_parts[1]  # e.g., "rpi-zigbee-abc123"
             
             # Get all users for this location
+            # TODO: Replace with Postgres query
             user_ids = self.redis_db.get_key(f"location:{location_id}:users")
             
             if not user_ids:
