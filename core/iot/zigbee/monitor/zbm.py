@@ -355,7 +355,10 @@ class Monitor:
                     self.loop
                 )
         # --- Route notification by topic ---
-        self.app_state["notification_router"].route_mqtt_message(topic, payload)
+        asyncio.run_coroutine_threadsafe(
+            self.app_state["notification_router"].route_mqtt_message(topic, payload),
+            self.loop
+        )
 
     async def handle_device_list(self, devices: List[Dict]):
         i = 0
