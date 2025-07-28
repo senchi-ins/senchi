@@ -239,6 +239,6 @@ class PostgresDB:
     def get_device_serial(self, user_id: str) -> Optional[str]:
         # TODO: Add property_id to the query
         query = """
-        SELECT device_serial FROM zb_user_devices WHERE owner_user_id = %s
+        SELECT device_serial FROM zb_devices WHERE owner_user_id = %s
         """
         return self.execute_with_return(query, (user_id,))
