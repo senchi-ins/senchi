@@ -6,6 +6,7 @@ import os
 from datetime import datetime
 import logging
 from typing import Any, Optional
+import uuid
 
 DATABASE_URL = os.getenv('DATABASE_URL')
 
@@ -116,26 +117,6 @@ class PostgresDB:
         params = (email, password_hash, full_name, user_type, is_active)
         return self.execute_with_return(query, params)
     
-    def insert_user_property(
-            self,
-            property_name: str,
-            address: str = None,
-            property_type: str = 'residential',
-            description: str = None,
-            timezone: str = 'UTC',
-            is_active: bool = True,
-        ) -> bool:
-        """
-        Insert a new property into the properties table.
-        """
-        query = """
-        INSERT INTO zb_properties (name, address, property_type, description, timezone, is_active)
-        VALUES (%s, %s, %s, %s, %s, %s)
-        RETURNING id
-        """
-        params = (property_name, address, property_type, description, timezone, is_active)
-        return self.execute_with_return(query, params)
-    
     def insert_user_property_relationship(
             self,
             user_id: str,
@@ -187,16 +168,17 @@ class PostgresDB:
             description: str = None,
             timezone: str = 'UTC',
             is_active: bool = True,
-        ) -> bool:
+        ) -> str:
         """
         Insert a new property into the properties table.
         """
         query = """
         INSERT INTO zb_properties (name, address, property_type, description, timezone, is_active)
         VALUES (%s, %s, %s, %s, %s, %s)
+        RETURNING id
         """
         params = (name, address, property_type, description, timezone, is_active)
-        return self.execute_insert(query, params)
+        return self.execute_with_return(query, params)
 
     def insert_user_property(
             self,

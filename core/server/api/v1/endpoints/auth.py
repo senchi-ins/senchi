@@ -62,7 +62,7 @@ async def register_user(
     try:
         password_hash = hash_password(password)
         user_id = request.app.state.db.insert_user(email, password_hash, full_name)
-        property_id = request.app.state.db.insert_user_property(property_name, address)
+        property_id = request.app.state.db.insert_property(property_name, address)
         print(f"property_id: {property_id}")
         request.app.state.db.insert_user_property_relationship(user_id, property_id, user_id)
         request.app.state.db.insert_user_device(user_id, device_serial, property_id)
