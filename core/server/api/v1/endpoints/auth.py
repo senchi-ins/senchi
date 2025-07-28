@@ -64,7 +64,7 @@ async def register_user(
         user_id = request.app.state.db.insert_user(email, password_hash, full_name)
         property_id = request.app.state.db.insert_user_property(property_name, address)
         request.app.state.db.insert_user_property_relationship(user_id, property_id, user_id)
-        request.app.state.db.insert_user_device(user_id, device_serial)
+        request.app.state.db.insert_user_device(user_id, device_serial, property_id)
 
         # TODO: Also store and set up the push notification token
         # TODO: Verify the push token is valid / available at this point
