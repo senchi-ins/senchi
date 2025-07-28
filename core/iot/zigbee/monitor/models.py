@@ -69,7 +69,7 @@ class Device(BaseModel):
     network_address: Optional[int] = None
     type: Optional[DeviceType] = None
     manufacturer: Optional[str] = None
-    model_id: Optional[str] = None
+    model: Optional[str] = None
     power_source: Optional[PowerSource] = None
     software_build_id: Optional[str] = None
     date_code: Optional[str] = None
