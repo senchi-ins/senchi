@@ -94,17 +94,12 @@ class Monitor:
                             logger.error(f"Failed to subscribe to {topic}: {e}")
                 
                 print(f"Subscribed to {len(device_serials)} topics")
-                if not device_serials:
-                    logger.warning("No device serials found in Redis, subscribing to default topics")
-                    print("No device serials found in Redis, subscribing to default topics")
-                    self._subscribe_to_default_topics() 
         except Exception as e:
             logger.error(f"Error subscribing to device topics: {e}")
-            logger.warning("Subscribing to default topics due to error")
-            self._subscribe_to_default_topics()
 
     def _subscribe_to_default_topics(self):
         """Subscribe to default topics for testing when Redis is unavailable"""
+        print("Subscribing to default topics")
         default_topics = [
             "zigbee2mqtt/senchi-SNH2025001/bridge/health",
             "zigbee2mqtt/senchi-SNH2025001/bridge/devices",
@@ -328,6 +323,7 @@ class Monitor:
 
             elif "bridge/devices" in topic:
                 # Extract device serial from topic for device subscriptions
+                print(f"Handling payload: {payload}")
                 device_serial = topic.split("/")[1].replace("senchi-", "")
                 self.current_device_serial = device_serial
                 logger.info(f"Processing device list for device serial: {device_serial}")
@@ -338,6 +334,7 @@ class Monitor:
                 )
                 return
             elif "bridge/event" in topic:
+                print(f"Handling bridge event: {payload}")
                 # Log bridge events
                 asyncio.run_coroutine_threadsafe(
                     self.log_bridge_event(payload),
