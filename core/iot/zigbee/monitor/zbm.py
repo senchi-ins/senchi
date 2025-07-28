@@ -88,6 +88,7 @@ class Monitor:
                     for topic in topics:
                         try:
                             self.client.subscribe(topic)
+                            print(f"Subscribed to topic: {topic}")
                             logger.info(f"Subscribed to topic: {topic}")
                         except Exception as e:
                             logger.error(f"Failed to subscribe to {topic}: {e}")
