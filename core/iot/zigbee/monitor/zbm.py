@@ -727,12 +727,20 @@ class Monitor:
             WHERE dm.ieee_address = %s
             """
             
+            logger.debug(f"Looking up owner for device {device_id}")
             owner_result = pg_db.execute_query(owner_query, (device_id,))
+            logger.debug(f"Owner query result: {owner_result}")
+            
             if not owner_result:
                 logger.warning(f"No owner found for device {device_id}")
                 return
             
-            owner_user_id = owner_result[0][0]
+            if len(owner_result) == 0:
+                logger.warning(f"Empty result set for device {device_id}")
+                return
+            
+            owner_user_id = owner_result[0]['owner_user_id']
+            logger.debug(f"Found owner_user_id: {owner_user_id}")
             
             # Create the message
             message = {
@@ -772,8 +780,15 @@ class Monitor:
                 if not self.app_state["websocket_connections"][owner_user_id]:
                     del self.app_state["websocket_connections"][owner_user_id]
                     
+                logger.info(f"Broadcasted device update for {device_id} to user {owner_user_id}")
+            else:
+                logger.debug(f"No WebSocket connections for user {owner_user_id}")
+                    
         except Exception as e:
             logger.error(f"Error broadcasting device update for {device_id}: {e}")
+            # Log the full exception for debugging
+            import traceback
+            logger.error(f"Full traceback: {traceback.format_exc()}")
 
     def start(self):
 
