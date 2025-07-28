@@ -4,7 +4,7 @@ import asyncio
 import aiohttp
 import logging
 from typing import List, Dict, Any, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 import jwt
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ec
@@ -33,6 +33,7 @@ class APNsService:
         
         self._auth_token = None
         self._token_expiry = None
+        self.token_duration_hours = 24 * 30 * 6 # 6 months
         
         logger.info(f"APNs initialized - Production: {self.is_production}, Bundle ID: {self.bundle_id}")
     
@@ -52,9 +53,11 @@ class APNsService:
             
             # Create JWT token
             now = datetime.now()
+            expiry_time = now + timedelta(hours=self.token_duration_hours)
             payload = {
                 'iss': self.team_id,
-                'iat': int(now.timestamp())
+                'iat': int(now.timestamp()),
+                'exp': int(expiry_time.timestamp())
             }
 
             print(payload)
@@ -72,7 +75,7 @@ class APNsService:
             )
             
             self._auth_token = token
-            self._token_expiry = now.timestamp() + 3600  # 1 hour expiry
+            self._token_expiry = expiry_time.timestamp()
             
             logger.info("APNs auth token generated successfully")
             return token

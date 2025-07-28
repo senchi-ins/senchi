@@ -5,16 +5,18 @@ import logging
 from typing import Optional, Dict, Any, List
 from datetime import datetime, timedelta
 from fastapi import HTTPException
+from maindb.pg import PostgresDB
 from models.tokens import TokenResponse, NotificationPayload
-from rdsdb.rdsdb import RedisDB
+from notifications.apns_service import APNsService
 from cfg import NOTIFICATION_CONFIG
 
 logger = logging.getLogger(__name__)
 
 
 class NotificationRouter:
-    def __init__(self, redis_db: RedisDB):
-        self.redis_db = redis_db
+    def __init__(self, db: PostgresDB, apns_service: APNsService):
+        self.db = db
+        self.apns_service = apns_service
     
     async def route_mqtt_message(self, topic: str, payload: dict):
         """Route MQTT message to correct users"""
@@ -28,7 +30,8 @@ class NotificationRouter:
             
             # Get all users for this location
             # TODO: Replace with Postgres query
-            user_ids = self.redis_db.get_key(f"location:{location_id}:users")
+            user_ids = self.db.get_user_from_location_id(location_id)
+            user_ids = [(user_id["owner_user_id"], user_id["serial_number"]) for user_id in user_ids]
             
             if not user_ids:
                 logger.warning(f"No users found for location {location_id}")
@@ -44,7 +47,7 @@ class NotificationRouter:
             # Get push tokens for all users
             push_tokens = []
             for user_id in user_ids:
-                token = self.redis_db.get_key(f"user:{user_id}:push_token")
+                token = self.db.get_device_tokens_for_iot_device(user_id[1]) # TODO: Fix naming to make clear this is the serial number
                 if token:
                     push_tokens.append(token)
             
@@ -85,7 +88,6 @@ class NotificationRouter:
     async def _send_push_notifications(self, push_tokens: List[str], notification: NotificationPayload):
         """Send push notifications to devices"""
         try:
-            from .apns_service import apns_service
             
             # Prepare notification data
             data = {
@@ -160,10 +162,13 @@ class NotificationRouter:
             
             user_id = user_info["user_id"]
             
-            # Set TTL to 30 days for push tokens
-            ttl_seconds = 60 * 60 * 24 * 30
-            self.redis_db.set_key(f"user:{user_id}:push_token", new_push_token, ttl_seconds)
-            self.redis_db.set_key(f"push_token:{new_push_token}", user_id, ttl_seconds)
+            self.db.register_device_token(
+                user_id=user_id,
+                device_token=new_push_token,
+                platform="apns",
+                device_identifier=new_push_token, # TODO: Fix
+                device_info={}
+            )
             
         except Exception as e:
             logger.error(f"Failed to update push token: {e}")

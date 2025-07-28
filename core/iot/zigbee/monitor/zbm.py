@@ -320,6 +320,7 @@ class Monitor:
                     self.log_device_event(payload['data']['id'], {"event": "device_removed", "data": payload}),
                     self.loop
                 )
+                return
 
             elif "bridge/devices" in topic:
                 # Extract device serial from topic for device subscriptions
@@ -354,7 +355,7 @@ class Monitor:
                     self.loop
                 )
         # --- Route notification by topic ---
-        self.route_notification_by_topic(topic, payload)
+        self.app_state["notification_router"].route_mqtt_message(topic, payload)
 
     async def handle_device_list(self, devices: List[Dict]):
         i = 0
@@ -840,50 +841,3 @@ class Monitor:
         if self.client:
             self.client.loop_stop()
             self.client.disconnect()
-
-    def route_notification_by_topic(self, topic, payload):
-        # Find all JWTs associated with this topic
-        jwt_key = f"topic:{topic}:jwts"
-        
-        # Try to get Redis connection from app_state first
-        redis_db = None
-        if "redis_db" in self.app_state:
-            redis_db = self.app_state["redis_db"]
-        
-        # If not in app_state, try to get global redis_db
-        if not redis_db:
-            try:
-                # TODO: Remove this, temp fix
-                from rdsdb.rdsdb import RedisDB
-                redis_db = RedisDB()
-                # Try to connect if not already connected
-                if not redis_db.conn:
-                    redis_db.connect()
-            except Exception as e:
-                logger.warning(f"Could not get Redis connection for topic routing: {e}")
-                return
-        
-        # Get JWT data if Redis is available
-        jwt_data = None
-        if redis_db and redis_db.conn:
-            try:
-                jwt_data = redis_db.get_key(jwt_key)
-            except Exception as e:
-                logger.warning(f"Error getting JWT data for topic {topic}: {e}")
-                return
-        
-        if not jwt_data:
-            logger.info(f"No JWTs found for topic {topic}")
-            return
-            
-        try:
-            jwt_list = jwt_data.decode().split(",")
-            for jwt_token in jwt_list:
-                logger.info(f"Would route notification to JWT: {jwt_token} for topic: {topic}")
-                # Here you can send a notification to the user/device associated with this JWT
-                # For example, via WebSocket, push, etc.
-                # Example: self.send_websocket_notification(jwt_token, payload)
-        except Exception as e:
-            logger.error(f"Error processing JWT data for topic {topic}: {e}")
-
-    

@@ -45,6 +45,7 @@ from monitor.models import (
 )
 from monitor.zbm import Monitor
 from monitor.utils import get_all_model_fields
+from notifications.apns_service import APNsService
 from notifications.noti import NotificationRouter
 from rdsdb.rdsdb import RedisDB
 from maindb.pg import PostgresDB
@@ -80,10 +81,13 @@ db = init_db()
 redis_db = RedisDB()
 pg_db = PostgresDB()
 mqtt_monitor = Monitor(app_state, pg_db)
+apns_service = APNsService()
+notification_router = NotificationRouter(pg_db, apns_service) 
 
 # Add Redis and Postgres database to app_state so Monitor can access it
 app_state["redis_db"] = redis_db
 app_state["pg_db"] = pg_db
+app_state["notification_router"] = notification_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -131,9 +135,7 @@ async def lifespan(app: FastAPI):
     
     logger.info("Home API Server stopped")
 
-app = FastAPI(lifespan=lifespan)
-
-notification_router = NotificationRouter(redis_db)  
+app = FastAPI(lifespan=lifespan) 
 
 app.add_middleware(
     CORSMiddleware,
@@ -766,6 +768,35 @@ async def confirm_location_setup(location_id: str):
         return {"status": "confirmed", "location_id": location_id}
     else:
         raise HTTPException(status_code=404, detail="Location not found")
+    
+class DeviceRegistrationRequest(BaseModel):
+    device_token: str
+    platform: str
+    device_identifier: str
+    device_info: dict
+
+@app.post("/api/register-device")
+async def register_device(
+        request: DeviceRegistrationRequest,
+        current_user: dict = Depends(get_current_user)
+    ):
+    try:
+        db = app_state.get("pg_db")
+        
+        token_id = db.register_device_token(
+            user_id=current_user['id'],
+            device_token=request.device_token,
+            platform=request.platform,
+            device_identifier=request.device_identifier,
+            device_info=request.device_info
+        )
+        
+        logger.info(f"Registered device token for user {current_user['id']}")
+        return {"status": "success", "token_id": token_id}
+        
+    except Exception as e:
+        logger.error(f"Failed to register device token: {e}")
+        return {"status": "error", "message": "Failed to register device"}
 
 def subscribe_to_new_topics_periodically(monitor, redis_db, interval=60):
     known_topics = set()
@@ -781,6 +812,7 @@ def subscribe_to_new_topics_periodically(monitor, redis_db, interval=60):
         except Exception as e:
             logger.error(f"Error subscribing to new topics: {e}")
         time.sleep(interval)
+
 
 if __name__ == "__main__":
 
