@@ -206,7 +206,12 @@ async def verify_auth(request: Request) -> TokenResponse:
     now = datetime.now()
     expires = now + timedelta(hours=int(os.getenv("JWT_EXPIRY_HOURS")))
     device_serial = request.app.state.db.get_device_serial(user_id)
-    location_id = f"rpi-zigbee-{device_serial[-8:]}"
+    device_serial = device_serial['serial_number'] if device_serial else None
+    print(f"device_serial: {device_serial}")
+    if device_serial:
+        location_id = f"rpi-zigbee-{device_serial[-8:]}"
+    else:
+        location_id = None
 
     user_info = UserInfoResponse(
         user_id=user_id,
