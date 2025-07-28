@@ -16,7 +16,7 @@ async def lifespan(app: FastAPI):
     redis_db = RedisDB()
     try:
         app.state.db = db
-        app.state.redis = redis_db
+        app.state.redis_db = redis_db
         redis_db.connect()
         db.execute_query("""
         CREATE TABLE IF NOT EXISTS assessment_responses (
