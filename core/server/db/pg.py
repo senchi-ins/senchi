@@ -131,9 +131,10 @@ class PostgresDB:
         query = """
         INSERT INTO zb_properties (name, address, property_type, description, timezone, is_active)
         VALUES (%s, %s, %s, %s, %s, %s)
+        RETURNING id
         """
         params = (property_name, address, property_type, description, timezone, is_active)
-        return self.execute_insert(query, params)
+        return self.execute_with_return(query, params)
     
     def insert_user_property_relationship(
             self,
