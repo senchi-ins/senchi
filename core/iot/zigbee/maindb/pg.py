@@ -2,8 +2,10 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 import os
 from datetime import datetime
+import logging
 
 DATABASE_URL = os.getenv('DATABASE_URL')
+logger = logging.getLogger(__name__)
 
 class PostgresDB:
     def __init__(self):
@@ -24,19 +26,37 @@ class PostgresDB:
     def upsert_device_mapping(self, device_serial: str, ieee_address: str, friendly_name: str = None, 
                              device_type: str = None, model: str = None, manufacturer: str = None):
         """Insert or update device mapping"""
-        query = """
-        INSERT INTO device_mappings (device_serial, ieee_address, friendly_name, device_type, model, manufacturer, last_seen)
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
-        ON CONFLICT (device_serial, ieee_address) 
-        DO UPDATE SET 
-            friendly_name = EXCLUDED.friendly_name,
-            device_type = EXCLUDED.device_type,
-            model = EXCLUDED.model,
-            manufacturer = EXCLUDED.manufacturer,
-            last_seen = EXCLUDED.last_seen
-        """
-        params = (device_serial, ieee_address, friendly_name, device_type, model, manufacturer, datetime.now())
-        return self.execute_insert(query, params)
+        try:
+            # First try to insert
+            insert_query = """
+            INSERT INTO device_mappings (device_serial, ieee_address, friendly_name, device_type, model, manufacturer, last_seen)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """
+            # Convert datetime to string for last_seen since it's text in the database
+            last_seen_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            params = (device_serial, ieee_address, friendly_name, device_type, model, manufacturer, last_seen_str)
+            result = self.execute_insert(insert_query, params)
+            
+            if result > 0:
+                logger.info(f"Inserted new device mapping: {device_serial} -> {ieee_address}")
+            else:
+                logger.warning(f"Failed to insert device mapping: {device_serial} -> {ieee_address}")
+                
+        except psycopg2.IntegrityError as e:
+            # If insert fails due to unique constraint on ieee_address, try to update
+            if "duplicate key value violates unique constraint" in str(e):
+                logger.info(f"Device mapping already exists, updating: {device_serial} -> {ieee_address}")
+                update_query = """
+                UPDATE device_mappings 
+                SET device_serial = %s, friendly_name = %s, device_type = %s, model = %s, manufacturer = %s, last_seen = %s
+                WHERE ieee_address = %s
+                """
+                last_seen_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                update_params = (device_serial, friendly_name, device_type, model, manufacturer, last_seen_str, ieee_address)
+                result = self.execute_insert(update_query, update_params)
+                logger.info(f"Updated device mapping: {result} rows affected")
+            else:
+                raise e
     
     def get_devices_by_serial(self, device_serial: str):
         """Get all devices for a given device serial"""
