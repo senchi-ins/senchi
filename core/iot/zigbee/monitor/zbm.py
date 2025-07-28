@@ -703,6 +703,17 @@ class Monitor:
         
         return True
 
+    def _serialize_datetime_objects(self, obj):
+        """Recursively convert datetime objects to ISO format strings for JSON serialization"""
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        elif isinstance(obj, dict):
+            return {key: self._serialize_datetime_objects(value) for key, value in obj.items()}
+        elif isinstance(obj, list):
+            return [self._serialize_datetime_objects(item) for item in obj]
+        else:
+            return obj
+
     async def broadcast_device_update(self, device_id: str, payload: Dict):
         """Broadcast device updates to connected WebSocket clients for the device owner"""
         try:
@@ -743,19 +754,24 @@ class Monitor:
             logger.debug(f"Found owner_user_id: {owner_user_id}")
             
             # Create the message
+            message_data = {
+                "friendly_name": getattr(device, 'friendly_name', None),
+                "device_type": getattr(device, 'type', None),
+                "last_seen": getattr(device, 'last_seen', None),
+                "status": "active",
+                "battery": payload.get("battery"),
+                "water_leak": payload.get("water_leak"),
+                "linkquality": payload.get("linkquality"),
+                **payload  # Include all other payload data
+            }
+            
+            # Serialize any datetime objects
+            message_data = self._serialize_datetime_objects(message_data)
+            
             message = {
                 "type": "device_update",
                 "device_id": device_id,
-                "data": {
-                    "friendly_name": getattr(device, 'friendly_name', None),
-                    "device_type": getattr(device, 'type', None),
-                    "last_seen": getattr(device, 'last_seen', None),
-                    "status": "active",
-                    "battery": payload.get("battery"),
-                    "water_leak": payload.get("water_leak"),
-                    "linkquality": payload.get("linkquality"),
-                    **payload  # Include all other payload data
-                },
+                "data": message_data,
                 "timestamp": datetime.now().isoformat()
             }
             

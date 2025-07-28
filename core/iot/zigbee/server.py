@@ -412,14 +412,50 @@ def broadcast_device_update(user_id: str, device_data: dict):
 @app.websocket("/ws/{user_id}")
 async def websocket_endpoint(
     websocket: WebSocket, 
-    user_id: str, 
-    # token: str = Query(...)
+    user_id: str
 ):
-    # TODO: Validate the token
     logger.info(f"WebSocket connection attempt for user_id: {user_id}")
     
-    # Validate JWT
-    # user_info = await notification_router.validate_token(token)
+    # Get the Authorization header from the WebSocket request
+    auth_header = websocket.headers.get("authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        logger.error(f"Missing or invalid authorization header for user: {user_id}")
+        await websocket.close(code=4001, reason="Missing or invalid authorization")
+        return
+    
+    token = auth_header.replace("Bearer ", "")
+    
+    # Validate JWT token against central server
+    try:
+        import httpx
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            verify_url = f"{settings.CENTRAL_API_BASE}/api/v1/auth/verify"
+            headers = {"Authorization": f"Bearer {token}"}
+            
+            response = await client.post(verify_url, headers=headers)
+            
+            if response.status_code != 200:
+                logger.error(f"Token validation failed for user: {user_id}")
+                await websocket.close(code=4001, reason="Invalid token")
+                return
+            
+            user_data = response.json()
+            if "user_info" in user_data:
+                verified_user_info = user_data["user_info"]
+                # Verify the user_id matches
+                if verified_user_info.get("user_id") != user_id:
+                    logger.error(f"User ID mismatch for WebSocket connection: {user_id}")
+                    await websocket.close(code=4001, reason="User ID mismatch")
+                    return
+            else:
+                logger.error(f"Invalid token response format for user: {user_id}")
+                await websocket.close(code=4001, reason="Invalid token format")
+                return
+                
+    except Exception as e:
+        logger.error(f"Error validating token for user {user_id}: {e}")
+        await websocket.close(code=4001, reason="Token validation error")
+        return
 
     await websocket.accept()
     logger.info(f"WebSocket connection accepted for user: {user_id}")
