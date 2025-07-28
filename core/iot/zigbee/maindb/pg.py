@@ -69,3 +69,12 @@ class PostgresDB:
         ORDER BY last_seen DESC
         """
         return self.execute_query(query, (user_id, property_name))
+    
+    def get_device_serials(self, user_id: str, property_name: str = "main"):
+        """Get all device serials for a given user_id"""
+        query = """
+        SELECT serial_number
+        FROM zb_devices
+        WHERE owner_user_id = %s AND property_id = %s
+        """
+        return self.execute_query(query, (user_id, property_name))

@@ -3,7 +3,7 @@ import sys
 import queue
 import time
 import asyncio
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 from datetime import datetime
 import logging
 import threading
@@ -14,13 +14,13 @@ import pandas as pd
 
 from monitor.config import settings
 from monitor.models import Device, LandlordNotification
-
+from maindb.pg import PostgresDB
 
 logger = logging.getLogger(__name__)
 
 
 class Monitor:
-    def __init__(self, initial_app_state: dict, db: pd.DataFrame):
+    def __init__(self, initial_app_state: dict, db: Union[PostgresDB, pd.DataFrame]):
         self.client = mqtt.Client()
         self.client.on_connect = self.on_connect
         self.client.on_message = self.on_message
@@ -32,8 +32,7 @@ class Monitor:
 
         # TODO: Can this just be defined here?
         self.app_state = initial_app_state
-
-        # TODO: Update this once we have a proper database
+        
         self.db = db
 
     def on_connect(
@@ -69,86 +68,15 @@ class Monitor:
     def _subscribe_to_device_topics(self):
         """Subscribe to MQTT topics for all known device serials"""
         try:
-            # Get all JWT tokens from Redis to find device serials
-            if hasattr(self, 'app_state') and 'redis_db' in self.app_state:
-                redis_db = self.app_state['redis_db']
+            if isinstance(self.db, pd.DataFrame):
+                device_serials = self.db.index.tolist()
             else:
-                # Fallback to global redis_db
-                from rdsdb.rdsdb import RedisDB
-                redis_db = RedisDB()
-            
-            # Check if Redis is connected
-            if not redis_db.conn:
-                logger.warning("Redis not connected, attempting to connect...")
-                print("Redis not connected, attempting to connect...")
-                try:
-                    redis_db.connect()
-                    print("Redis connection successful")
-                except Exception as e:
-                    logger.error(f"Failed to connect to Redis: {e}")
-                    print(f"Failed to connect to Redis: {e}")
-                    logger.warning("Subscribing to default topics only")
-                    self._subscribe_to_default_topics()
-                    return
-            
-            # Get all JWT keys
-            try:
-                jwt_keys = redis_db.conn.keys("jwt:*")
-                device_serials = set()
-                
-                if not jwt_keys:
-                    logger.warning("No JWT keys found in Redis, subscribing to default topics")
-                    self._subscribe_to_default_topics()
-                    return
-                
-                for key in jwt_keys:
-                    try:
-                        # Skip keys that end with :topic (these are topic mappings, not JWT data)
-                        key_str = key.decode()
-                        if key_str.endswith(':topic'):
-                            continue
-                        
-                        # Get the JWT token from the key
-                        jwt_token = key_str.split(":", 1)[1]
-                        
-                        # Get the JWT data
-                        jwt_data = redis_db.get_key(f"jwt:{jwt_token}")
-                        if jwt_data:
-                            # Handle bytes vs string
-                            if isinstance(jwt_data, bytes):
-                                jwt_data = jwt_data.decode('utf-8')
-                            
-                            try:
-                                import json
-                                data = json.loads(jwt_data)
-                            except json.JSONDecodeError as e:
-                                logger.warning(f"Invalid JSON in JWT data for token {jwt_token[:20]}...: {e}")
-                                continue
-                            
-                            # Try to get device_serial from different possible fields
-                            device_serial = None
-                            if 'device_serial' in data:
-                                device_serial = data['device_serial']
-                            elif 'location_id' in data:
-                                # Extract device serial from location_id (e.g., "rpi-zigbee-nrjrjr" -> "nrjrjr")
-                                location_id = data['location_id']
-                                if location_id.startswith('rpi-zigbee-'):
-                                    device_serial = location_id.replace('rpi-zigbee-', '')
-                                else:
-                                    device_serial = location_id
-                            
-                            if device_serial:
-                                device_serials.add(device_serial)
-                            else:
-                                logger.warning(f"No device serial found in JWT data: {data}")
-                    except Exception as e:
-                        logger.warning(f"Error processing JWT key {key}: {e}")
-                        continue
+                device_serials = self.db.get_device_serials()
                 
                 # Subscribe to topics for each device serial
                 for device_serial in device_serials:
                     # Use the correct topic format: zigbee2mqtt/senchi-{device_serial}/*
-                    base_topic = f"zigbee2mqtt/senchi-{device_serial}"
+                    base_topic = f"zigbee2mqtt/senchi-{device_serial.serial_number}"
                     
                     topics = [
                         f"{base_topic}/bridge/health",
@@ -167,13 +95,7 @@ class Monitor:
                 if not device_serials:
                     logger.warning("No device serials found in Redis, subscribing to default topics")
                     print("No device serials found in Redis, subscribing to default topics")
-                    self._subscribe_to_default_topics()
-                    
-            except Exception as e:
-                logger.error(f"Error accessing Redis keys: {e}")
-                logger.warning("Subscribing to default topics due to Redis error")
-                self._subscribe_to_default_topics()
-                        
+                    self._subscribe_to_default_topics() 
         except Exception as e:
             logger.error(f"Error subscribing to device topics: {e}")
             logger.warning("Subscribing to default topics due to error")

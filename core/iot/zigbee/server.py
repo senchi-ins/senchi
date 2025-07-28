@@ -77,9 +77,9 @@ def init_db():
     return database
 
 db = init_db()
-mqtt_monitor = Monitor(app_state, db)
 redis_db = RedisDB()
 pg_db = PostgresDB()
+mqtt_monitor = Monitor(app_state, pg_db)
 
 # Add Redis and Postgres database to app_state so Monitor can access it
 app_state["redis_db"] = redis_db
@@ -149,8 +149,10 @@ async def get_current_user(authorization: str = Header(None)):
         raise HTTPException(status_code=401, detail="Missing or invalid authorization header")
     
     token = authorization.replace("Bearer ", "")
+    user_info = await notification_router.validate_token(token)
+    
+    # Validate token against central server instead of local Redis
     try:
-        print(f"Validating token properly")
         import httpx
         async with httpx.AsyncClient(timeout=10.0) as client:
             # Call central server's verify endpoint
@@ -161,19 +163,9 @@ async def get_current_user(authorization: str = Header(None)):
             
             if response.status_code == 200:
                 user_data = response.json()
-                logger.info(f"Main server response: {user_data}")
                 # Extract user info from the response
-                # The main server returns TokenResponse with user_info field
-                if "user_info" in user_data:
-                    user_info = user_data["user_info"]
-                    logger.info(f"Extracted user_info from main server: {user_info}")
-                    logger.info(f"user_info type: {type(user_info)}")
-                    logger.info(f"user_info keys: {user_info.keys() if isinstance(user_info, dict) else 'not a dict'}")
-                    return user_info
-                else:
-                    # Fallback: if user_info is not present, use the data directly
-                    logger.warning("user_info not found in response, using data directly")
-                    return user_data
+                user_info = user_data["user_info"]
+                return user_info
             else:
                 raise HTTPException(status_code=401, detail="Invalid or expired token")
                 
