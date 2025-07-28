@@ -189,20 +189,28 @@ async def get_devices(
             return cached_devices["devices"]
     
     print(f"Fetching devices from database for user: {user_id}, property: {property_name}")
-    devices = app_state.get("pg_db").get_user_devices(user_id, property_name)
-    print(f"Database returned devices: {devices}")
     
-    # Only cache if we got actual results
-    if devices:
-        app_state["devices"][cache_key] = {
-            "devices": devices,
-            "timestamp": datetime.now().timestamp()
-        }
-        print(f"Cached {len(devices)} devices")
-    else:
-        print("No devices found, not caching empty result")
-    
-    return devices
+    try:
+        devices = app_state.get("pg_db").get_user_devices(user_id, property_name)
+        print(f"Database returned devices: {devices}")
+        
+        # Only cache if we got actual results
+        if devices:
+            app_state["devices"][cache_key] = {
+                "devices": devices,
+                "timestamp": datetime.now().timestamp()
+            }
+            print(f"Cached {len(devices)} devices")
+        else:
+            print("No devices found, not caching empty result")
+        
+        return devices
+        
+    except Exception as e:
+        logger.error(f"Error fetching devices from database: {e}")
+        print(f"Database error: {e}")
+        # Return empty list on error
+        return []
 
 
 # TODO: Delete, now on central server
@@ -516,12 +524,23 @@ async def health_check():
     except:
         redis_status = "disconnected"
     
+    # Test database connection
+    db_status = "unknown"
+    try:
+        # Simple test query
+        test_result = pg_db.execute_query("SELECT 1 as test")
+        db_status = "connected" if test_result else "no_data"
+    except Exception as e:
+        db_status = f"error: {str(e)[:50]}"
+        logger.error(f"Database health check failed: {e}")
+    
     return {
         "status": "healthy",
         "mqtt_connected": mqtt_monitor.connected,
         "mqtt_broker": f"{settings.MQTT_BROKER}:{settings.MQTT_PORT}",
         "redis_status": redis_status,
         "redis_url": redis_db.redis_url.replace(redis_db.redis_url.split('@')[-1], '***') if '@' in redis_db.redis_url else redis_db.redis_url,
+        "database_status": db_status,
         "devices": len(app_state["devices"]),
         "active_leaks": len(app_state["active_leaks"]),
         "websocket_connections": len(app_state["websocket_connections"])
