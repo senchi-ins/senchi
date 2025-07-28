@@ -51,7 +51,7 @@ async def register_user(
 
     # TODO: Allow user to configure property name and address on signup
     property_name = "Main"
-    address = None
+    address = "123 Main St, Anytown, Ontario"
     first_name, _ = full_name.split(' ', 1)
 
     # TODO: Make this customizable
@@ -63,7 +63,7 @@ async def register_user(
         password_hash = hash_password(password)
         user_id = request.app.state.db.insert_user(email, password_hash, full_name)
         property_id = request.app.state.db.insert_user_property(property_name, address)
-        request.app.state.db.insert_user_property_relationship(user_id, property_id, user_id)
+        request.app.state.db.insert_user_property_relationship(user_id, property_id, user_id, added_by=user_id)
         request.app.state.db.insert_user_device(user_id, device_serial, property_id)
 
         # TODO: Also store and set up the push notification token
