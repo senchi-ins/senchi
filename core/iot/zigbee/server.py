@@ -151,7 +151,6 @@ async def get_current_user(authorization: str = Header(None)):
         raise HTTPException(status_code=401, detail="Missing or invalid authorization header")
     
     token = authorization.replace("Bearer ", "")
-    user_info = await notification_router.validate_token(token)
     
     # Validate token against central server instead of local Redis
     try:
