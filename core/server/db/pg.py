@@ -249,17 +249,17 @@ class PostgresDB:
         """
         return self.execute_query(query, (user_id,))
     
-    def add_property(self, user_id: str, role: str = 'owner', added_by: str = None) -> bool:
+    def add_property(self, user_id: str, name: str, address: str = None, role: str = 'owner', added_by: str = None) -> bool:
         query = """
         INSERT INTO zb_properties (name, address, property_type, description, timezone, is_active)
         VALUES (%s, %s, %s, %s, %s, %s)
         RETURNING id
         """
-        property_id = self.execute_with_return(query, (user_id,))
+        property_id = self.execute_with_return(query, (name, address, 'residential', None, 'UTC', True))
         property_id = property_id['id'] if property_id else None
         if not property_id:
             return False
-        
+        print(f"property_id: {property_id}")
         added_by = added_by if added_by else user_id
 
         # Insert a user-property relationship
@@ -267,5 +267,7 @@ class PostgresDB:
         INSERT INTO zb_user_properties (user_id, property_id, role, added_by)
         VALUES (%s, %s, %s, %s)
         """
+        print(f"query: {query}")
         self.execute_insert(query, (user_id, property_id, role, added_by))
+        print(f"success")
         return True

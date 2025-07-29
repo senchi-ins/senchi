@@ -46,7 +46,7 @@ async def add_property(
 ) -> PropertyResponse:
     # TODO: This also needs to allow people to set up a pi for the new property
     # Maybe its a + button on the page after going to the property page?
-    success = request.app.state.db.add_property(property_request.user_id)
+    success = request.app.state.db.add_property(property_request.user_id, property_request.property_name)
     if not success:
         raise HTTPException(status_code=500, detail="Failed to add property")
     return PropertyResponse(id=property_request.user_id, name="New Property")
