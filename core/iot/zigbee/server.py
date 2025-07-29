@@ -148,9 +148,11 @@ app.add_middleware(
 async def get_current_user(authorization: str = Header(None)):
     """FastAPI dependency to validate JWT token"""
     if not authorization or not authorization.startswith("Bearer "):
+        logger.error("Missing or invalid authorization header")
         raise HTTPException(status_code=401, detail="Missing or invalid authorization header")
     
     token = authorization.replace("Bearer ", "")
+    logger.info(f"Validating token: {token[:20]}...")
     
     # Validate token against central server instead of local Redis
     try:
@@ -160,14 +162,27 @@ async def get_current_user(authorization: str = Header(None)):
             verify_url = f"{settings.CENTRAL_API_BASE}/api/v1/auth/verify"
             headers = {"Authorization": f"Bearer {token}"}
             
+            logger.info(f"Calling central server verify endpoint: {verify_url}")
             response = await client.post(verify_url, headers=headers)
+            
+            logger.info(f"Central server response status: {response.status_code}")
             
             if response.status_code == 200:
                 user_data = response.json()
+                logger.info(f"Central server response: {user_data}")
                 # Extract user info from the response
-                user_info = user_data["user_info"]
-                return user_info
+                if "user_info" in user_data:
+                    user_info = user_data["user_info"]
+                    logger.info(f"Extracted user_info: {user_info}")
+                    return user_info
+                else:
+                    logger.error(f"No user_info in response: {user_data}")
+                    raise HTTPException(status_code=401, detail="Invalid token response format")
             else:
+                logger.error(f"Central server returned error: {response.status_code}")
+                response_text = response.text
+                if response_text:
+                    logger.error(f"Response text: {response_text}")
                 raise HTTPException(status_code=401, detail="Invalid or expired token")
                 
     except httpx.RequestError as e:
@@ -770,9 +785,8 @@ async def confirm_location_setup(location_id: str):
     
 class DeviceRegistrationRequest(BaseModel):
     device_token: str
-    platform: str
-    device_identifier: str
-    device_info: dict
+    user_id: str
+    device_type: str
 
 @app.post("/api/register-device")
 async def register_device(
@@ -782,15 +796,22 @@ async def register_device(
     try:
         db = app_state.get("pg_db")
         
+        # The current_user dict contains user_info from the central server
+        # which has user_id field, not id
+        user_id = current_user.get('user_id')
+        if not user_id:
+            logger.error(f"No user_id found in current_user: {current_user}")
+            return {"status": "error", "message": "Invalid user information"}
+        
         token_id = db.register_device_token(
-            user_id=current_user['id'],
+            user_id=user_id,
             device_token=request.device_token,
-            platform=request.platform,
-            device_identifier=request.device_identifier,
-            device_info=request.device_info
+            platform=request.device_type,
+            device_identifier=request.device_token,  # Use device_token as identifier
+            device_info={"platform": request.device_type, "user_id": request.user_id}
         )
         
-        logger.info(f"Registered device token for user {current_user['id']}")
+        logger.info(f"Registered device token for user {user_id}")
         return {"status": "success", "token_id": token_id}
         
     except Exception as e:
