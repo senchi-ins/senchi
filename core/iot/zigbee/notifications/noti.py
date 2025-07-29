@@ -101,7 +101,7 @@ class NotificationRouter:
             category = "LEAK_ALERT" if notification.data.get("type") == "leak_alert" else "DEVICE_UPDATE"
             
             # Send notifications via APNs
-            results = await apns_service.send_bulk_notifications(
+            results = await self.apns_service.send_bulk_notifications(
                 device_tokens=push_tokens,
                 title=notification.title,
                 body=notification.body,
@@ -128,29 +128,6 @@ class NotificationRouter:
             logger.error(f"Failed to send push notifications: {e}")
             # Fallback to logging
             logger.info(f"Notification (failed to send): {notification.title} - {notification.body}")
-    
-    # TODO: Delete
-    async def validate_token(self, token: str) -> Optional[Dict[str, Any]]:
-        """Validate JWT token and return user info"""
-        try:
-            token_data = self.redis_db.get_key(f"jwt:{token}")
-            if not token_data:
-                return None
-            
-            payload = jwt.decode(token, NOTIFICATION_CONFIG["JWT_SECRET"], algorithms=[NOTIFICATION_CONFIG["JWT_ALGORITHM"]])
-            
-            redis_data = json.loads(token_data)
-            return {**payload, **redis_data}
-            
-        except jwt.ExpiredSignatureError:
-            logger.warning("Token expired")
-            return None
-        except jwt.InvalidTokenError:
-            logger.warning("Invalid token")
-            return None
-        except Exception as e:
-            logger.error(f"Token validation error: {e}")
-            return None
     
     # TODO: Periodically check / invalidate tokens that are expired
     async def update_push_token(self, jwt_token: str, new_push_token: str):
