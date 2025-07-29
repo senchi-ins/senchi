@@ -103,3 +103,27 @@ CREATE TABLE IF NOT EXISTS zb_user_properties (
 --     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 -- );
 
+CREATE TABLE IF NOT EXISTS user_device_tokens (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES zb_users(id) ON DELETE CASCADE,
+    device_token VARCHAR(255) NOT NULL,
+    platform VARCHAR(20) NOT NULL CHECK (platform IN ('ios', 'android')),
+    device_identifier VARCHAR(255), -- Add this: unique device ID
+    device_info JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    last_used TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    is_active BOOLEAN DEFAULT true,
+    
+    UNIQUE(device_token)
+);
+
+-- Update existing rows
+UPDATE zb_devices
+SET location_id = 'rpi-zigbee-' || RIGHT(serial_number, 8)
+WHERE serial_number IS NOT NULL;
+
+-- Then make it a generated column (PostgreSQL 12+)
+ALTER TABLE zb_devices
+ALTER COLUMN location_id 
+SET GENERATED ALWAYS AS ('rpi-zigbee-' || RIGHT(serial_number, 8)) STORED;

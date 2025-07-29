@@ -5,7 +5,7 @@ from psycopg2.extras import RealDictCursor
 import os
 from datetime import datetime
 import logging
-from typing import Any, Optional
+from typing import Any, Optional, List
 import uuid
 
 DATABASE_URL = os.getenv('DATABASE_URL')
@@ -242,3 +242,30 @@ class PostgresDB:
         SELECT serial_number FROM zb_devices WHERE owner_user_id = %s
         """
         return self.execute_with_return(query, (user_id,))
+    
+    def get_properties(self, user_id: str) -> Optional[List[str]]:
+        query = """
+        SELECT id, name FROM zb_properties WHERE id IN (SELECT property_id FROM zb_user_properties WHERE user_id = %s)
+        """
+        return self.execute_query(query, (user_id,))
+    
+    def add_property(self, user_id: str, role: str = 'owner', added_by: str = None) -> bool:
+        query = """
+        INSERT INTO zb_properties (name, address, property_type, description, timezone, is_active)
+        VALUES (%s, %s, %s, %s, %s, %s)
+        RETURNING id
+        """
+        property_id = self.execute_with_return(query, (user_id,))
+        property_id = property_id['id'] if property_id else None
+        if not property_id:
+            return False
+        
+        added_by = added_by if added_by else user_id
+
+        # Insert a user-property relationship
+        query = """
+        INSERT INTO zb_user_properties (user_id, property_id, role, added_by)
+        VALUES (%s, %s, %s, %s)
+        """
+        self.execute_insert(query, (user_id, property_id, role, added_by))
+        return True
