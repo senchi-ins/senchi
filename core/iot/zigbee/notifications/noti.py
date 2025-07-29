@@ -47,9 +47,12 @@ class NotificationRouter:
             # Get push tokens for all users
             push_tokens = []
             for user_id in user_ids:
-                token = self.db.get_device_tokens_for_iot_device(user_id[1]) # TODO: Fix naming to make clear this is the serial number
-                if token:
-                    push_tokens.append(token)
+                tokens = self.db.get_device_tokens_for_iot_device(user_id[1]) # TODO: Fix naming to make clear this is the serial number
+                if tokens:
+                    # Extract device_token from RealDictRow objects
+                    for token_row in tokens:
+                        if token_row.get('device_token'):
+                            push_tokens.append(token_row['device_token'])
             
             if push_tokens:
                 notification = await self._create_notification(topic, payload)
@@ -116,7 +119,7 @@ class NotificationRouter:
             # Log any failures
             for device_token, success in results.items():
                 if not success:
-                    logger.warning(f"Failed to send notification to device {device_token[:8]}...")
+                    logger.warning(f"Failed to send notification to device {str(device_token)[:8]}...")
                     
         except ImportError:
             logger.warning("APNs service not available, falling back to logging")

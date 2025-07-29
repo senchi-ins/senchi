@@ -146,7 +146,7 @@ class APNsService:
             async with httpx.AsyncClient(http2=True, timeout=10) as client:
                 response = await client.post(url, headers=headers, json=payload)
             if response.status_code == 200:
-                logger.info(f"APNs notification sent successfully to {device_token[:8]}...")
+                logger.info(f"APNs notification sent successfully to {str(device_token)[:8]}...")
                 return True
             else:
                 logger.error(f"APNs notification failed: {response.status_code} - {response.text}")
@@ -156,13 +156,13 @@ class APNsService:
                 logger.error(f"APNs request payload: {json.dumps(payload)}")
                 # Handle specific APNs errors
                 if response.status_code == 410:
-                    logger.warning(f"Device token {device_token[:8]}... is no longer valid")
+                    logger.warning(f"Device token {str(device_token)[:8]}... is no longer valid")
                 elif response.status_code == 400:
-                    logger.error(f"Invalid payload for device {device_token[:8]}...")
+                    logger.error(f"Invalid payload for device {str(device_token)[:8]}...")
                 return False
                         
         except Exception as e:
-            logger.error(f"APNs request failed: {e}")
+            logger.error(f"APNs request failed for device {str(device_token)[:8]}...: {e}")
             return False
     
     async def send_bulk_notifications(
@@ -198,7 +198,7 @@ class APNsService:
                 success = await task
                 results[device_token] = success
             except Exception as e:
-                logger.error(f"Failed to send notification to {device_token[:8]}...: {e}")
+                logger.error(f"Failed to send notification to {str(device_token)[:8]}...: {e}")
                 results[device_token] = False
         
         success_count = sum(1 for success in results.values() if success)
