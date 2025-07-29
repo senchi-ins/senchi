@@ -26,14 +26,14 @@ class PostgresDB:
             except Exception as e:
                 logging.error(f"Error executing query: {e}")
     
-    def execute_query(self, query, params=None) -> bool:
+    def execute_query(self, query, params=None) -> List[dict]:
         with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
             try:
                 cur.execute(query, params)
-                return True
+                return cur.fetchall()
             except Exception as e:
                 logging.error(f"Error executing query: {e}")
-                return False
+                return []
     
     def execute_insert(self, query, params=None) -> bool:
         with self.conn.cursor() as cur:
