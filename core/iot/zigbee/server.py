@@ -45,6 +45,7 @@ from monitor.models import (
 )
 from monitor.zbm import Monitor
 from monitor.utils import get_all_model_fields
+from notifications.apns_service import APNsService
 from notifications.noti import NotificationRouter
 from rdsdb.rdsdb import RedisDB
 from maindb.pg import PostgresDB
@@ -77,13 +78,16 @@ def init_db():
     return database
 
 db = init_db()
-mqtt_monitor = Monitor(app_state, db)
 redis_db = RedisDB()
 pg_db = PostgresDB()
+mqtt_monitor = Monitor(app_state, pg_db)
+apns_service = APNsService()
+notification_router = NotificationRouter(pg_db, apns_service) 
 
 # Add Redis and Postgres database to app_state so Monitor can access it
 app_state["redis_db"] = redis_db
 app_state["pg_db"] = pg_db
+app_state["notification_router"] = notification_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -131,9 +135,7 @@ async def lifespan(app: FastAPI):
     
     logger.info("Home API Server stopped")
 
-app = FastAPI(lifespan=lifespan)
-
-notification_router = NotificationRouter(redis_db)  
+app = FastAPI(lifespan=lifespan) 
 
 app.add_middleware(
     CORSMiddleware,
@@ -146,15 +148,49 @@ app.add_middleware(
 async def get_current_user(authorization: str = Header(None)):
     """FastAPI dependency to validate JWT token"""
     if not authorization or not authorization.startswith("Bearer "):
+        logger.error("Missing or invalid authorization header")
         raise HTTPException(status_code=401, detail="Missing or invalid authorization header")
     
     token = authorization.replace("Bearer ", "")
-    user_info = await notification_router.validate_token(token)
+    logger.info(f"Validating token: {token[:20]}...")
     
-    if not user_info:
+    # Validate token against central server instead of local Redis
+    try:
+        import httpx
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            # Call central server's verify endpoint
+            verify_url = f"{settings.CENTRAL_API_BASE}/api/v1/auth/verify"
+            headers = {"Authorization": f"Bearer {token}"}
+            
+            logger.info(f"Calling central server verify endpoint: {verify_url}")
+            response = await client.post(verify_url, headers=headers)
+            
+            logger.info(f"Central server response status: {response.status_code}")
+            
+            if response.status_code == 200:
+                user_data = response.json()
+                logger.info(f"Central server response: {user_data}")
+                # Extract user info from the response
+                if "user_info" in user_data:
+                    user_info = user_data["user_info"]
+                    logger.info(f"Extracted user_info: {user_info}")
+                    return user_info
+                else:
+                    logger.error(f"No user_info in response: {user_data}")
+                    raise HTTPException(status_code=401, detail="Invalid token response format")
+            else:
+                logger.error(f"Central server returned error: {response.status_code}")
+                response_text = response.text
+                if response_text:
+                    logger.error(f"Response text: {response_text}")
+                raise HTTPException(status_code=401, detail="Invalid or expired token")
+                
+    except httpx.RequestError as e:
+        logger.error(f"Error validating token with central server: {e}")
+        raise HTTPException(status_code=503, detail="Authentication service unavailable")
+    except Exception as e:
+        logger.error(f"Unexpected error during token validation: {e}")
         raise HTTPException(status_code=401, detail="Invalid or expired token")
-    
-    return user_info
 
 @app.get("/")
 async def root():
@@ -189,31 +225,28 @@ async def get_devices(
             return cached_devices["devices"]
     
     print(f"Fetching devices from database for user: {user_id}, property: {property_name}")
-    devices = app_state.get("pg_db").get_user_devices(user_id, property_name)
-    print(f"Database returned devices: {devices}")
     
-    # Only cache if we got actual results
-    if devices:
-        app_state["devices"][cache_key] = {
-            "devices": devices,
-            "timestamp": datetime.now().timestamp()
-        }
-        print(f"Cached {len(devices)} devices")
-    else:
-        print("No devices found, not caching empty result")
-    
-    return devices
-
-
-@app.post("/api/auth/setup", response_model=TokenResponse)
-async def setup_device_auth(request: TokenRequest):
-    """Generate JWT token during device setup"""
-    return await notification_router.create_user_token(
-        device_serial=request.device_serial,
-        push_token=request.push_token,
-        email=request.email,
-        full_name=request.full_name
-    )
+    try:
+        devices = app_state.get("pg_db").get_user_devices(user_id, property_name)
+        print(f"Database returned devices: {devices}")
+        
+        # Only cache if we got actual results
+        if devices:
+            app_state["devices"][cache_key] = {
+                "devices": devices,
+                "timestamp": datetime.now().timestamp()
+            }
+            print(f"Cached {len(devices)} devices")
+        else:
+            print("No devices found, not caching empty result")
+        
+        return devices
+        
+    except Exception as e:
+        logger.error(f"Error fetching devices from database: {e}")
+        print(f"Database error: {e}")
+        # Return empty list on error
+        return []
 
 @app.post("/api/auth/push-token")
 async def update_push_token(
@@ -224,6 +257,7 @@ async def update_push_token(
     await notification_router.update_push_token(current_user["jwt_token"], push_token)
     return {"message": "Push token updated successfully"}
 
+# TODO: Delete, now on central server
 @app.get("/api/auth/verify")
 async def verify_token(current_user: dict = Depends(get_current_user)):
     """Verify if token is valid"""
@@ -240,6 +274,7 @@ async def verify_token(current_user: dict = Depends(get_current_user)):
 class LoginRequest(BaseModel):
     email: str
 
+# TODO: Delete, now on central server
 @app.post("/api/auth/login")
 async def login_with_email(request: LoginRequest):
     """Login with email to retrieve stored token"""
@@ -287,6 +322,7 @@ def set_redis_key(request: RedisSetRequest):
     redis_db.set_key(request.key, request.value, request.ttl)
     return {"message": "Key set successfully"}
 
+# TODO: Delete
 @app.get("/redis/get")
 def get_redis_key(key: str):
     value = redis_db.get_key(key)
@@ -392,14 +428,50 @@ def broadcast_device_update(user_id: str, device_data: dict):
 @app.websocket("/ws/{user_id}")
 async def websocket_endpoint(
     websocket: WebSocket, 
-    user_id: str, 
-    # token: str = Query(...)
+    user_id: str
 ):
-    # TODO: Validate the token
     logger.info(f"WebSocket connection attempt for user_id: {user_id}")
     
-    # Validate JWT
-    # user_info = await notification_router.validate_token(token)
+    # Get the Authorization header from the WebSocket request
+    auth_header = websocket.headers.get("authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        logger.error(f"Missing or invalid authorization header for user: {user_id}")
+        await websocket.close(code=4001, reason="Missing or invalid authorization")
+        return
+    
+    token = auth_header.replace("Bearer ", "")
+    
+    # Validate JWT token against central server
+    try:
+        import httpx
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            verify_url = f"{settings.CENTRAL_API_BASE}/api/v1/auth/verify"
+            headers = {"Authorization": f"Bearer {token}"}
+            
+            response = await client.post(verify_url, headers=headers)
+            
+            if response.status_code != 200:
+                logger.error(f"Token validation failed for user: {user_id}")
+                await websocket.close(code=4001, reason="Invalid token")
+                return
+            
+            user_data = response.json()
+            if "user_info" in user_data:
+                verified_user_info = user_data["user_info"]
+                # Verify the user_id matches
+                if verified_user_info.get("user_id") != user_id:
+                    logger.error(f"User ID mismatch for WebSocket connection: {user_id}")
+                    await websocket.close(code=4001, reason="User ID mismatch")
+                    return
+            else:
+                logger.error(f"Invalid token response format for user: {user_id}")
+                await websocket.close(code=4001, reason="Invalid token format")
+                return
+                
+    except Exception as e:
+        logger.error(f"Error validating token for user {user_id}: {e}")
+        await websocket.close(code=4001, reason="Token validation error")
+        return
 
     await websocket.accept()
     logger.info(f"WebSocket connection accepted for user: {user_id}")
@@ -512,12 +584,23 @@ async def health_check():
     except:
         redis_status = "disconnected"
     
+    # Test database connection
+    db_status = "unknown"
+    try:
+        # Simple test query
+        test_result = pg_db.execute_query("SELECT 1 as test")
+        db_status = "connected" if test_result else "no_data"
+    except Exception as e:
+        db_status = f"error: {str(e)[:50]}"
+        logger.error(f"Database health check failed: {e}")
+    
     return {
         "status": "healthy",
         "mqtt_connected": mqtt_monitor.connected,
         "mqtt_broker": f"{settings.MQTT_BROKER}:{settings.MQTT_PORT}",
         "redis_status": redis_status,
         "redis_url": redis_db.redis_url.replace(redis_db.redis_url.split('@')[-1], '***') if '@' in redis_db.redis_url else redis_db.redis_url,
+        "database_status": db_status,
         "devices": len(app_state["devices"]),
         "active_leaks": len(app_state["active_leaks"]),
         "websocket_connections": len(app_state["websocket_connections"])
@@ -699,6 +782,41 @@ async def confirm_location_setup(location_id: str):
         return {"status": "confirmed", "location_id": location_id}
     else:
         raise HTTPException(status_code=404, detail="Location not found")
+    
+class DeviceRegistrationRequest(BaseModel):
+    device_token: str
+    user_id: str
+    device_type: str
+
+@app.post("/api/register-device")
+async def register_device(
+        request: DeviceRegistrationRequest,
+        current_user: dict = Depends(get_current_user)
+    ):
+    try:
+        db = app_state.get("pg_db")
+        
+        # The current_user dict contains user_info from the central server
+        # which has user_id field, not id
+        user_id = current_user.get('user_id')
+        if not user_id:
+            logger.error(f"No user_id found in current_user: {current_user}")
+            return {"status": "error", "message": "Invalid user information"}
+        
+        token_id = db.register_device_token(
+            user_id=user_id,
+            device_token=request.device_token,
+            platform=request.device_type,
+            device_identifier=request.device_token,  # Use device_token as identifier
+            device_info={"platform": request.device_type, "user_id": request.user_id}
+        )
+        
+        logger.info(f"Registered device token for user {user_id}")
+        return {"status": "success", "token_id": token_id}
+        
+    except Exception as e:
+        logger.error(f"Failed to register device token: {e}")
+        return {"status": "error", "message": "Failed to register device"}
 
 def subscribe_to_new_topics_periodically(monitor, redis_db, interval=60):
     known_topics = set()
@@ -714,6 +832,7 @@ def subscribe_to_new_topics_periodically(monitor, redis_db, interval=60):
         except Exception as e:
             logger.error(f"Error subscribing to new topics: {e}")
         time.sleep(interval)
+
 
 if __name__ == "__main__":
 

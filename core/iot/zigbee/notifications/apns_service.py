@@ -4,7 +4,7 @@ import asyncio
 import aiohttp
 import logging
 from typing import List, Dict, Any, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 import jwt
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ec
@@ -33,6 +33,7 @@ class APNsService:
         
         self._auth_token = None
         self._token_expiry = None
+        self.token_duration_hours = 24 * 30 * 6 # 6 months
         
         logger.info(f"APNs initialized - Production: {self.is_production}, Bundle ID: {self.bundle_id}")
     
@@ -52,9 +53,11 @@ class APNsService:
             
             # Create JWT token
             now = datetime.now()
+            expiry_time = now + timedelta(hours=self.token_duration_hours)
             payload = {
                 'iss': self.team_id,
-                'iat': int(now.timestamp())
+                'iat': int(now.timestamp()),
+                'exp': int(expiry_time.timestamp())
             }
 
             print(payload)
@@ -72,7 +75,7 @@ class APNsService:
             )
             
             self._auth_token = token
-            self._token_expiry = now.timestamp() + 3600  # 1 hour expiry
+            self._token_expiry = expiry_time.timestamp()
             
             logger.info("APNs auth token generated successfully")
             return token
@@ -143,7 +146,7 @@ class APNsService:
             async with httpx.AsyncClient(http2=True, timeout=10) as client:
                 response = await client.post(url, headers=headers, json=payload)
             if response.status_code == 200:
-                logger.info(f"APNs notification sent successfully to {device_token[:8]}...")
+                logger.info(f"APNs notification sent successfully to {str(device_token)[:8]}...")
                 return True
             else:
                 logger.error(f"APNs notification failed: {response.status_code} - {response.text}")
@@ -153,13 +156,13 @@ class APNsService:
                 logger.error(f"APNs request payload: {json.dumps(payload)}")
                 # Handle specific APNs errors
                 if response.status_code == 410:
-                    logger.warning(f"Device token {device_token[:8]}... is no longer valid")
+                    logger.warning(f"Device token {str(device_token)[:8]}... is no longer valid")
                 elif response.status_code == 400:
-                    logger.error(f"Invalid payload for device {device_token[:8]}...")
+                    logger.error(f"Invalid payload for device {str(device_token)[:8]}...")
                 return False
                         
         except Exception as e:
-            logger.error(f"APNs request failed: {e}")
+            logger.error(f"APNs request failed for device {str(device_token)[:8]}...: {e}")
             return False
     
     async def send_bulk_notifications(
@@ -195,7 +198,7 @@ class APNsService:
                 success = await task
                 results[device_token] = success
             except Exception as e:
-                logger.error(f"Failed to send notification to {device_token[:8]}...: {e}")
+                logger.error(f"Failed to send notification to {str(device_token)[:8]}...: {e}")
                 results[device_token] = False
         
         success_count = sum(1 for success in results.values() if success)

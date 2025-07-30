@@ -3,6 +3,7 @@ import Foundation
 import Network
 import Combine
 import SwiftUI
+import Security
 
 struct DeviceUpdatePayload: Codable {
     let battery_low: Bool?
@@ -16,29 +17,55 @@ struct DeviceUpdatePayload: Codable {
 }
 
 class WebSocketManager: ObservableObject {
-    @Published var isConnected: Bool = false
-    @Published var deviceCount: Int = 0
     @Published var devices: [Device] = []
+    @Published var deviceCount: Int = 0
+    @Published var isConnected: Bool = false
     
     private var webSocket: URLSessionWebSocketTask?
     private var timer: Timer?
+    private var userId: String
+    private var selectedProperty: String = "main"
+    private var heartbeatTimer: Timer?
     
-    init() {
-//        print("WebSocketManager initialized")
-        setupWebSocket()
+    init(userId: String) {
+        self.userId = userId
     }
     
     deinit {
         disconnect()
     }
     
+    func updateUserId(_ newUserId: String) {
+        // Disconnect current connection
+        disconnect()
+        
+        // Update userId and reconnect
+        userId = newUserId
+        setupWebSocket()
+    }
+    
+    func updateProperty(_ newProperty: String) {
+        selectedProperty = newProperty
+        fetchDevices()
+    }
+    
     func setupWebSocket() {
-        guard let url = URL(string: ApplicationConfig.wsURL) else {
-            print("Invalid WebSocket URL")
+        // Get the JWT token from keychain
+        let token = loadTokenFromKeychain()
+        
+        guard let token = token else {
+
             return
         }
         
-        print("Creating WebSocket task for URL: \(url)")
+        let wsUrlString = "\(ApplicationConfig.wsURL)/ws/\(userId)"
+        print("🔍 Constructing WebSocket URL: \(wsUrlString)")
+        
+        guard let url = URL(string: wsUrlString) else {
+
+            return
+        }
+    
         let session = URLSession(configuration: .default)
         webSocket = session.webSocketTask(with: url)
         
@@ -88,12 +115,32 @@ class WebSocketManager: ObservableObject {
     }
     
     func fetchDevices() {
-        guard let url = URL(string: ApplicationConfig.apiBase + "/devices") else {
+        guard let url = URL(string: ApplicationConfig.zbAPIBase + "/devices") else {
             print("Invalid devices API URL")
             return
         }
         
-        let task = URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
+        // Create DeviceRequest body with property_id support
+        var requestBody: [String: Any] = [
+            "user_id": userId,
+            "property_name": selectedProperty
+        ]
+        
+        // Add property_id if available (for future use)
+        // requestBody["property_id"] = propertyId // TODO: Add when property support is implemented
+        
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        do {
+            urlRequest.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
+        } catch {
+            print("Failed to serialize request body: \(error)")
+            return
+        }
+        
+        let task = URLSession.shared.dataTask(with: urlRequest) { [weak self] data, response, error in
             DispatchQueue.main.async {
                 if let error = error {
                     print("Failed to fetch devices: \(error)")
@@ -121,7 +168,6 @@ class WebSocketManager: ObservableObject {
     private func receiveMessage() {
         print("Setting up message receiver...")
         webSocket?.receive { [weak self] result in
-            // print("Received WebSocket result: \(result)")
             DispatchQueue.main.async {
                 switch result {
                 case .success(let message):
@@ -176,6 +222,16 @@ class WebSocketManager: ObservableObject {
             case "device_update":
                 if let deviceId = message.deviceId, let payload = message.data {
                     updateDevice(deviceId: deviceId, payload: payload)
+                }
+            case "connection_established":
+                print("WebSocket connection established with server")
+                DispatchQueue.main.async {
+                    self.isConnected = true
+                }
+            case "heartbeat_response":
+                print("Heartbeat response received")
+                DispatchQueue.main.async {
+                    self.isConnected = true
                 }
             case "heartbeat":
                 print("Received heartbeat")
@@ -250,6 +306,32 @@ class WebSocketManager: ObservableObject {
                 }
             }
         }
+    }
+    
+    // MARK: - Keychain Access
+    
+    private func loadTokenFromKeychain() -> String? {
+        let keychainService = "com.yourapp.homemonitor"
+        let tokenKey = "jwt_token"
+        
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: keychainService,
+            kSecAttrAccount as String: tokenKey,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne
+        ]
+        
+        var result: AnyObject?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+        
+        guard status == errSecSuccess,
+              let data = result as? Data,
+              let token = String(data: data, encoding: .utf8) else {
+            return nil
+        }
+        
+        return token
     }
 }
 

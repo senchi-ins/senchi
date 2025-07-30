@@ -33,10 +33,12 @@ struct Device: Codable, Identifiable {
     let last_seen: String?
     
     enum CodingKeys: String, CodingKey {
-        case ieee_address, name, friendly_name, type, manufacturer, model_id, power_source
+        case ieee_address, name, friendly_name, manufacturer, model_id, power_source
         case interview_completed, supported, disabled, definition
         case water_leak, battery, battery_low, linkquality, device_temperature
         case voltage, power_outage_count, trigger_count, last_seen
+        case type = "device_type"  // Map device_type from database to type
+        case model = "model"  // Map model from database to model_id
     }
     
     // Custom initializer for creating devices with updated values
@@ -91,7 +93,7 @@ struct Device: Codable, Identifiable {
         ieee_address = try container.decode(String.self, forKey: .ieee_address)
         name = try container.decodeIfPresent(String.self, forKey: .name)
         friendly_name = try container.decode(String.self, forKey: .friendly_name)
-        type = try container.decode(String.self, forKey: .type)
+        type = try container.decode(String.self, forKey: .type)  // This will decode from "device_type"
         manufacturer = try container.decodeIfPresent(String.self, forKey: .manufacturer)
         model_id = try container.decodeIfPresent(String.self, forKey: .model_id)
         power_source = try container.decodeIfPresent(String.self, forKey: .power_source)
@@ -109,7 +111,32 @@ struct Device: Codable, Identifiable {
         trigger_count = try container.decodeIfPresent(Int.self, forKey: .trigger_count)
         last_seen = try container.decodeIfPresent(String.self, forKey: .last_seen)
         
+        // Set id to ieee_address if not provided
         id = ieee_address
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(ieee_address, forKey: .ieee_address)
+        try container.encodeIfPresent(name, forKey: .name)
+        try container.encode(friendly_name, forKey: .friendly_name)
+        try container.encode(type, forKey: .type)  // This will encode as "device_type"
+        try container.encodeIfPresent(manufacturer, forKey: .manufacturer)
+        try container.encodeIfPresent(model_id, forKey: .model_id)
+        try container.encodeIfPresent(power_source, forKey: .power_source)
+        try container.encodeIfPresent(interview_completed, forKey: .interview_completed)
+        try container.encodeIfPresent(supported, forKey: .supported)
+        try container.encodeIfPresent(disabled, forKey: .disabled)
+        try container.encodeIfPresent(definition, forKey: .definition)
+        try container.encodeIfPresent(water_leak, forKey: .water_leak)
+        try container.encodeIfPresent(battery, forKey: .battery)
+        try container.encodeIfPresent(battery_low, forKey: .battery_low)
+        try container.encodeIfPresent(linkquality, forKey: .linkquality)
+        try container.encodeIfPresent(device_temperature, forKey: .device_temperature)
+        try container.encodeIfPresent(voltage, forKey: .voltage)
+        try container.encodeIfPresent(power_outage_count, forKey: .power_outage_count)
+        try container.encodeIfPresent(trigger_count, forKey: .trigger_count)
+        try container.encodeIfPresent(last_seen, forKey: .last_seen)
     }
 }
 

@@ -8,6 +8,5 @@ class UserSettings: ObservableObject {
     @Published var isOnboarded: Bool = false
     @Published var userName: String = ""
     @Published var survey: Survey? = nil
-    
-    // TODO: Add other variables here in the future
+    @Published var userInfo: UserInfoResponse? = nil
 }

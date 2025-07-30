@@ -3,7 +3,7 @@ import sys
 import queue
 import time
 import asyncio
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 from datetime import datetime
 import logging
 import threading
@@ -14,13 +14,13 @@ import pandas as pd
 
 from monitor.config import settings
 from monitor.models import Device, LandlordNotification
-
+from maindb.pg import PostgresDB
 
 logger = logging.getLogger(__name__)
 
 
 class Monitor:
-    def __init__(self, initial_app_state: dict, db: pd.DataFrame):
+    def __init__(self, initial_app_state: dict, db: Union[PostgresDB, pd.DataFrame]):
         self.client = mqtt.Client()
         self.client.on_connect = self.on_connect
         self.client.on_message = self.on_message
@@ -33,7 +33,6 @@ class Monitor:
         # TODO: Can this just be defined here?
         self.app_state = initial_app_state
 
-        # TODO: Update this once we have a proper database
         self.db = db
 
     def on_connect(
@@ -69,86 +68,15 @@ class Monitor:
     def _subscribe_to_device_topics(self):
         """Subscribe to MQTT topics for all known device serials"""
         try:
-            # Get all JWT tokens from Redis to find device serials
-            if hasattr(self, 'app_state') and 'redis_db' in self.app_state:
-                redis_db = self.app_state['redis_db']
+            if isinstance(self.db, pd.DataFrame):
+                device_serials = self.db.index.tolist()
             else:
-                # Fallback to global redis_db
-                from rdsdb.rdsdb import RedisDB
-                redis_db = RedisDB()
-            
-            # Check if Redis is connected
-            if not redis_db.conn:
-                logger.warning("Redis not connected, attempting to connect...")
-                print("Redis not connected, attempting to connect...")
-                try:
-                    redis_db.connect()
-                    print("Redis connection successful")
-                except Exception as e:
-                    logger.error(f"Failed to connect to Redis: {e}")
-                    print(f"Failed to connect to Redis: {e}")
-                    logger.warning("Subscribing to default topics only")
-                    self._subscribe_to_default_topics()
-                    return
-            
-            # Get all JWT keys
-            try:
-                jwt_keys = redis_db.conn.keys("jwt:*")
-                device_serials = set()
-                
-                if not jwt_keys:
-                    logger.warning("No JWT keys found in Redis, subscribing to default topics")
-                    self._subscribe_to_default_topics()
-                    return
-                
-                for key in jwt_keys:
-                    try:
-                        # Skip keys that end with :topic (these are topic mappings, not JWT data)
-                        key_str = key.decode()
-                        if key_str.endswith(':topic'):
-                            continue
-                        
-                        # Get the JWT token from the key
-                        jwt_token = key_str.split(":", 1)[1]
-                        
-                        # Get the JWT data
-                        jwt_data = redis_db.get_key(f"jwt:{jwt_token}")
-                        if jwt_data:
-                            # Handle bytes vs string
-                            if isinstance(jwt_data, bytes):
-                                jwt_data = jwt_data.decode('utf-8')
-                            
-                            try:
-                                import json
-                                data = json.loads(jwt_data)
-                            except json.JSONDecodeError as e:
-                                logger.warning(f"Invalid JSON in JWT data for token {jwt_token[:20]}...: {e}")
-                                continue
-                            
-                            # Try to get device_serial from different possible fields
-                            device_serial = None
-                            if 'device_serial' in data:
-                                device_serial = data['device_serial']
-                            elif 'location_id' in data:
-                                # Extract device serial from location_id (e.g., "rpi-zigbee-nrjrjr" -> "nrjrjr")
-                                location_id = data['location_id']
-                                if location_id.startswith('rpi-zigbee-'):
-                                    device_serial = location_id.replace('rpi-zigbee-', '')
-                                else:
-                                    device_serial = location_id
-                            
-                            if device_serial:
-                                device_serials.add(device_serial)
-                            else:
-                                logger.warning(f"No device serial found in JWT data: {data}")
-                    except Exception as e:
-                        logger.warning(f"Error processing JWT key {key}: {e}")
-                        continue
+                device_serials = self.db.get_device_serials()
                 
                 # Subscribe to topics for each device serial
                 for device_serial in device_serials:
                     # Use the correct topic format: zigbee2mqtt/senchi-{device_serial}/*
-                    base_topic = f"zigbee2mqtt/senchi-{device_serial}"
+                    base_topic = f"zigbee2mqtt/senchi-{device_serial['serial_number']}"
                     
                     topics = [
                         f"{base_topic}/bridge/health",
@@ -160,27 +88,18 @@ class Monitor:
                     for topic in topics:
                         try:
                             self.client.subscribe(topic)
+                            print(f"Subscribed to topic: {topic}")
                             logger.info(f"Subscribed to topic: {topic}")
                         except Exception as e:
                             logger.error(f"Failed to subscribe to {topic}: {e}")
                 
-                if not device_serials:
-                    logger.warning("No device serials found in Redis, subscribing to default topics")
-                    print("No device serials found in Redis, subscribing to default topics")
-                    self._subscribe_to_default_topics()
-                    
-            except Exception as e:
-                logger.error(f"Error accessing Redis keys: {e}")
-                logger.warning("Subscribing to default topics due to Redis error")
-                self._subscribe_to_default_topics()
-                        
+                print(f"Subscribed to {len(device_serials)} topics")
         except Exception as e:
             logger.error(f"Error subscribing to device topics: {e}")
-            logger.warning("Subscribing to default topics due to error")
-            self._subscribe_to_default_topics()
 
     def _subscribe_to_default_topics(self):
         """Subscribe to default topics for testing when Redis is unavailable"""
+        print("Subscribing to default topics")
         default_topics = [
             "zigbee2mqtt/senchi-SNH2025001/bridge/health",
             "zigbee2mqtt/senchi-SNH2025001/bridge/devices",
@@ -401,9 +320,11 @@ class Monitor:
                     self.log_device_event(payload['data']['id'], {"event": "device_removed", "data": payload}),
                     self.loop
                 )
+                return
 
             elif "bridge/devices" in topic:
                 # Extract device serial from topic for device subscriptions
+                print(f"Handling payload: {payload}")
                 device_serial = topic.split("/")[1].replace("senchi-", "")
                 self.current_device_serial = device_serial
                 logger.info(f"Processing device list for device serial: {device_serial}")
@@ -414,6 +335,7 @@ class Monitor:
                 )
                 return
             elif "bridge/event" in topic:
+                print(f"Handling bridge event: {payload}")
                 # Log bridge events
                 asyncio.run_coroutine_threadsafe(
                     self.log_bridge_event(payload),
@@ -433,7 +355,10 @@ class Monitor:
                     self.loop
                 )
         # --- Route notification by topic ---
-        self.route_notification_by_topic(topic, payload)
+        asyncio.run_coroutine_threadsafe(
+            self.app_state["notification_router"].route_mqtt_message(topic, payload),
+            self.loop
+        )
 
     async def handle_device_list(self, devices: List[Dict]):
         i = 0
@@ -465,13 +390,20 @@ class Monitor:
             ieee_address = curr.ieee_address
             print(f"Checking if {ieee_address} exists in app_state")
             
+            # Add detailed logging to debug the condition
+            existing_devices = list(self.app_state["devices"].keys())
+            logger.info(f"Current devices in app_state: {existing_devices}")
+            logger.info(f"Checking if {ieee_address} in app_state: {ieee_address in self.app_state['devices']}")
+            
+            # Always store device mapping in database, regardless of app_state
+            device_serial = self._extract_device_serial_from_topic()
+            logger.info(f"Storing device mapping for {ieee_address} with serial {device_serial}")
+            self._store_device_mapping(device_serial, curr)
+            
             if ieee_address not in self.app_state["devices"]:
                 print(f"Adding new device: {ieee_address}")
+                logger.info(f"Adding new device to app_state: {ieee_address}")
                 self.app_state["devices"][ieee_address] = curr
-                
-                # Store device mapping in database
-                device_serial = self._extract_device_serial_from_topic()
-                self._store_device_mapping(device_serial, curr)
                 
                 try:
                     # Subscribe to device updates using the correct topic format
@@ -490,6 +422,7 @@ class Monitor:
                     self.loop
                 )
             else:
+                logger.info(f"Device {ieee_address} already exists in app_state, but still stored in database")
                 if ieee_address in self.app_state["devices"]:
                     existing_device = self.app_state["devices"][ieee_address]
                     for field, value in curr.dict(exclude_unset=True).items():
@@ -774,6 +707,17 @@ class Monitor:
         
         return True
 
+    def _serialize_datetime_objects(self, obj):
+        """Recursively convert datetime objects to ISO format strings for JSON serialization"""
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        elif isinstance(obj, dict):
+            return {key: self._serialize_datetime_objects(value) for key, value in obj.items()}
+        elif isinstance(obj, list):
+            return [self._serialize_datetime_objects(item) for item in obj]
+        else:
+            return obj
+
     async def broadcast_device_update(self, device_id: str, payload: Dict):
         """Broadcast device updates to connected WebSocket clients for the device owner"""
         try:
@@ -798,27 +742,40 @@ class Monitor:
             WHERE dm.ieee_address = %s
             """
             
+            logger.debug(f"Looking up owner for device {device_id}")
             owner_result = pg_db.execute_query(owner_query, (device_id,))
+            logger.debug(f"Owner query result: {owner_result}")
+            
             if not owner_result:
                 logger.warning(f"No owner found for device {device_id}")
                 return
             
-            owner_user_id = owner_result[0][0]
+            if len(owner_result) == 0:
+                logger.warning(f"Empty result set for device {device_id}")
+                return
+            
+            owner_user_id = owner_result[0]['owner_user_id']
+            logger.debug(f"Found owner_user_id: {owner_user_id}")
             
             # Create the message
+            message_data = {
+                "friendly_name": getattr(device, 'friendly_name', None),
+                "device_type": getattr(device, 'type', None),
+                "last_seen": getattr(device, 'last_seen', None),
+                "status": "active",
+                "battery": payload.get("battery"),
+                "water_leak": payload.get("water_leak"),
+                "linkquality": payload.get("linkquality"),
+                **payload  # Include all other payload data
+            }
+            
+            # Serialize any datetime objects
+            message_data = self._serialize_datetime_objects(message_data)
+            
             message = {
                 "type": "device_update",
                 "device_id": device_id,
-                "data": {
-                    "friendly_name": getattr(device, 'friendly_name', None),
-                    "device_type": getattr(device, 'type', None),
-                    "last_seen": getattr(device, 'last_seen', None),
-                    "status": "active",
-                    "battery": payload.get("battery"),
-                    "water_leak": payload.get("water_leak"),
-                    "linkquality": payload.get("linkquality"),
-                    **payload  # Include all other payload data
-                },
+                "data": message_data,
                 "timestamp": datetime.now().isoformat()
             }
             
@@ -843,8 +800,15 @@ class Monitor:
                 if not self.app_state["websocket_connections"][owner_user_id]:
                     del self.app_state["websocket_connections"][owner_user_id]
                     
+                logger.info(f"Broadcasted device update for {device_id} to user {owner_user_id}")
+            else:
+                logger.debug(f"No WebSocket connections for user {owner_user_id}")
+                    
         except Exception as e:
             logger.error(f"Error broadcasting device update for {device_id}: {e}")
+            # Log the full exception for debugging
+            import traceback
+            logger.error(f"Full traceback: {traceback.format_exc()}")
 
     def start(self):
 
@@ -880,50 +844,3 @@ class Monitor:
         if self.client:
             self.client.loop_stop()
             self.client.disconnect()
-
-    def route_notification_by_topic(self, topic, payload):
-        # Find all JWTs associated with this topic
-        jwt_key = f"topic:{topic}:jwts"
-        
-        # Try to get Redis connection from app_state first
-        redis_db = None
-        if "redis_db" in self.app_state:
-            redis_db = self.app_state["redis_db"]
-        
-        # If not in app_state, try to get global redis_db
-        if not redis_db:
-            try:
-                # TODO: Remove this, temp fix
-                from rdsdb.rdsdb import RedisDB
-                redis_db = RedisDB()
-                # Try to connect if not already connected
-                if not redis_db.conn:
-                    redis_db.connect()
-            except Exception as e:
-                logger.warning(f"Could not get Redis connection for topic routing: {e}")
-                return
-        
-        # Get JWT data if Redis is available
-        jwt_data = None
-        if redis_db and redis_db.conn:
-            try:
-                jwt_data = redis_db.get_key(jwt_key)
-            except Exception as e:
-                logger.warning(f"Error getting JWT data for topic {topic}: {e}")
-                return
-        
-        if not jwt_data:
-            logger.info(f"No JWTs found for topic {topic}")
-            return
-            
-        try:
-            jwt_list = jwt_data.decode().split(",")
-            for jwt_token in jwt_list:
-                logger.info(f"Would route notification to JWT: {jwt_token} for topic: {topic}")
-                # Here you can send a notification to the user/device associated with this JWT
-                # For example, via WebSocket, push, etc.
-                # Example: self.send_websocket_notification(jwt_token, payload)
-        except Exception as e:
-            logger.error(f"Error processing JWT data for topic {topic}: {e}")
-
-    

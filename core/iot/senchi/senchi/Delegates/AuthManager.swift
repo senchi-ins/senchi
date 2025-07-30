@@ -3,45 +3,6 @@ import SwiftUI
 import Foundation
 import Security
 
-// MARK: - Response Types
-struct UserInfoResponse: Codable {
-    let user_id: String
-    let location_id: String
-    let device_serial: String
-    let full_name: String?
-    let iat: Double?
-    let exp: Double
-    let created_at: String?
-}
-
-enum AuthError: Error, LocalizedError {
-    case invalidURL
-    case serverError(String)
-    case networkError(Error)
-    case keychainError(String)
-    case pushNotificationDenied(Error)
-    
-    var errorDescription: String? {
-        switch self {
-        case .invalidURL:
-            return "Invalid URL"
-        case .serverError(let message):
-            return message
-        case .networkError(let error):
-            return "Network error: \(error.localizedDescription)"
-        case .keychainError(let message):
-            return "Keychain error: \(message)"
-        case .pushNotificationDenied(let error):
-            return "Push notification permission denied: \(error.localizedDescription)"
-        }
-    }
-}
-
-struct LoginResponse: Codable {
-    let message: String
-    let token: String
-    let user_info: UserInfoResponse
-}
 
 @MainActor
 class AuthManager: ObservableObject {
@@ -59,110 +20,44 @@ class AuthManager: ObservableObject {
         loadStoredCredentials()
     }
     
-    func signIn(email: String, password: String) async throws {
+    func setupDevice(
+        serialNumber: String,
+        email: String,
+        fullName: String,
+        password: String,
+    ) async throws {
         isLoading = true
         errorMessage = nil
         
         defer { isLoading = false }
         
         do {
-            // For now, we'll simulate a successful sign in
-            // In a real implementation, you would make an API call here
-            print("Signing in user: \(email)")
-            
-            // Simulate network delay
-            try await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
-            
-            // For demo purposes, we'll just set authenticated to true
-            // In production, you would validate credentials with your server
-            isAuthenticated = true
-            currentToken = "demo_token_\(UUID().uuidString)"
-            locationId = "demo_location_\(UUID().uuidString)"
-            
-            UserDefaults.standard.set(email, forKey: "user_email")
-            
-            print("Sign in successful for: \(email)")
-            
-        } catch {
-            errorMessage = error.localizedDescription
-            print("Sign in failed: \(error)")
-            throw error
-        }
-    }
-    
-    func createAccount(fullName: String, email: String, password: String) async throws {
-        isLoading = true
-        errorMessage = nil
-        
-        defer { isLoading = false }
-        
-        do {
-            // For now, we'll simulate account creation
-            // In a real implementation, you would make an API call here
-            print("Creating account for: \(fullName) (\(email))")
-            
-            // Simulate network delay
-            try await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
-            
-            // For demo purposes, we'll just set authenticated to true
-            // In production, you would create the account on your server
-            isAuthenticated = true
-            currentToken = "demo_token_\(UUID().uuidString)"
-            locationId = "demo_location_\(UUID().uuidString)"
-            
-            print("Account created successfully for: \(email)")
-            
-        } catch {
-            errorMessage = error.localizedDescription
-            print("Account creation failed: \(error)")
-            throw error
-        }
-    }
-    
-    func setupDevice(serialNumber: String, email: String? = nil, fullName: String? = nil) async throws {
-        isLoading = true
-        errorMessage = nil
-        
-        defer { isLoading = false }
-        
-        do {
-            // Setup device with server
             let tokenResponse = try await performDeviceSetup(
                 serialNumber: serialNumber,
-                pushToken: nil as String?, // Will be updated later when received
+                pushToken: nil as String? ?? "", // TODO: Update this to use redis or similar
                 email: email,
-                fullName: fullName
+                fullName: fullName,
+                password: password
             )
-            
-            // Store credentials securely
-            try storeCredentials(token: tokenResponse.jwtToken, locationId: tokenResponse.locationId)
-            
-            // Email -> token mapping is now handled server-side
-            
-            // Update state
+            try storeCredentials(token: tokenResponse.jwtToken, locationId: tokenResponse.userInfo.location_id ?? "")
             currentToken = tokenResponse.jwtToken
-            locationId = tokenResponse.locationId
+            locationId = tokenResponse.userInfo.location_id
             isAuthenticated = true
-            
-            print("Device setup successful! Location: \(tokenResponse.locationId)")
             
         } catch {
             errorMessage = error.localizedDescription
-            print("Device setup failed: \(error)")
             throw error
         }
     }
     
     func refreshToken() async throws {
-//        guard let currentToken = self.currentToken else {
-//            throw AuthError.keychainError("No token to refresh!")
-//        }
-        if currentToken == nil {
-            currentToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiYjViNDI0NjMtN2FjNC00N2JhLWFhOTYtMzRjOWY5NmI1ZTM2IiwibG9jYXRpb25faWQiOiJycGktemlnYmVlLTM2ZjIwZTY0IiwiZGV2aWNlX3NlcmlhbCI6IjE3NTI2MjA1MzZmMjBlNjQiLCJpYXQiOjE3NTI2ODYzMDIuMTUzOTM4LCJleHAiOjE3NTUyNzgzMDIuMTUzOTM4fQ.rBJ6Dn5AhL75dL2Jssgo8lBtEGesV2QGnQrk1LFaZHY"
+        guard let currentToken = self.currentToken else {
+            throw AuthError.keychainError("No token to refresh!")
         }
 
         // Decode JWT to check expiration
-        let segments = currentToken!.split(separator: ".")
+        // TODO: This isn't actually decoding the token, fix
+        let segments = currentToken.split(separator: ".")
         guard segments.count == 3,
               let payloadData = Data(base64Encoded: String(segments[1]).base64URLToBase64()),
               let payload = try? JSONSerialization.jsonObject(with: payloadData) as? [String: Any],
@@ -174,11 +69,8 @@ class AuthManager: ObservableObject {
         let now = Date()
 
         if expirationDate > now {
-            print("✅ Token is still valid until \(expirationDate)")
-            return // Token is still valid, nothing to do
+            return
         }
-
-        print("🔄 Token expired at \(expirationDate), refreshing...")
 
         guard let email = UserDefaults.standard.string(forKey: "user_email"),
               let password = UserDefaults.standard.string(forKey: "user_password") else {
@@ -189,7 +81,7 @@ class AuthManager: ObservableObject {
         errorMessage = nil
         defer { isLoading = false }
 
-        // Call the login endpoint
+        // NOTE: Central server
         guard let url = URL(string: "\(ApplicationConfig.restAPIBase)/api/v1/auth/login") else {
             throw AuthError.invalidURL
         }
@@ -210,54 +102,45 @@ class AuthManager: ObservableObject {
 
         // Parse the response and update the token
         let loginResponse = try JSONDecoder().decode(LoginResponse.self, from: data)
-        self.currentToken = loginResponse.token
+        self.currentToken = loginResponse.jwt_token
         self.locationId = loginResponse.user_info.location_id
         self.isAuthenticated = true
-        try storeCredentials(token: loginResponse.token, locationId: loginResponse.user_info.location_id)
+        try storeCredentials(token: loginResponse.jwt_token, locationId: loginResponse.user_info.location_id ?? "")
         print("Token refreshed successfully from server")
     }
     
-    func loginWithEmail(email: String) async throws {
+    func loginWithEmail(email: String, password: String) async throws -> UserInfoResponse? {
         isLoading = true
         errorMessage = nil
         
         defer { isLoading = false }
         
         do {
-            // Retrieve token and user info from Redis using email
-            let result = try await retrieveTokenByEmail(email: email)
+            let result = try await retrieveTokenByEmail(email: email, password: password)
             
-            if let result = result {
-                let token = result.token
-                let userInfo = result.userInfo
-                
-                // Validate the token with the server
-                let isValid = try await validateTokenWithServer(token)
-                
-                if isValid {
-                    // Store credentials securely
-                    try storeCredentials(token: token, locationId: userInfo.location_id)
-                    
-                    // Update state
-                    currentToken = token
-                    locationId = userInfo.location_id
-                    isAuthenticated = true
-                    
-                    // Store user name if available
-                    if let fullName = userInfo.full_name {
-                        // You can store this in UserDefaults or pass it to UserSettings
-                        UserDefaults.standard.set(fullName, forKey: "user_full_name")
-                        print("Stored user name: \(fullName)")
-                    }
-                    
-                    print("Login successful for: \(email)")
-                } else {
-                    // throw AuthError.serverError("Invalid or expired token")
-                    try await refreshToken()
-                    return
-                }
-            } else {
+            guard let result = result else {
                 throw AuthError.serverError("No account found for this email")
+            }
+            
+            let token = result.jwt_token
+            let userInfo = result.userInfo
+            
+            let isValid = try await validateTokenWithServer(token)
+            
+            if isValid {
+                try storeCredentials(token: token, locationId: userInfo.location_id ?? "")
+                
+                currentToken = token
+                locationId = userInfo.location_id
+                isAuthenticated = true
+                
+                if let fullName = userInfo.full_name {
+                    UserDefaults.standard.set(fullName, forKey: "user_full_name")
+                }
+                return userInfo
+            } else {
+                try await refreshToken()
+                return nil
             }
             
         } catch {
@@ -269,8 +152,15 @@ class AuthManager: ObservableObject {
     
     // TODO: Update the apiBase to zigbeeAPIBase to clarify which server its running on
     // NOTE: some JWTs will have the device serial in the payload (initial setup) while later it will not
-    private func performDeviceSetup(serialNumber: String, pushToken: String?, email: String?, fullName: String?) async throws -> TokenResponse {
-        guard let url = URL(string: "\(ApplicationConfig.apiBase)/api/auth/setup") else {
+    private func performDeviceSetup(
+        serialNumber: String,
+        pushToken: String,
+        email: String,
+        fullName: String,
+        password: String
+    ) async throws -> TokenResponse {
+        // NOTE: This hits the central server
+        guard let url = URL(string: "\(ApplicationConfig.restAPIBase)/api/v1/auth/register") else {
             throw AuthError.invalidURL
         }
         
@@ -305,8 +195,9 @@ class AuthManager: ObservableObject {
         }
     }
     
+    // TODO: Verify if this should be on main server or zigbee partition
     private func sendPushTokenUpdate(jwtToken: String, pushToken: String) async throws {
-        guard let url = URL(string: "\(ApplicationConfig.apiBase)/api/auth/push-token") else {
+        guard let url = URL(string: "\(ApplicationConfig.zbAPIBase)/api/auth/push-token") else {
             throw AuthError.invalidURL
         }
         
@@ -331,7 +222,6 @@ class AuthManager: ObservableObject {
     func verifyToken() async -> Bool {
         print("🔍 verifyToken called. Current token: \(String(describing: currentToken))")
         guard let token = currentToken else {
-            print("❌ No token found in verifyToken")
             return false
         }
         do {
@@ -339,17 +229,15 @@ class AuthManager: ObservableObject {
             if !isValid {
                 logout()
             }
-            print("Token validated: \(isValid)")
             return isValid
         } catch {
-            print("❌ Token verification failed: \(error)")
             logout()
             return false
         }
     }
     
     private func validateTokenWithServer(_ token: String) async throws -> Bool {
-        // TODO: Only use the central server for verification
+        // NOTE: This uses the central server
         guard let url = URL(string: "\(ApplicationConfig.restAPIBase)/api/v1/auth/verify") else {
             throw AuthError.invalidURL
         }
@@ -367,9 +255,9 @@ class AuthManager: ObservableObject {
         return 200...299 ~= httpResponse.statusCode
     }
     
-    private func retrieveTokenByEmail(email: String) async throws -> (token: String, userInfo: UserInfoResponse)? {
+    private func retrieveTokenByEmail(email: String, password: String) async throws -> (jwt_token: String, userInfo: UserInfoResponse)? {
         // Use server endpoint to retrieve token by email
-        guard let url = URL(string: "\(ApplicationConfig.apiBase)/api/auth/login") else {
+        guard let url = URL(string: "\(ApplicationConfig.restAPIBase)/api/v1/auth/login") else {
             throw AuthError.invalidURL
         }
         
@@ -377,7 +265,7 @@ class AuthManager: ObservableObject {
         urlRequest.httpMethod = "POST"
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        let requestBody = ["email": email]
+        let requestBody = ["email": email, "password": password]
         urlRequest.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
         
         let (data, response) = try await URLSession.shared.data(for: urlRequest)
@@ -395,7 +283,7 @@ class AuthManager: ObservableObject {
         do {
             let loginResponse = try JSONDecoder().decode(LoginResponse.self, from: data)
             print("✅ Login response decoded successfully")
-            return (token: loginResponse.token, userInfo: loginResponse.user_info)
+            return (jwt_token: loginResponse.jwt_token, userInfo: loginResponse.user_info)
         } catch let decodingError as DecodingError {
             print("❌ Decoding error: \(decodingError)")
             switch decodingError {
@@ -419,8 +307,8 @@ class AuthManager: ObservableObject {
         }
     }
     
+    // TODO: Delete this, don't store JWT at all
     private func storeEmailTokenMapping(email: String, token: String) async throws {
-        // Store email -> token mapping in Redis
         do {
             try await setKey(prefix: "email", key: email, value: token, ttl: 60 * 60 * 24 * 30) // 30 days
             print("Stored email -> token mapping for: \(email)")
@@ -430,8 +318,10 @@ class AuthManager: ObservableObject {
         }
     }
     
+    // TODO: Delete this, get user info from db
+    // This endpoint should hit the main server
     private func getUserInfoFromToken(_ token: String) async throws -> (locationId: String, deviceSerial: String) {
-        guard let url = URL(string: "\(ApplicationConfig.apiBase)/api/auth/verify") else {
+        guard let url = URL(string: "\(ApplicationConfig.zbAPIBase)/api/auth/verify") else {
             throw AuthError.invalidURL
         }
         
@@ -448,9 +338,8 @@ class AuthManager: ObservableObject {
         
         // Debug: Print the verify response
         let responseString = String(data: data, encoding: .utf8) ?? "No data"
-        print("🔍 Verify response: \(responseString)")
         
-        // The verify endpoint returns a different structure, so let's decode it properly
+        // TODO: Move structs out of functions
         struct VerifyResponse: Codable {
             let valid: Bool
             let user_id: String
@@ -528,7 +417,6 @@ class AuthManager: ObservableObject {
     }
     
     func logout() {
-        // Clear keychain
         let tokenQuery: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: keychainService,
@@ -544,22 +432,8 @@ class AuthManager: ObservableObject {
         SecItemDelete(tokenQuery as CFDictionary)
         SecItemDelete(locationQuery as CFDictionary)
         
-        // Clear state
         currentToken = nil
         locationId = nil
         isAuthenticated = false
-    }
-}
-
-extension String {
-    func base64URLToBase64() -> String {
-        var base64 = self
-            .replacingOccurrences(of: "-", with: "+")
-            .replacingOccurrences(of: "_", with: "/")
-        let padding = 4 - base64.count % 4
-        if padding < 4 {
-            base64 += String(repeating: "=", count: padding)
-        }
-        return base64
     }
 }

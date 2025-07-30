@@ -6,7 +6,6 @@ struct OnboardingStep2QRCodeView: View {
     var onQRCodeScanned: (String) -> Void
     var onManualConnect: () -> Void
     var onConnected: () -> Void
-    var onNextStep: () -> Void
     
     @State private var isShowingScanner = false
     @State private var scannedCode: String? = nil
@@ -205,7 +204,6 @@ struct OnboardingStep2QRCodeView: View {
                         onQRCodeScanned(serial)
                     }
                     onConnected()
-                    onNextStep()
                 } else {
                     checkCurrentConnection()
                 }
@@ -429,9 +427,6 @@ struct OnboardingStep2QRCodeView: View {
         onConnected: {
             let generator = UIImpactFeedbackGenerator(style: .medium)
             generator.impactOccurred()
-            print("Moving to next onboarding step")
-        },
-        onNextStep: {
             print("Moving to next onboarding step")
         }
     )

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct LoginView: View {
     @State private var email: String = ""
+    @State private var password: String = ""
     @State private var isLoading: Bool = false
     @State private var errorMessage: String = ""
     @State private var showAlert: Bool = false
@@ -38,6 +39,19 @@ struct LoginView: View {
                             .foregroundColor(.black)
                         
                         TextField("Enter your email", text: $email)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .keyboardType(.emailAddress)
+                            .autocapitalization(.none)
+                            .disableAutocorrection(true)
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Password")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(.black)
+                        
+                        TextField("Enter your password", text: $password)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
                             .keyboardType(.emailAddress)
                             .autocapitalization(.none)
@@ -107,12 +121,18 @@ struct LoginView: View {
             errorMessage = "Please enter your email"
             return
         }
+        guard !password.isEmpty else {
+            errorMessage = "Please enter your password"
+            return
+        }
         
         isLoading = true
         errorMessage = ""
+        print(password)
         
         do {
-            try await authManager.loginWithEmail(email: email)
+            let info = try await authManager.loginWithEmail(email: email, password: password)
+            userSettings.userInfo = info
         } catch {
             errorMessage = error.localizedDescription
             showAlert = true

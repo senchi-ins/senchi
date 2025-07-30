@@ -80,13 +80,6 @@ struct OnboardingViewMain: View {
                     onCreateAccount: {
                         let generator = UIImpactFeedbackGenerator(style: .medium)
                         generator.impactOccurred()
-                        createAccount()
-                    },
-                    onSignIn: {
-                        let generator = UIImpactFeedbackGenerator(style: .medium)
-                        generator.impactOccurred()
-                        userSettings.isOnboarded = true
-                        signIn()
                     },
                     onLogin: {
                         let generator = UIImpactFeedbackGenerator(style: .medium)
@@ -97,18 +90,15 @@ struct OnboardingViewMain: View {
             case 2:
                 OnboardingStep2QRCodeView(
                     onQRCodeScanned: { code in
-                        deviceSerial = code  // Use the actual device serial from QR code
+                        deviceSerial = code
                     },
                     onManualConnect: {
-                        // Handle manual connect
+                        // TODO: Handle manual connect
                     },
                     onConnected: {
                         let generator = UIImpactFeedbackGenerator(style: .medium)
                         generator.impactOccurred()
                         withAnimation { currentStep = 3 }
-                    },
-                    onNextStep: {
-                        // This will be handled by onConnected
                     }
                 )
             case 3:
@@ -134,93 +124,26 @@ struct OnboardingViewMain: View {
         .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading)))
     }
     
-    private func createAccount() {
-        guard !fullName.isEmpty && !email.isEmpty && !password.isEmpty else {
-            alertMessage = "Please fill in all fields"
-            showingAlert = true
-            return
-        }
-        
-        isLoading = true
-        
-        Task {
-            do {
-                try await authManager.createAccount(
-                    fullName: fullName,
-                    email: email,
-                    password: password
-                )
-                
-                await MainActor.run {
-                    // Store the user name for use throughout the app
-                    userSettings.userName = fullName
-                    isLoading = false
-                    alertMessage = "Account created successfully!"
-                    showingAlert = true
-                    withAnimation { currentStep = 2 }
-                }
-            } catch {
-                await MainActor.run {
-                    isLoading = false
-                    alertMessage = "Account creation failed: \(error.localizedDescription)"
-                    showingAlert = true
-                }
-            }
-        }
-    }
-    
-    private func signIn() {
-        guard !email.isEmpty && !password.isEmpty else {
-            alertMessage = "Please enter email and password"
-            showingAlert = true
-            return
-        }
-        
-        isLoading = true
-        
-        Task {
-            do {
-                try await authManager.signIn(email: email, password: password)
-                
-                await MainActor.run {
-                    isLoading = false
-                    alertMessage = "Signed in successfully!"
-                    showingAlert = true
-                    withAnimation { currentStep = 2 }
-                }
-            } catch {
-                await MainActor.run {
-                    isLoading = false
-                    alertMessage = "Sign in failed: \(error.localizedDescription)"
-                    showingAlert = true
-                }
-            }
-        }
-    }
-    
     private func setupDevice() {
         guard !deviceSerial.isEmpty else {
             alertMessage = "Please scan the QR code on your device first"
             showingAlert = true
             return
         }
-        
         isLoading = true
-        
         Task {
             do {
                 // Now setup device with the actual device serial from QR code and user's email
-                try await authManager.setupDevice(serialNumber: deviceSerial, email: email, fullName: fullName)
+                try await authManager.setupDevice(serialNumber: deviceSerial, email: email, fullName: fullName, password: password)
                 
                 await MainActor.run {
                     isLoading = false
-                    // Device setup is now complete, go to dashboard
                     withAnimation { showDashboard = true }
                 }
             } catch {
                 await MainActor.run {
                     isLoading = false
-                    alertMessage = "Device setup failed: \(error.localizedDescription)"
+                    alertMessage = "Failed to setup device: \(error.localizedDescription)"
                     showingAlert = true
                 }
             }

@@ -10,11 +10,11 @@ struct HomeDashboardView: View {
                 case 0:
                     HomeTabContent()
                 case 1:
-                    HealthSavings()
-                case 2:
-                    AccountSettings()
-                case 3:
                     External()
+                case 2:
+                    HealthSavings()
+                case 3:
+                    AccountSettings()
                 default:
                     HomeTabContent()
                 }

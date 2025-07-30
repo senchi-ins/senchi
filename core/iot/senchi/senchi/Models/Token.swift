@@ -20,12 +20,12 @@ struct TokenSetupRequest: Codable {
 struct TokenResponse: Codable {
     let jwtToken: String
     let expiresAt: String
-    let locationId: String
+    let userInfo: UserInfoResponse
     
     enum CodingKeys: String, CodingKey {
         case jwtToken = "jwt_token"
         case expiresAt = "expires_at"
-        case locationId = "location_id"
+        case userInfo = "user_info"
     }
 }
 
