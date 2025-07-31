@@ -5,6 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "scipy>=1.13.1",
     "numpy>=1.21.0",
     "setuptools<80.9.0",
     "tqdm>=4.67.1",

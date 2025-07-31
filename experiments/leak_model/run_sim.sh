@@ -85,10 +85,10 @@ case "${1:-default}" in
         ;;
 esac
 
-export SIM_OUTPUT="output/synthetic_water_data_minute_${SIM_HOMES}.csv.gz"
+export SIM_OUTPUT="data/output/synthetic_water_data_minute_${SIM_HOMES}.csv.gz"
 
 # Create output directory
-mkdir -p output
+mkdir -p data/output
 
 # Run with Docker Compose
 echo "Starting simulation with Docker Compose..."
@@ -96,4 +96,4 @@ echo "Configuration: $SIM_HOMES homes, $SIM_START to $SIM_END, $SIM_MEMORY_LIMIT
 
 docker compose up --build leak-sim
 
-echo "Simulation complete! Output saved to output/${SIM_OUTPUT}" 
+echo "Simulation complete! Output saved to data/output/${SIM_OUTPUT}" 

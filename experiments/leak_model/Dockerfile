@@ -56,4 +56,4 @@ ENV PYTHONUNBUFFERED=1
 ENV OMP_NUM_THREADS=1
 ENV MKL_NUM_THREADS=1
 
-CMD ["uv", "run", "data/z_simd.py"]
+CMD ["uv", "run", "data/WDN_sim.py"]
