@@ -97,6 +97,7 @@ class Monitor:
         except Exception as e:
             logger.error(f"Error subscribing to device topics: {e}")
 
+    # TODO: Delete
     def _subscribe_to_default_topics(self):
         """Subscribe to default topics for testing when Redis is unavailable"""
         print("Subscribing to default topics")

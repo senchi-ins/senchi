@@ -3,6 +3,7 @@ from typing import List
 
 from pydantic_settings import BaseSettings
 
+# TODO: Move this to the central cfg.py file
 class Settings(BaseSettings):
     """
     Configuration for the Zigbee2MQTT API.
