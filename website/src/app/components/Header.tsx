@@ -83,7 +83,7 @@ export default function Header() {
               >
                 {/* TODO Update to be in line with the desktop version */}
                 <a
-                  href="https://senchi.ca/external-assessment"
+                  href="https://senchi.ca/ext-assessment"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2"

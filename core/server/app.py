@@ -8,12 +8,16 @@ import uvicorn
 from config import settings
 from api.v1.api import api_router
 from db.pg import PostgresDB
+from db.rds import RedisDB
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     db = PostgresDB()
+    redis_db = RedisDB()
     try:
         app.state.db = db
+        app.state.redis_db = redis_db
+        redis_db.connect()
         db.execute_query("""
         CREATE TABLE IF NOT EXISTS assessment_responses (
             id SERIAL PRIMARY KEY,

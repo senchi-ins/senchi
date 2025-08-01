@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     # API Version. This directly impacts the file path
     # used when looking for endpoints. E.g. v1 is api/v1/endpoints/
     VERSION: str = "v1"
-    DESCRIPTION: str = "FastAPI server to handle quoting and claims engines."
+    DESCRIPTION: str = "Core API for Senchi"
     
     # Prefixes any url paths. E.g. /api/v1/quote/
     API_PREFIX: str = "/api/v1"

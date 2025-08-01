@@ -115,7 +115,7 @@ export default function Footer() {
         <div className="border-t border-gray-200 py-6">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="text-gray-600 text-sm mb-4 md:mb-0">
-              © 2025 Senchi Insurance
+              © 2025 Senchi Technologies Inc.
             </div>
             <div className="flex items-center space-x-6 text-sm">
               <a href="#" className="text-gray-600 hover:text-senchi-primary transition-colors">Privacy Policy</a>
