@@ -26,11 +26,14 @@ class Settings(BaseSettings):
         "http://localhost:3000", 
         "https://localhost:3000", 
         "http://localhost:8000", 
+        "http://localhost:5000",
+        "https://localhost:5000",
         "https://localhost:8000",
         "https://api.senchi.ca",
         "http://api.senchi.ca",
         "https://www.senchi.ca",
-        "http://www.senchi.ca"
+        "http://www.senchi.ca",
+        "https://survey.senchi.ca"
     ]
     ALLOWED_CREDENTIALS: bool = True
     ALLOWED_HEADERS: List[str] = ["*"]

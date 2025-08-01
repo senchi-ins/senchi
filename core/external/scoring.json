@@ -1,0 +1,18 @@
+{
+    "Very High": [{
+        "1": 10,
+        "0": 0
+    }],
+    "Relatively High": [{
+        "1": 7,
+        "0": 0
+    }],
+    "Relatively Moderate": [{
+        "1": 5,
+        "0": 0
+    }],
+    "Relatively Low": [{
+        "1": 3,
+        "0": 0
+    }]
+}

@@ -1,11 +1,11 @@
 "use client"
 
-import React, { Suspense, useState, useMemo, useEffect } from 'react'
+import React, { Suspense, useState, useMemo, useEffect, useCallback } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls, useGLTF, Html } from '@react-three/drei'
 import { motion, AnimatePresence } from 'framer-motion'
 import dotenv from 'dotenv'
-import { AnalyzeHouseResponse, proxyGLB } from '@/utils/api'
+import { AnalyzeHouseResponse } from '@/utils/api'
 import { fallback_url } from '@/utils/fallback'
 
 dotenv.config()
@@ -44,10 +44,10 @@ export default function BespokeHouse({ imageURL, labellingResponse = defaultLabe
   const [selectedRisk, setSelectedRisk] = useState<RiskInfo | null>(null);
   const [renderURL, setRenderURL] = useState<string | null>(null);
   
-  const getRenderURL = async () => {
+  const getRenderURL = useCallback(async () => {
     if (imageURL !== fallback_url) {
       try {
-        const simpleProxyURL = await proxyGLB(imageURL);
+        const simpleProxyURL = "/3D/sample_house.glb";
         return simpleProxyURL;
       } catch (error) {
         console.warn('Failed to proxy GLB, using fallback:', error);
@@ -55,7 +55,7 @@ export default function BespokeHouse({ imageURL, labellingResponse = defaultLabe
       }
     }
     return imageURL;
-  }
+  }, [imageURL]);
 
   useEffect(() => {
     const fetchURL = async () => {
@@ -75,7 +75,7 @@ export default function BespokeHouse({ imageURL, labellingResponse = defaultLabe
         URL.revokeObjectURL(renderURL);
       }
     };
-  }, [imageURL]);
+  }, [imageURL, getRenderURL, renderURL]);
 
   // Cleanup blob URLs when renderURL changes
   useEffect(() => {

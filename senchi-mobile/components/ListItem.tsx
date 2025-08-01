@@ -16,6 +16,7 @@ interface ListItemProps {
   item: {
     text: string;
     image: ImageURISource;
+    component?: React.ReactNode;
   };
   index: number;
   x: SharedValue<number>;
@@ -78,6 +79,34 @@ const ListItem = ({ item, index, x }: ListItemProps) => {
         transform: [{ translateY}],
       };
     }, [index, x]);
+
+    const rnComponentStyle = useAnimatedStyle(() => {
+      const translateY = interpolate(
+        x.value,
+        [
+          (index - 1) * SCREEN_WIDTH,
+          index * SCREEN_WIDTH,
+          (index + 1) * SCREEN_WIDTH,
+        ],
+        [100, 0, 100],
+        Extrapolate.CLAMP
+      );
+      const opacity = interpolate(
+        x.value,
+        [
+          (index - 1) * SCREEN_WIDTH,
+          index * SCREEN_WIDTH,
+          (index + 1) * SCREEN_WIDTH,
+        ],
+        [0, 1, 0],
+        Extrapolate.CLAMP
+      );
+      return {
+        opacity,
+        transform: [{ translateY}],
+      };
+    }, [index, x]);
+
     return (
       <View style={[styles.itemContainer, { width: SCREEN_WIDTH }]}>
         <Animated.Image
@@ -85,6 +114,11 @@ const ListItem = ({ item, index, x }: ListItemProps) => {
           style={rnImageStyle}
           resizeMode="contain"
         />
+        {item.component && (
+          <Animated.View style={rnComponentStyle}>
+            {item.component}
+          </Animated.View>
+        )}
         <Animated.Text style={[styles.textItem, rnTextStyle]}>
           {item.text}
         </Animated.Text>
