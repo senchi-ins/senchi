@@ -21,7 +21,7 @@ export default function Footer() {
             <p className="text-gray-600 max-w-sm"> 
               AI powered prediction meets charitable giving for complete protection.
             </p>
-            <div className="flex space-x-4">
+            {/* <div className="flex space-x-4">
               <a href="#" className="text-gray-400 hover:text-senchi-primary transition-colors" aria-label="Follow us on X">
                 <Twitter className="h-5 w-5" />
               </a>
@@ -36,7 +36,7 @@ export default function Footer() {
                   <path d="M19.321 5.562a5.124 5.124 0 0 1-.443-.258 6.228 6.228 0 0 1-1.137-.966c-.849-.849-1.341-1.984-1.341-3.338h-2.891v15.729c0 1.659-1.341 3-3 3s-3-1.341-3-3 1.341-3 3-3c.338 0 .659.056.956.162v-3.018a6.02 6.02 0 0 0-.956-.078c-3.309 0-6 2.691-6 6s2.691 6 6 6 6-2.691 6-6V9.321a9.065 9.065 0 0 0 5.321 1.679V8.115a6.147 6.147 0 0 1-2.509-2.553z"/>
                 </svg>
               </a>
-            </div>
+            </div> */}
           </div>
 
           {/* Insurance Types */}

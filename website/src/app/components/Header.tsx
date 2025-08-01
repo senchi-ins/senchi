@@ -12,7 +12,7 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-senchi-footer/80 backdrop-blur-sm">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
+        <div className="flex h-16 items-center justify-between z-1 bg-senchi-footer relative">
           {/* Logo */}
           <div className="flex items-center">
             <div className="flex items-center space-x-2">
@@ -33,7 +33,7 @@ export default function Header() {
             </a>
             <Button asChild className="bg-senchi-primary hover:bg-senchi-primary/90 text-white px-4 py-2" size="sm">
               <Link href="/ext-assessment" className="flex items-center gap-2">
-                Take our external assessment
+                Take our assessment
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </Button>
@@ -52,8 +52,14 @@ export default function Header() {
         </div>
 
         {/* Mobile Navigation */}
-        {isMenuOpen && (
-          <div className="md:hidden border-t bg-white">
+        <div className="md:hidden absolute bg-senchi-footer backdrop-blur-sm w-full left-1/2 -translate-x-1/2"
+          style={{
+            transform: isMenuOpen ? 'translateY(0)' : 'translateY(-100%)',
+            opacity: isMenuOpen ? 1 : 0,
+            transition: 'transform 0.3s ease-in-out, opacity 0.3s ease-in-out',
+          }}
+        >
+          <div className="px-2 md:px-22 border-b">
             <div className="px-2 pt-2 pb-3 space-y-1">
               <a
                 href="#halo"
@@ -89,13 +95,13 @@ export default function Header() {
                   className="flex items-center justify-center gap-2"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  Take our external assessment
+                  Take our assessment
                   <ArrowRight className="w-4 h-4" />
                 </a>
               </Button>
             </div>
           </div>
-        )}
+        </div>
       </div>
     </header>
   );
