@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     # API Version. This directly impacts the file path
     # used when looking for endpoints. E.g. v1 is api/v1/endpoints/
     VERSION: str = "v1"
-    DESCRIPTION: str = "FastAPI server to handle quoting and claims engines."
+    DESCRIPTION: str = "Core API for Senchi"
     
     # Prefixes any url paths. E.g. /api/v1/quote/
     API_PREFIX: str = "/api/v1"
@@ -26,11 +26,14 @@ class Settings(BaseSettings):
         "http://localhost:3000", 
         "https://localhost:3000", 
         "http://localhost:8000", 
+        "http://localhost:5000",
+        "https://localhost:5000",
         "https://localhost:8000",
         "https://api.senchi.ca",
         "http://api.senchi.ca",
         "https://www.senchi.ca",
-        "http://www.senchi.ca"
+        "http://www.senchi.ca",
+        "https://survey.senchi.ca"
     ]
     ALLOWED_CREDENTIALS: bool = True
     ALLOWED_HEADERS: List[str] = ["*"]

@@ -17,7 +17,7 @@ import Animated, {
   useSharedValue,
 } from 'react-native-reanimated';
 import SplashScreen from '@/animations/splash';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Entypo from '@expo/vector-icons/Entypo';
 import * as Font from 'expo-font';
 import { useAppLoading } from '@/app/context/AppLoadingContext';
@@ -25,21 +25,7 @@ import { useExistingUser } from '@/app/context/ExistingUser';
 import ListItem from '@/components/ListItem';
 import PaginationElement from '@/components/PaginationElement';
 import Button from '@/components/Button';
-
-const pages = [
-  {
-    "text": "Welcome to Senchi",
-    "image": require('@/assets/gend/car.png'),
-  },
-  {
-    "text": "What do you use?",
-    "image": require('@/assets/gend/car.png'),
-  },
-  {
-    "text": "Get started",
-    "image": require('@/assets/gend/car.png'),
-  }
-]
+import { Selectable } from '@/components/Selectable';
 
 type Props = {
   onSubmit: () => void;
@@ -47,12 +33,50 @@ type Props = {
 
 export default function HomeScreen({ onSubmit }: Props) {
   const router = useRouter();
+  const [selectedOption, setSelectedOption] = useState(false);
   const x = useSharedValue(0);
   const flatListIndex = useSharedValue(0);
   const flatListRef = useAnimatedRef<Animated.FlatList<{
     text: string;
     image: ImageURISource;
+    component?: React.ReactNode;
   }>>();
+
+  const selectable = (
+    <View style={styles.selectableContainer}>
+      <Selectable
+        selected={selectedOption} 
+        onSelect={() => setSelectedOption(!selectedOption)} 
+        image={require('@/assets/onboarding/leak_sensor.png')}
+        >
+          <Text>Leak detector</Text>
+      </Selectable>
+      <Selectable 
+        selected={selectedOption} 
+        onSelect={() => setSelectedOption(!selectedOption)} 
+        image={require('@/assets/onboarding/shutoff_valve.png')}
+        >
+          <Text>Remote shutoff valve</Text>
+      </Selectable>
+    </View>
+  );
+
+  const pages = [
+    {
+      "text": "Welcome to Senchi",
+      "component": selectable,
+      "image": require('@/assets/gend/car.png'),
+    },
+    {
+      "text": "What do you use?",
+      "image": require('@/assets/gend/car.png'),
+    },
+    {
+      "text": "Get started",
+      "image": require('@/assets/gend/car.png'),
+    }
+  ];
+
   const onViewableItemsChanged = useCallback(
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {
       flatListIndex.value = viewableItems[0].index ?? 0;
@@ -71,7 +95,7 @@ export default function HomeScreen({ onSubmit }: Props) {
       item,
       index,
      }: { 
-      item: { text: string; image: ImageURISource }, 
+      item: { text: string; image: ImageURISource; component?: React.ReactNode }, 
       index: number }) => {
         return <ListItem item={item} index={index} x={x} />
       },
@@ -150,6 +174,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
+  },
+  selectableContainer: {
+    // flexDirection: 'column',
+    // justifyContent: 'space-between',
+    marginVertical: 2,
+    alignItems: 'center',
+    // paddingHorizontal: 20,
+    // gap: 0,
   },
 });
 
