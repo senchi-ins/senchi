@@ -3,12 +3,96 @@
 import { Button } from "./ui/button";
 import { Shield, Zap, Heart, Thermometer, Droplets, Lock, Wifi, Battery, TrendingUp, CheckCircle, AlertTriangle } from "lucide-react";
 // import { addToWaitlist } from "@/utils/waitlist";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+
+// Custom hook for animating numbers from 0 to target value
+function useAnimatedNumber(target: number, duration: number = 2000, prefix: string = '', suffix: string = '') {
+  const [current, setCurrent] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const elementRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!elementRef.current) return;
+
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !isAnimating) {
+            setIsAnimating(true);
+            const startTime = Date.now();
+            const animate = () => {
+              const elapsed = Date.now() - startTime;
+              const progress = Math.min(elapsed / duration, 1);
+              // Easing function for smooth animation
+              const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+              setCurrent(Math.floor(target * easeOutQuart));
+              
+              if (progress < 1) {
+                requestAnimationFrame(animate);
+              } else {
+                setCurrent(target);
+              }
+            };
+            animate();
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    observerRef.current.observe(elementRef.current);
+
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+    };
+  }, [target, duration, isAnimating]);
+
+  return { current, elementRef, displayValue: `${prefix}${current}${suffix}` };
+}
 
 export default function HeroSection() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<null | 'success' | 'error'>(null);
   const [loading, setLoading] = useState(false);
+  
+  // Animated numbers
+  const temp = useAnimatedNumber(72, 1500, '', '°F');
+  const humidity = useAnimatedNumber(43, 1500, '', '%');
+  const battery = useAnimatedNumber(98, 1500, '', '%');
+  const savings = useAnimatedNumber(847, 2000, '$');
+  const claimEvents = useAnimatedNumber(3, 1000);
+  const doGoodAmount = useAnimatedNumber(127, 1500, '$');
+  const familiesHelped = useAnimatedNumber(342, 2000);
+  const organizations = useAnimatedNumber(12, 1200);
+  
+  // Progress bar animation
+  const [progressWidth, setProgressWidth] = useState(0);
+  const progressRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    if (!progressRef.current) return;
+    
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            // Delay slightly to ensure smooth animation
+            setTimeout(() => {
+              setProgressWidth(25);
+            }, 100);
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+    
+    observer.observe(progressRef.current);
+    
+    return () => observer.disconnect();
+  }, []);
 
   const handleJoinWaitlist = async () => {
     setLoading(true);
@@ -156,14 +240,14 @@ export default function HeroSection() {
                     </div>
                   </div>
                   <div className="grid grid-cols-4 gap-2 text-xs">
-                    <div className="text-center">
+                    <div className="text-center" ref={temp.elementRef}>
                       <Thermometer className="h-4 w-4 text-blue-500 mx-auto mb-1" />
-                      <div className="font-medium text-gray-900">72°F</div>
+                      <div className="font-medium text-gray-900">{temp.displayValue}</div>
                       <div className="text-gray-600 text-xs">Temp</div>
                     </div>
-                    <div className="text-center">
+                    <div className="text-center" ref={humidity.elementRef}>
                       <Droplets className="h-4 w-4 text-cyan-500 mx-auto mb-1" />
-                      <div className="font-medium text-gray-900">43%</div>
+                      <div className="font-medium text-gray-900">{humidity.displayValue}</div>
                       <div className="text-gray-600 text-xs">Humid</div>
                     </div>
                     <div className="text-center">
@@ -171,9 +255,9 @@ export default function HeroSection() {
                       <div className="font-medium text-green-600">Safe</div>
                       <div className="text-gray-600 text-xs">Security</div>
                     </div>
-                    <div className="text-center">
+                    <div className="text-center" ref={battery.elementRef}>
                       <Battery className="h-4 w-4 text-orange-500 mx-auto mb-1" />
-                      <div className="font-medium text-gray-900">98%</div>
+                      <div className="font-medium text-gray-900">{battery.displayValue}</div>
                       <div className="text-gray-600 text-xs">Power</div>
                     </div>
                   </div>
@@ -197,26 +281,26 @@ export default function HeroSection() {
 
                 {/* Savings & Performance */}
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3" ref={savings.elementRef}>
                     <div className="flex items-center space-x-1 mb-1">
                       <TrendingUp className="h-4 w-4 text-green-600" />
                       <h4 className="text-sm font-semibold text-green-800">Savings</h4>
                     </div>
-                    <div className="text-lg font-bold text-green-700">$847</div>
+                    <div className="text-lg font-bold text-green-700">{savings.displayValue}</div>
                     <div className="text-xs text-green-600">This year</div>
                   </div>
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3" ref={claimEvents.elementRef}>
                     <div className="flex items-center space-x-1 mb-1">
                       <Shield className="h-4 w-4 text-blue-600" />
                       <h4 className="text-sm font-semibold text-blue-800">Claim-worthy event</h4>
                     </div>
-                    <div className="text-lg font-bold text-blue-700">3</div>
+                    <div className="text-lg font-bold text-blue-700">{claimEvents.displayValue}</div>
                     <div className="text-xs text-blue-600">Prevented</div>
                   </div>
                 </div>
 
                 {/* Risk Assessment */}
-                <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-3" ref={progressRef}>
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center space-x-2">
                       <Zap className="h-4 w-4 text-purple-600" />
@@ -224,8 +308,11 @@ export default function HeroSection() {
                     </div>
                     <span className="text-sm font-bold text-purple-600">Low</span>
                   </div>
-                  <div className="w-full bg-purple-200 rounded-full h-2">
-                    <div className="bg-purple-600 h-2 rounded-full" style={{width: '25%'}}></div>
+                  <div className="w-full bg-purple-200 rounded-full h-2 overflow-hidden">
+                    <div 
+                      className="bg-purple-600 h-2 rounded-full transition-all duration-1000 ease-out" 
+                      style={{width: `${progressWidth}%`}}
+                    ></div>
                   </div>
                   <div className="text-xs text-purple-700 mt-1">Excellent home maintenance</div>
                 </div>
@@ -237,15 +324,15 @@ export default function HeroSection() {
                       <Heart className="h-4 w-4 text-senchi-primary" />
                       <h4 className="text-sm font-semibold text-senchi-primary">Do Good</h4>
                     </div>
-                    <span className="text-sm font-bold text-senchi-primary">$127</span>
+                    <span className="text-sm font-bold text-senchi-primary" ref={doGoodAmount.elementRef}>{doGoodAmount.displayValue}</span>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className="bg-white rounded p-2 text-center">
-                      <div className="font-medium text-gray-900">342</div>
+                    <div className="bg-white rounded p-2 text-center" ref={familiesHelped.elementRef}>
+                      <div className="font-medium text-gray-900">{familiesHelped.displayValue}</div>
                       <div className="text-gray-600">Families helped</div>
                     </div>
-                    <div className="bg-white rounded p-2 text-center">
-                      <div className="font-medium text-gray-900">12</div>
+                    <div className="bg-white rounded p-2 text-center" ref={organizations.elementRef}>
+                      <div className="font-medium text-gray-900">{organizations.displayValue}</div>
                       <div className="text-gray-600">Organizations</div>
                     </div>
                   </div>

@@ -33,7 +33,7 @@ export default function Header() {
             </a>
             <Button asChild className="bg-senchi-primary hover:bg-senchi-primary/90 text-white px-4 py-2" size="sm">
               <Link href="/ext-assessment" className="flex items-center gap-2">
-                Take our assessment
+                Take our external assessment
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </Button>
@@ -95,7 +95,7 @@ export default function Header() {
                   className="flex items-center justify-center gap-2"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  Take our assessment
+                  Take our external assessment
                   <ArrowRight className="w-4 h-4" />
                 </a>
               </Button>
