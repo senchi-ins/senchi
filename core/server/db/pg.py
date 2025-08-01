@@ -271,3 +271,9 @@ class PostgresDB:
         self.execute_insert(query, (user_id, property_id, role, added_by))
         print(f"success")
         return True
+
+    def delete_user(self, user_id: str) -> bool:
+        query = """
+        DELETE FROM zb_users WHERE id = %s CASCADE
+        """
+        return self.execute_insert(query, (user_id,))

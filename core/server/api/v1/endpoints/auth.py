@@ -228,3 +228,33 @@ async def verify_auth(request: Request) -> TokenResponse:
         expires_at=expires.isoformat(),
         user_info=user_info,
     )
+
+@router.post("/delete")
+async def delete_user(request: Request):
+    auth_header = request.headers.get("Authorization")
+    if not auth_header:
+        logger.error("Authorization header missing")
+        raise HTTPException(status_code=401, detail="Authorization header missing")
+    
+    try:
+        scheme, token = auth_header.split()
+        if scheme.lower() != "bearer":
+            logger.error("Invalid authentication scheme")
+            raise HTTPException(status_code=401, detail="Invalid authentication scheme")
+    except ValueError:
+        logger.error("Invalid authorization header format")
+        raise HTTPException(status_code=401, detail="Invalid authorization header format")
+    
+    try:
+        decoded_jwt = decode_jwt(token)
+        logger.info(f"Decoded JWT: {decoded_jwt}")
+    except jwt.InvalidTokenError:
+        logger.error("Invalid token")
+        raise HTTPException(status_code=401, detail="Invalid token")
+    
+    user_id = decoded_jwt["user_id"]
+    request.app.state.db.delete_user(user_id)
+    return {
+        "status": "success",
+        "message": "User deleted successfully"
+    }
