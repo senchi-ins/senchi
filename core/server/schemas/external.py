@@ -40,7 +40,7 @@ class RiskQuestion(BaseModel):
 
 class LocationRiskResponse(BaseModel):
     """Model for location risk assessment response"""
-    location_risks: Dict[str, str]
+    location_risks: Dict[str, Optional[str]] # A risk can be missing for a location --> value is None
     questions: List[RiskQuestion]
 
 class AddressRequest(BaseModel):
