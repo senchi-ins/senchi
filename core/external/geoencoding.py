@@ -7,6 +7,8 @@ from dataclasses import dataclass, asdict
 
 import googlemaps
 from dotenv import load_dotenv
+import requests
+import re
 
 @dataclass
 class Location:
@@ -15,7 +17,7 @@ class Location:
     latitude: float
     longitude: float
     formatted_address: str
-    country: str  # Add country field to identify USA or Canada
+    country: str
 
 class GeocodingError(Exception):
     """Custom exception for geocoding-related errors."""
@@ -40,6 +42,25 @@ class GoogleMapsGeocoder:
             
         self.client = googlemaps.Client(key=api_key)
         
+    @staticmethod
+    def _get_county_from_fcc(lat: float, lon: float) -> Optional[str]:
+        """Fetch county name from FCC census API given latitude and longitude."""
+        try:
+            url = f"https://geo.fcc.gov/api/census/area?lat={lat}&lon={lon}&format=json"
+            resp = requests.get(url, timeout=5)
+            if resp.status_code == 200:
+                data = resp.json()
+                if data.get('results'):
+                    return data['results'][0].get('county_name')
+        except Exception:
+            pass  # Swallow any exception and return None if FCC API fails
+        return None
+
+    @staticmethod
+    def _clean_county_name(name: str) -> str:
+        """Remove common suffixes like 'County', 'Municipality', etc. from county name."""
+        return re.sub(r"\s+(County|City and County|City|Municipality|Parish|Borough|Census Area)$", "", name, flags=re.IGNORECASE)
+        
     def geocode_address(self, address: str) -> dict:
         """
         Convert a USA or Canadian address to latitude and longitude coordinates and return as a dictionary.
@@ -62,9 +83,10 @@ class GoogleMapsGeocoder:
             state_abbr = None
             postal_code = ""
             country = None
-            county = None
+            county = None # For USA administrative_area_level_2
             region = None  # For Canadian administrative_area_level_2
             
+            candidate_admin2 = None  # store administrative_area_level_2 regardless of country
             for component in address_components:
                 types = component['types']
                 if 'street_number' in types:
@@ -81,12 +103,21 @@ class GoogleMapsGeocoder:
                     country_code = component['short_name']
                     country = 'USA' if country_code == 'US' else ('Canada' if country_code == 'CA' else None)
                 elif 'administrative_area_level_2' in types:
-                    if country == 'USA':
-                        county = component['long_name']
-                        if county.endswith(' County'):
-                            county = county[:-7]
-                    else:  # Canada
-                        region = component['long_name']
+                    candidate_admin2 = component['long_name']
+            
+            # Decide on county/region based on collected administrative_area_level_2
+            if country == 'USA':
+                if not county and candidate_admin2:
+                    county = self._clean_county_name(candidate_admin2)
+                # If still missing, fallback to FCC API
+                if not county:
+                    fcc_county = self._get_county_from_fcc(location['geometry']['location']['lat'],
+                                                           location['geometry']['location']['lng'])
+                    if fcc_county:
+                        county = self._clean_county_name(fcc_county)
+            elif country == 'Canada':
+                if not region and candidate_admin2:
+                    region = candidate_admin2
             
             if not country or country not in ['USA', 'Canada']:
                 raise GeocodingError(f"Address not found in USA/Canada: {address}")
