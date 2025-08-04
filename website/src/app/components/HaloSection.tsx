@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import Image from 'next/image';
-import { Brain, AlertTriangle, TrendingDown, Clock, Wifi, Shield, Droplets, Activity, Settings } from "lucide-react";
+import { Brain, AlertTriangle, TrendingDown, Clock, Wifi, Shield, Droplets, Activity, Settings, Bot } from "lucide-react";
 
 
 export default function HaloSection() {
@@ -31,9 +31,9 @@ export default function HaloSection() {
       description: "Seamlessly connects with popular smart home platforms and IoT devices."
     },
     {
-      icon: Shield,
-      title: "Comprehensive Monitoring",
-      description: "Combining internal sensors and external data to provide 360 degree monitoring"
+      icon: Bot,
+      title: "Autonomous Mitigation",
+      description: "Autonomous routing of plumbers, electricians, and other service providers to stop damages"
     }
   ];
 
@@ -65,13 +65,13 @@ export default function HaloSection() {
         <div className="text-center max-w-3xl mx-auto mb-16">
           <div className="inline-flex items-center rounded-full bg-white px-4 py-2 text-sm mb-4">
             <Brain className="h-4 w-4 text-senchi-primary mr-2" />
-            Senchi Halo Platform
+            Senchi HomeGuard Platform
           </div>
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
             Smart Home Data Platform
           </h2>
           <p className="text-lg text-gray-600">
-            Senchi Halo uses cutting-edge AI and IoT integration to predict claims before they happen, 
+            Senchi HomeGuard uses cutting-edge AI and IoT integration to predict claims before they happen, 
             saving you money while protecting your home.
           </p>
         </div>
@@ -100,7 +100,7 @@ export default function HaloSection() {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
               <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">
-                How Senchi Halo Works
+                How Senchi HomeGuard Works
               </h3>
               <div className="space-y-6">
                 <div className="flex items-start space-x-4">
@@ -121,7 +121,7 @@ export default function HaloSection() {
                   <div className="flex-shrink-0 w-8 h-8 bg-senchi-primary text-white rounded-full flex items-center justify-center text-sm font-bold">3</div>
                   <div>
                     <h4 className="font-semibold text-gray-900 mb-2">Prevent Claims</h4>
-                    <p className="text-gray-600">Receive alerts and recommendations to prevent issues before they become claims.</p>
+                    <p className="text-gray-600">Receive alerts and recommendations to prevent issues before they become claims and set up automatic responses to prevent damages.</p>
                   </div>
                 </div>
               </div>
@@ -132,7 +132,7 @@ export default function HaloSection() {
                 {/* Dashboard Preview */}
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <h4 className="font-semibold text-gray-900">Halo Dashboard</h4>
+                    <h4 className="font-semibold text-gray-900">HomeGuard Dashboard</h4>
                     <div className="flex items-center space-x-2">
                       <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                       <span className="text-sm text-gray-600">Online</span>

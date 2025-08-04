@@ -13,7 +13,7 @@ export default function Home() {
         <HeroSection />
         <HaloSection />
         <CoverageSection />
-        <DoGoodSection />
+        {/* <DoGoodSection /> */}
       </main>
       <Footer />
     </div>
