@@ -1,6 +1,6 @@
 "use client";
 
-import { Mail, MapPin, Twitter, Linkedin, Instagram, Home, Building } from "lucide-react";
+import { Mail, MapPin, Home, Building } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import Image from 'next/image';

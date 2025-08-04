@@ -2,7 +2,7 @@ import Header from "./components/Header";
 import HeroSection from "./components/HeroSection";
 import HaloSection from "./components/HaloSection";
 import CoverageSection from "./components/CoverageSection";
-import DoGoodSection from "./components/DoGoodSection";
+// import DoGoodSection from "./components/DoGoodSection";
 import Footer from "./components/Footer";
 
 export default function Home() {
