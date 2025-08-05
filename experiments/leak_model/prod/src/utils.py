@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-from .config import CATEGORICAL_FEATURES_v1
+from config import CATEGORICAL_FEATURES_v1
 
 
 def load_data(input_path: str) -> pd.DataFrame:

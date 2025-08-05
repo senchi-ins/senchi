@@ -2,14 +2,14 @@ import joblib
 import pandas as pd
 from darts import TimeSeries
 
-from .config import (
+from config import (
     FEATURES,
     TARGETS,
     TARGET_COLUMNS,
     NAN_COLS,
     NUMERICAL_FEATURES_v2, 
 )
-from .utils import (
+from utils import (
     load_data,
     calculate_errors,
     create_feature_encodings,
@@ -138,4 +138,14 @@ def run_pipeline(
         Tuple of (house_feature_series, house_target_series) dictionaries
     """
     pipeline = LeakModelPipeline(scalar_input_path)
-    return pipeline.run(data_input_path) 
+    return pipeline.run(data_input_path)
+
+
+if __name__ == "__main__":
+    # Example usage with the new class-based approach
+    pipeline = LeakModelPipeline(
+        scalar_input_path='../data/model/weights/20250805_084127/feature_scaler.pkl'
+    )
+    house_feature_series, house_target_series = pipeline.run(
+        data_input_path='../output/synthetic_water_data_minute_100.csv'
+    )

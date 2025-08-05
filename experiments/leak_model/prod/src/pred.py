@@ -1,7 +1,7 @@
 import pandas as pd
 from darts.models import TCNModel
 
-from .config import HYPERPARAMS
+from config import HYPERPARAMS
 
 
 class Predictor:

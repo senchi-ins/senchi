@@ -5,8 +5,8 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
 
-from .pipeline import LeakModelPipeline
-from .pred import Predictor
+from pipeline import LeakModelPipeline
+from pred import Predictor
 
 
 pipeline = None
