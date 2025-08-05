@@ -36,24 +36,25 @@ ENV PATH="/root/.local/bin/:$PATH"
 ENV PYTHONPATH="/app:$PYTHONPATH"
 
 WORKDIR /app
-ADD . /app
 
-COPY pyproject.toml uv.lock ./
+# Copy the current directory (which is data/) to /app
+COPY . .
+
+# Install dependencies using the pyproject.toml in current directory
 RUN uv sync --locked
 
-# Copy the built library to where WNTR expects it
-RUN mkdir -p /app/.venv/lib/python3.11/site-packages/wntr/epanet/libepanet/linux-x64/ && \
-    cp /tmp/epanet-build/EPANET/build/lib/libepanet2.so /app/.venv/lib/python3.11/site-packages/wntr/epanet/libepanet/linux-x64/libepanet22.so && \
-    chmod +x /app/.venv/lib/python3.11/site-packages/wntr/epanet/libepanet/linux-x64/libepanet22.so && \
+# Copy the built library to where WNTR expects it (in the virtual environment)
+RUN mkdir -p .venv/lib/python3.11/site-packages/wntr/epanet/libepanet/linux-x64/ && \
+    cp /tmp/epanet-build/EPANET/build/lib/libepanet2.so .venv/lib/python3.11/site-packages/wntr/epanet/libepanet/linux-x64/libepanet22.so && \
+    chmod +x .venv/lib/python3.11/site-packages/wntr/epanet/libepanet/linux-x64/libepanet22.so && \
     echo "=== WNTR library placed ===" && \
-    ls -la /app/.venv/lib/python3.11/site-packages/wntr/epanet/libepanet/linux-x64/ && \
+    ls -la .venv/lib/python3.11/site-packages/wntr/epanet/libepanet/linux-x64/ && \
     cd / && \
     rm -rf /tmp/epanet-build
-
-COPY data/ ./data/
 
 ENV PYTHONUNBUFFERED=1
 ENV OMP_NUM_THREADS=1
 ENV MKL_NUM_THREADS=1
 
-CMD ["uv", "run", "data/WDN_sim.py"]
+# Run the script that's now in the current directory
+CMD ["uv", "run", "WDN_sim.py"]

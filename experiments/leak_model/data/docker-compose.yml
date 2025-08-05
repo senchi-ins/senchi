@@ -11,7 +11,7 @@ services:
       - SIM_HOMES=${SIM_HOMES:-1000}
       - SIM_START=${SIM_START:-2025-01}
       - SIM_END=${SIM_END:-2025-12}
-      - SIM_OUTPUT=${SIM_OUTPUT:-synthetic_water_data_minute.csv.gz}
+      - SIM_OUTPUT=${SIM_OUTPUT:-../output/synthetic_water_data_minute.csv.gz}  # Note: relative to /app/data
       - SIM_MEMORY_LIMIT=${SIM_MEMORY_LIMIT:-12G}
       - SIM_CPU_LIMIT=${SIM_CPU_LIMIT:-4}
       - SIM_BATCH_SIZE=${SIM_BATCH_SIZE:-50}
@@ -25,11 +25,11 @@ services:
           memory: ${SIM_MEMORY_RESERVATION:-12G}
           cpus: '${SIM_CPU_RESERVATION:-4}'
     command: [
-      "uv", "run", "data/WDN_sim.py",
+      "uv", "run", "WDN_sim.py",
       "--homes", "${SIM_HOMES:-1000}",
       "--start", "${SIM_START:-2025-01}",
       "--end", "${SIM_END:-2025-12}",
-      "--out", "${SIM_OUTPUT:-synthetic_water_data_minute.csv.gz}",
+      "--out", "${SIM_OUTPUT:-../output/synthetic_water_data_minute.csv.gz}",
       "--batch-size", "${SIM_BATCH_SIZE:-50}",
       "--chunk-size", "${SIM_CHUNK_SIZE:-1000}"
-    ] 
+    ]
