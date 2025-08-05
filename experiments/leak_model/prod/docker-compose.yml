@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  leak-model-api:
+    build: .
+    container_name: leak-model-api
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount test data directory
+      - ./test_data:/app/data:ro
+      # Mount models directory
+      - ./models:/app/models:ro
+      # Mount output directory for results
+      - ./output:/app/output
+      # Mount source code for development (optional)
+      - .:/app
+    environment:
+      - PYTHONPATH=/app
+      - ENVIRONMENT=production
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - leak-model-network
+
+networks:
+  leak-model-network:
+    driver: bridge 
