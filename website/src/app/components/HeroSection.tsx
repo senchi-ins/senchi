@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "./ui/button";
-import { Shield, Zap, Heart, Thermometer, Droplets, Lock, Wifi, Battery, TrendingUp, CheckCircle, AlertTriangle } from "lucide-react";
+import { Shield, Zap, Thermometer, Droplets, Lock, Wifi, Battery, TrendingUp, CheckCircle, AlertTriangle, Bot } from "lucide-react";
 // import { addToWaitlist } from "@/utils/waitlist";
 import { useState } from "react";
 
@@ -39,17 +39,17 @@ export default function HeroSection() {
           {/* Content */}
           <div className="flex-1 flex flex-col">
             <div className="space-y-4 mb-8">
-              <div className="inline-flex items-center rounded-full bg-senchi-accent-light px-4 py-2 text-sm">
+              {/* <div className="inline-flex items-center rounded-full bg-senchi-accent-light px-4 py-2 text-sm">
                 <Zap className="h-4 w-4 text-senchi-primary mr-2" />
                 Smart Risk Prevention for Every Home
-              </div>
+              </div> */}
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
                 Smart Risk Prevention for
                 <span className="text-senchi-primary"> Every Home</span>
               </h1>
               <p className="text-lg text-gray-600 max-w-xl">
-                Whether you own a home or manage properties 
-                Senchi&apos;s Halo predicts and prevents claims while supporting charitable causes.
+                Whether you own a home, manage properties, or are a looking to improve your loss ratio,
+                Senchi&apos;s HomeGuard predicts and prevents claims.
               </p>
             </div>
 
@@ -77,18 +77,18 @@ export default function HeroSection() {
                 </div>
                 <div className="bg-gray-50 rounded-lg p-4 flex items-start gap-4 hover:bg-gray-100 transition-colors duration-200">
                   <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center border border-gray-200 flex-shrink-0">
-                    <Heart className="h-6 w-6 text-senchi-primary" />
+                    <Bot className="h-6 w-6 text-senchi-primary" />
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900 mb-1">Give back program</h4>
-                    <p className="text-xs text-gray-600">Portion of savings donated to charitable causes in your community</p>
+                    <h4 className="font-semibold text-gray-900 mb-1">Autonomous mitigation</h4>
+                    <p className="text-xs text-gray-600">Autonomous routing of plumbers, electricians, and other service providers to stop damages</p>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Waitlist Email Field (below the value prop box, outside the card) */}
-            <div id="waitlist-email" className="flex flex-col sm:flex-row items-center gap-2 mb-8 mt-8 max-w-lg mx-auto w-full">
+            <div id="waitlist-email" className="flex flex-col sm:flex-row items-center gap-2 mt-8 max-w-2xl lg:max-w-4xl xl:max-w-5xl mx-auto w-full">
               <input
                 type="email"
                 placeholder="Enter your email to join the waitlist"
@@ -117,10 +117,10 @@ export default function HeroSection() {
           {/* Visual */}
           <div className="flex-1 flex flex-col relative">
             <div className="relative rounded-2xl bg-gradient-to-br from-senchi-accent-light to-white p-8 shadow-2xl flex-1 flex flex-col">
-              <div className="flex flex-col gap-4 h-full justify-between">
+              <div className="flex flex-col gap-6 h-full justify-between">
                 {/* Policy Status & Property Types Combined */}
-                <div className="bg-white rounded-lg p-3 shadow-sm border border-gray-100">
-                  <div className="flex items-center justify-between mb-2">
+                <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
+                  <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-2">
                       <Shield className="h-4 w-4 text-senchi-primary" />
                       <h3 className="text-sm font-semibold text-gray-900">Active Monitoring</h3>
@@ -130,25 +130,25 @@ export default function HeroSection() {
                       <span className="text-xs text-green-600 font-medium">Monitored</span>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="grid grid-cols-3 gap-2 text-xs">
                     <div className="bg-senchi-accent-light border border-senchi-primary/20 p-1.5 rounded text-center">
                       <div className="text-senchi-primary font-medium">Homeowner</div>
                     </div>
                     <div className="bg-gray-50 p-1.5 rounded text-center text-gray-600">
                       <div>PM</div>
                     </div>
-                    {/* <div className="bg-gray-50 p-1.5 rounded text-center text-gray-600">
-                      <div>Rental</div>
-                    </div> */}
+                    <div className="bg-gray-50 p-1.5 rounded text-center text-gray-600">
+                      <div>Insurer</div>
+                    </div>
                   </div>
                 </div>
 
                 {/* Senchi Halo Monitoring Grid */}
-                <div className="bg-white rounded-lg p-3 shadow-sm border border-gray-100">
-                  <div className="flex items-center justify-between mb-2">
+                <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
+                  <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-2">
                       <Wifi className="h-4 w-4 text-senchi-primary" />
-                      <h3 className="text-sm font-semibold text-gray-900">Senchi Halo</h3>
+                      <h3 className="text-sm font-semibold text-gray-900">Senchi HomeGuard</h3>
                     </div>
                     <div className="flex items-center space-x-1">
                       <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
@@ -180,7 +180,7 @@ export default function HeroSection() {
                 </div>
 
                 {/* Alert & Prevention */}
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                   <div className="flex items-start space-x-2">
                     <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
@@ -196,8 +196,8 @@ export default function HeroSection() {
                 </div>
 
                 {/* Savings & Performance */}
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                     <div className="flex items-center space-x-1 mb-1">
                       <TrendingUp className="h-4 w-4 text-green-600" />
                       <h4 className="text-sm font-semibold text-green-800">Savings</h4>
@@ -205,7 +205,7 @@ export default function HeroSection() {
                     <div className="text-lg font-bold text-green-700">$847</div>
                     <div className="text-xs text-green-600">This year</div>
                   </div>
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <div className="flex items-center space-x-1 mb-1">
                       <Shield className="h-4 w-4 text-blue-600" />
                       <h4 className="text-sm font-semibold text-blue-800">Claim-worthy event</h4>
@@ -216,7 +216,7 @@ export default function HeroSection() {
                 </div>
 
                 {/* Risk Assessment */}
-                <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center space-x-2">
                       <Zap className="h-4 w-4 text-purple-600" />
@@ -231,15 +231,16 @@ export default function HeroSection() {
                 </div>
 
                 {/* Community Impact - Compact */}
-                <div className="bg-senchi-accent-light rounded-lg p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center space-x-2">
+                {/* <div className="bg-senchi-accent-light rounded-lg p-3"> */}
+                  {/* <div className="flex items-center justify-between mb-2"> */}
+                    {/* TODO: Long term goal */}
+                    {/* <div className="flex items-center space-x-2">
                       <Heart className="h-4 w-4 text-senchi-primary" />
                       <h4 className="text-sm font-semibold text-senchi-primary">Do Good</h4>
-                    </div>
-                    <span className="text-sm font-bold text-senchi-primary">$127</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    </div> */}
+                    {/* <span className="text-sm font-bold text-senchi-primary">$127</span> */}
+                  {/* </div> */}
+                  {/* <div className="grid grid-cols-2 gap-2 text-xs">
                     <div className="bg-white rounded p-2 text-center">
                       <div className="font-medium text-gray-900">342</div>
                       <div className="text-gray-600">Families helped</div>
@@ -248,8 +249,8 @@ export default function HeroSection() {
                       <div className="font-medium text-gray-900">12</div>
                       <div className="text-gray-600">Organizations</div>
                     </div>
-                  </div>
-                </div>
+                  </div> */}
+                {/* </div> */}
               </div>
             </div>
 
