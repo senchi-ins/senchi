@@ -163,8 +163,7 @@ class AuthManager: ObservableObject {
         guard let url = URL(string: "\(ApplicationConfig.restAPIBase)/api/v1/auth/register") else {
             throw AuthError.invalidURL
         }
-        
-        let request = TokenSetupRequest(deviceSerial: serialNumber, pushToken: pushToken, email: email, fullName: fullName)
+        let request = TokenSetupRequest(deviceSerial: serialNumber, password: password, email: email, fullName: fullName, pushToken: pushToken)
         
         var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = "POST"
@@ -175,23 +174,62 @@ class AuthManager: ObservableObject {
         
         guard let httpResponse = response as? HTTPURLResponse,
               200...299 ~= httpResponse.statusCode else {
-            throw AuthError.serverError("Setup failed")
+            throw AuthError.serverError("Setup failed with status: \(response)")
         }
         
         return try JSONDecoder().decode(TokenResponse.self, from: data)
     }
     
     func updatePushToken(_ token: String) async {
-        guard let jwtToken = currentToken else {
-            print("⚠️ No JWT token available for push token update")
+        guard let url = URL(string: "\(ApplicationConfig.zbAPIBase)/api/register-device") else {
+            print("❌ Invalid API URL")
             return
         }
         
+        guard let authToken = self.currentToken else {
+            print("❌ No auth token available")
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        
+        let deviceIdentifier = "ZBPhone-\(UUID().uuidString)" // TODO: Update to be more device specific
+        
+        let deviceInfo = [
+            "model": UIDevice.current.model,
+            "system_version": UIDevice.current.systemVersion,
+            "app_version": Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown",
+            "vendor_id": UIDevice.current.identifierForVendor?.uuidString ?? "unknown"
+        ]
+        
+        let payload = [
+            "device_token": token,
+            "platform": "ios",
+            "device_identifier": deviceIdentifier,
+            "device_info": deviceInfo
+        ] as [String: Any]
+        
         do {
-            try await sendPushTokenUpdate(jwtToken: jwtToken, pushToken: token)
-            print("✅ Push token updated successfully")
+            request.httpBody = try JSONSerialization.data(withJSONObject: payload)
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            if let httpResponse = response as? HTTPURLResponse {
+                if httpResponse.statusCode == 200 {
+                    print("✅ Device token registered successfully")
+                    print("🔑 Device ID: \(deviceIdentifier)")
+                    print("📱 Token: \(token.prefix(16))...")
+                } else {
+                    print("❌ Failed to register device token: \(httpResponse.statusCode)")
+                    if let responseData = String(data: data, encoding: .utf8) {
+                        print("   Response: \(responseData)")
+                    }
+                }
+            }
         } catch {
-            print("❌ Failed to update push token: \(error)")
+            print("❌ Error registering device token: \(error)")
         }
     }
     
@@ -435,5 +473,34 @@ class AuthManager: ObservableObject {
         currentToken = nil
         locationId = nil
         isAuthenticated = false
+    }
+    
+    func deleteAccount() async throws {
+        guard let token = currentToken else {
+            throw AuthError.keychainError("Token not found")
+        }
+        guard let url = URL(string: "\(ApplicationConfig.restAPIBase)/api/v1/auth/delete") else {
+            throw AuthError.invalidURL
+        }
+        
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        let (data, response) = try await URLSession.shared.data(for: urlRequest)
+        
+        guard let httpResponse = response as? HTTPURLResponse,
+              200...299 ~= httpResponse.statusCode else {
+            let errorMessage = String(data: data, encoding: .utf8) ?? "Unknown error"
+            throw AuthError.serverError("Delete account failed: \(errorMessage)")
+        }
+        
+        // Parse the response to confirm success
+        do {
+            let deleteResponse = try JSONDecoder().decode(DeleteResponse.self, from: data)
+            print(deleteResponse)
+        } catch {
+            print("Failed to decode delete response: \(error)")
+        }
     }
 }

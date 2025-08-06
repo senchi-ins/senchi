@@ -44,3 +44,8 @@ struct LoginResponse: Codable {
     let jwt_token: String
     let user_info: UserInfoResponse
 }
+
+struct DeleteResponse: Codable {
+    let status: String
+    let message: String
+}

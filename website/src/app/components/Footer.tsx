@@ -1,6 +1,6 @@
 "use client";
 
-import { Mail, MapPin, Home, Building } from "lucide-react";
+import { Mail, MapPin, Twitter, Linkedin, Instagram, Home, Building } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import Image from 'next/image';
@@ -22,7 +22,7 @@ export default function Footer() {
               AI powered prediction meets charitable giving for complete protection.
             </p>
             <div className="flex space-x-4">
-              {/* <a href="#" className="text-gray-400 hover:text-senchi-primary transition-colors" aria-label="Follow us on X">
+              <a href="#" className="text-gray-400 hover:text-senchi-primary transition-colors" aria-label="Follow us on X">
                 <Twitter className="h-5 w-5" />
               </a>
               <a href="#" className="text-gray-400 hover:text-senchi-primary transition-colors" aria-label="Follow us on LinkedIn">
@@ -35,7 +35,7 @@ export default function Footer() {
                 <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M19.321 5.562a5.124 5.124 0 0 1-.443-.258 6.228 6.228 0 0 1-1.137-.966c-.849-.849-1.341-1.984-1.341-3.338h-2.891v15.729c0 1.659-1.341 3-3 3s-3-1.341-3-3 1.341-3 3-3c.338 0 .659.056.956.162v-3.018a6.02 6.02 0 0 0-.956-.078c-3.309 0-6 2.691-6 6s2.691 6 6 6 6-2.691 6-6V9.321a9.065 9.065 0 0 0 5.321 1.679V8.115a6.147 6.147 0 0 1-2.509-2.553z"/>
                 </svg>
-              </a> */}
+              </a>
             </div>
           </div>
 
@@ -51,10 +51,10 @@ export default function Footer() {
                 <Building className="h-4 w-4 text-senchi-primary" />
                 <a href="#plans" className="text-gray-600 hover:text-senchi-primary transition-colors">Property Managers</a>
               </li>
-              <li className="flex items-center space-x-2">
-                <Building className="h-4 w-4 text-senchi-primary" />
-                <a href="#plans" className="text-gray-600 hover:text-senchi-primary transition-colors">Insurers</a>
-              </li>
+              {/* <li className="flex items-center space-x-2">
+                <Users className="h-4 w-4 text-senchi-primary" />
+                <a href="#tenants" className="text-gray-600 hover:text-senchi-primary transition-colors">Tenant</a>
+              </li> */}
             </ul>
           </div>
 
@@ -62,9 +62,9 @@ export default function Footer() {
           <div>
             <h3 className="font-semibold text-gray-900 mb-4">Company</h3>
             <ul className="space-y-3">
-              <li><a href="#halo" className="text-gray-600 hover:text-senchi-primary transition-colors">Senchi HomeGuard</a></li>
+              <li><a href="#halo" className="text-gray-600 hover:text-senchi-primary transition-colors">Senchi Halo</a></li>
               <li><a href="#plans" className="text-gray-600 hover:text-senchi-primary transition-colors">Coverage</a></li>
-              {/* <li><a href="#do-good" className="text-gray-600 hover:text-senchi-primary transition-colors">Do Good</a></li> */}
+              <li><a href="#do-good" className="text-gray-600 hover:text-senchi-primary transition-colors">Do Good</a></li>
             </ul>
           </div>
 
@@ -96,11 +96,7 @@ export default function Footer() {
               </div>
               <div>
                 <div className="font-medium text-gray-900">Contact Us</div>
-                <div className="text-gray-600 text-sm">
-                  <a href="mailto:adam@senchi.ca" className="hover:text-senchi-primary transition-colors">adam@senchi.ca</a>
-                  <span className="mx-2">|</span>
-                  <a href="mailto:mike@senchi.ca" className="hover:text-senchi-primary transition-colors">mike@senchi.ca</a>
-                </div>
+                <div className="text-gray-600 text-sm">adam@senchi.ca</div>
               </div>
             </div>
             <div className="flex items-center space-x-3">
@@ -121,11 +117,11 @@ export default function Footer() {
             <div className="text-gray-600 text-sm mb-4 md:mb-0">
               © 2025 Senchi Technologies Inc.
             </div>
-            {/* <div className="flex items-center space-x-6 text-sm">
+            <div className="flex items-center space-x-6 text-sm">
               <a href="#" className="text-gray-600 hover:text-senchi-primary transition-colors">Privacy Policy</a>
               <a href="#" className="text-gray-600 hover:text-senchi-primary transition-colors">Terms of Service</a>
               <a href="#" className="text-gray-600 hover:text-senchi-primary transition-colors">Cookie Policy</a>
-            </div> */}
+            </div>
           </div>
         </div>
       </div>

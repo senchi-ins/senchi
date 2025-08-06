@@ -3,6 +3,7 @@ import SwiftUI
 struct OnboardingViewMain: View {
     @EnvironmentObject var authManager: AuthManager
     @EnvironmentObject var userSettings: UserSettings
+    @EnvironmentObject var pushNotificationManager: PushNotificationManager
     
     @State private var fullName: String = ""
     @State private var email: String = ""
@@ -80,11 +81,17 @@ struct OnboardingViewMain: View {
                     onCreateAccount: {
                         let generator = UIImpactFeedbackGenerator(style: .medium)
                         generator.impactOccurred()
+                        currentStep = 2
                     },
                     onLogin: {
                         let generator = UIImpactFeedbackGenerator(style: .medium)
                         generator.impactOccurred()
                         showLoginView = true
+                            
+                        // Send any pending push tokens
+                        Task {
+                            await pushNotificationManager.sendPendingTokenIfNeeded()
+                        }
                     }
                 )
             case 2:
@@ -134,6 +141,7 @@ struct OnboardingViewMain: View {
         Task {
             do {
                 // Now setup device with the actual device serial from QR code and user's email
+                print("Setting up device")
                 try await authManager.setupDevice(serialNumber: deviceSerial, email: email, fullName: fullName, password: password)
                 
                 await MainActor.run {

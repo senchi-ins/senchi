@@ -18,6 +18,7 @@ struct External: View {
     @State private var isSubmitting: Bool = false
     @State private var submissionResult: AssessmentResponse? = nil
     @State private var showingResults: Bool = false
+    @State private var showingRisksScreen: Bool = false
     
     var body: some View {
         if showingResults, let result = submissionResult {
@@ -29,6 +30,14 @@ struct External: View {
                 submissionResult = nil
                 showingResults = false
             }
+        } else if showingRisksScreen, let survey = userSettings.survey {
+            LocationRisksScreen(
+                address: address,
+                locationRisks: survey.locationRisks,
+                onStartSurvey: {
+                    showingRisksScreen = false
+                }
+            )
         } else {
             VStack(spacing: 0) {
                 // Address input and fetch button (only if survey not loaded)
@@ -51,7 +60,7 @@ struct External: View {
                             Text("Property Address")
                                 .font(.caption)
                                 .foregroundColor(.gray)
-                            TextField("123 Main Street, City, Province", text: $address)
+                            TextField("123 Main Street, City", text: $address)
                                 .textFieldStyle(PlainTextFieldStyle())
                                 .padding(10)
                                 .background(Color(.systemGray6))
@@ -143,6 +152,7 @@ struct External: View {
                         // Risk and priority pills
                         HStack(spacing: 8) {
                             Pill(text: q.risk_type, color: SenchiColors.senchiBlue)
+                            Pill(text: q.risk_level, color: q.risk_level.contains("High") ? SenchiColors.senchiRed : .gray)
                             Pill(text: q.importance, color: q.importance.contains("High") ? SenchiColors.senchiRed : .gray)
                         }
                         // Question
@@ -172,12 +182,13 @@ struct External: View {
                         // Photo support
                         if q.requires_photo {
                             VStack(alignment: .leading, spacing: 8) {
-                                if let img = answers[q.id]?.photo {
-                                    Image(uiImage: img)
-                                        .resizable()
-                                        .scaledToFit()
-                                        .frame(height: 120)
-                                        .cornerRadius(10)
+                                                        if let photoData = answers[q.id]?.photo,
+                           let uiImage = UIImage(data: photoData) {
+                            Image(uiImage: uiImage)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(height: 120)
+                                .cornerRadius(10)
                                     Button("Replace Photo") {
                                         imagePickerQuestionID = q.id
                                         showImagePicker = true
@@ -275,8 +286,9 @@ struct External: View {
             .sheet(isPresented: $showImagePicker) {
                 if let qid = imagePickerQuestionID {
                     ImagePicker(sourceType: imagePickerSource) { img in
-                        if let img = img {
-                            answers[qid, default: SurveyAnswer()].photo = img
+                        if let img = img,
+                           let imageData = img.jpegData(compressionQuality: 0.8) {
+                            answers[qid, default: SurveyAnswer()].photo = imageData
                         }
                     }
                 }
@@ -384,6 +396,7 @@ struct External: View {
                     let decoded = try JSONDecoder().decode(LocationRiskResponse.self, from: data)
                     userSettings.survey = Survey(locationRisks: decoded.location_risks, questions: decoded.questions)
                     self.currentQuestionIndex = 0
+                    showingRisksScreen = true
                 } catch {
                     errorMessage = "Failed to decode survey: \(error.localizedDescription)"
                 }
@@ -401,10 +414,16 @@ struct External: View {
         var userAnswers: [UserAnswer] = []
         for question in survey.questions {
             if let answer = answers[question.id]?.answer {
+                // Convert photos to base64 strings if they exist
+                var photoStrings: [String] = []
+                if let photoData = answers[question.id]?.photo {
+                    photoStrings.append(photoData.base64EncodedString())
+                }
+                
                 userAnswers.append(UserAnswer(
                     question: question.question,
                     answer: answer,
-                    photos: [] // Ignoring photos for now
+                    photos: photoStrings
                 ))
             }
         }
@@ -451,11 +470,200 @@ struct External: View {
             }
         }.resume()
     }
+    
+    private func getRiskColor(_ riskLevel: String?) -> Color {
+        guard let riskLevel = riskLevel else { return .gray }
+        
+        switch riskLevel.lowercased() {
+        case let level where level.contains("very high") || level.contains("relatively high"):
+            return .red
+        case let level where level.contains("high") || level.contains("moderate"):
+            return .orange
+        case let level where level.contains("medium") || level.contains("relatively moderate"):
+            return .yellow
+        case let level where level.contains("low") || level.contains("relatively low"):
+            return .green
+        default:
+            return .gray
+        }
+    }
+}
+
+struct LocationRisksScreen: View {
+    let address: String
+    let locationRisks: [String: String?]
+    let onStartSurvey: () -> Void
+    
+    private func getRiskColor(_ riskLevel: String?) -> Color {
+        guard let riskLevel = riskLevel else { return .gray }
+        
+        switch riskLevel.lowercased() {
+        case let level where level.contains("very high") || level.contains("relatively high"):
+            return .red
+        case let level where level.contains("high") || level.contains("moderate"):
+            return .orange
+        case let level where level.contains("medium") || level.contains("relatively moderate"):
+            return .yellow
+        case let level where level.contains("low") || level.contains("relatively low"):
+            return .green
+        default:
+            return .gray
+        }
+    }
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Header
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Button(action: {
+                        // Go back to address input
+                        onStartSurvey()
+                    }) {
+                        Image(systemName: "chevron.left")
+                            .font(.title2)
+                            .foregroundColor(SenchiColors.senchiBlue)
+                    }
+                    Spacer()
+                }
+                
+                Text("Location Risk Assessment")
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+                
+                Text("Risks identified for your property")
+                    .font(.subheadline)
+                    .foregroundColor(.gray)
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 10)
+            
+            // Address Display
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Image(systemName: "location.circle.fill")
+                        .foregroundColor(SenchiColors.senchiBlue)
+                    Text("Property Address")
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                    Spacer()
+                }
+                
+                Text(address)
+                    .font(.subheadline)
+                    .foregroundColor(.gray)
+                    .padding(.leading, 28)
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
+            .background(Color.white)
+            .cornerRadius(12)
+            .shadow(color: Color(.black).opacity(0.06), radius: 4, x: 0, y: 2)
+            .padding(.horizontal, 20)
+            .padding(.top, 20)
+            
+            // Risks Grid
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    HStack {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundColor(SenchiColors.senchiBlue)
+                        Text("Identified Risks")
+                            .font(.headline)
+                            .fontWeight(.semibold)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 20)
+                    
+                    LazyVGrid(columns: [
+                        GridItem(.flexible()),
+                        GridItem(.flexible())
+                    ], spacing: 12) {
+                        ForEach(Array(locationRisks.keys.sorted()), id: \.self) { riskType in
+                            if let riskLevel = locationRisks[riskType], 
+                               let level = riskLevel,
+                               !level.isEmpty,
+                               level.lowercased() != "unknown" {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    HStack {
+                                        Text(riskType)
+                                            .font(.subheadline)
+                                            .fontWeight(.medium)
+                                            .foregroundColor(.black)
+                                        Spacer()
+                                    }
+                                    
+                                    HStack {
+                                        Text(level)
+                                            .font(.caption)
+                                            .fontWeight(.semibold)
+                                            .foregroundColor(getRiskColor(level))
+                                        Spacer()
+                                    }
+                                }
+                                .padding(16)
+                                .background(Color.white)
+                                .cornerRadius(12)
+                                .shadow(color: Color(.black).opacity(0.06), radius: 4, x: 0, y: 2)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                }
+            }
+            .padding(.top, 20)
+            
+            Spacer()
+            
+            // Start Survey Button
+            VStack(spacing: 16) {
+                Button(action: onStartSurvey) {
+                    HStack {
+                        Text("Start Risk Assessment Survey")
+                            .font(.headline)
+                            .fontWeight(.semibold)
+                        Image(systemName: "arrow.right")
+                            .font(.headline)
+                    }
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(SenchiColors.senchiBlue)
+                    .cornerRadius(12)
+                }
+                .padding(.horizontal, 20)
+                
+                Text("Complete the survey to get personalized recommendations")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+            }
+            .padding(.bottom, 40)
+        }
+        .background(Color.gray.opacity(0.05))
+    }
 }
 
 struct AssessmentResultsView: View {
     let result: AssessmentResponse
     let onGetRecommendations: () -> Void
+    
+    // Helper function for risk level colors
+    private func getColorForRiskLevel(_ riskLevel: String) -> Color {
+        switch riskLevel.lowercased() {
+        case let level where level.contains("very high"):
+            return .red
+        case let level where level.contains("high"):
+            return .orange
+        case let level where level.contains("medium"):
+            return .yellow
+        case let level where level.contains("low"):
+            return .green
+        default:
+            return .gray
+        }
+    }
     
     var body: some View {
         ScrollView {
@@ -521,10 +729,11 @@ struct AssessmentResultsView: View {
                         .foregroundColor(.gray)
                     
                     VStack(spacing: 8) {
-                        RiskLevelRow(level: "Very High", percentage: 0, color: .red)
-                        RiskLevelRow(level: "High", percentage: 25, color: .orange)
-                        RiskLevelRow(level: "Medium", percentage: 60, color: .yellow)
-                        RiskLevelRow(level: "Low", percentage: 15, color: .green)
+                        ForEach(Array(result.breakdown.keys.sorted()), id: \.self) { riskType in
+                            if let breakdown = result.breakdown[riskType] {
+                                RiskLevelRow(level: riskType, percentage: Int(breakdown.percentage), color: getColorForRiskLevel(riskType))
+                            }
+                        }
                     }
                 }
                 .padding(20)
@@ -551,7 +760,7 @@ struct AssessmentResultsView: View {
                             .font(.subheadline)
                             .fontWeight(.semibold)
                         
-                        ForEach(result.recommendations.prefix(3), id: \.question) { recommendation in
+                        ForEach(Array(result.recommendations.prefix(3).enumerated()), id: \.offset) { index, recommendation in
                             HStack {
                                 Image(systemName: "exclamationmark.triangle.fill")
                                     .foregroundColor(.orange)
@@ -615,8 +824,6 @@ struct RiskLevelRow: View {
     var body: some View {
         HStack {
             Pill(text: level, color: color)
-            Text("Risk Level")
-                .font(.caption)
             Spacer()
             ProgressView(value: Double(percentage), total: 100)
                 .progressViewStyle(LinearProgressViewStyle(tint: color))

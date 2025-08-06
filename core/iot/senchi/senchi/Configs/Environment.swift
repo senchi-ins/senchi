@@ -9,4 +9,9 @@ class UserSettings: ObservableObject {
     @Published var userName: String = ""
     @Published var survey: Survey? = nil
     @Published var userInfo: UserInfoResponse? = nil
+    @Published var automateResponse: Bool = false
+    
+    // TODO: Remove this and make API call
+    // Also TODO: Make this less hacky
+    @Published var homeHealthScore: Double = 0.18
 }

@@ -7,23 +7,38 @@
 import SwiftUI
 
 struct RiskQuestion: Identifiable, Codable {
-    let id = UUID()
+    let id: UUID
     let question: String
     let risk_type: String
     let importance: String
     let rubric: [String: Int]
     let requires_photo: Bool
     let risk_level: String
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = UUID()
+        self.question = try container.decode(String.self, forKey: .question)
+        self.risk_type = try container.decode(String.self, forKey: .risk_type)
+        self.importance = try container.decode(String.self, forKey: .importance)
+        self.rubric = try container.decode([String: Int].self, forKey: .rubric)
+        self.requires_photo = try container.decode(Bool.self, forKey: .requires_photo)
+        self.risk_level = try container.decode(String.self, forKey: .risk_level)
+    }
+    
+    private enum CodingKeys: String, CodingKey {
+        case question, risk_type, importance, rubric, requires_photo, risk_level
+    }
 }
 
 struct LocationRiskResponse: Codable {
-    let location_risks: [String: String]
+    let location_risks: [String: String?]
     let questions: [RiskQuestion]
 }
 
 struct SurveyAnswer {
     var answer: String? = nil
-    var photo: UIImage? = nil
+    var photo: Data? = nil
 }
 
 struct UserAnswer: Codable {
@@ -74,6 +89,6 @@ struct Pill: View {
 }
 
 struct Survey {
-    let locationRisks: [String: String]
+    let locationRisks: [String: String?]
     let questions: [RiskQuestion]
 }
