@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+from enum import Enum
 import os
 import secrets
 import sys
@@ -26,7 +27,8 @@ from fastapi import (
     WebSocketDisconnect, 
     Depends, 
     Request,
-    Query
+    Query,
+    Response
 )
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
@@ -49,6 +51,7 @@ from notifications.apns_service import APNsService
 from notifications.noti import NotificationRouter
 from rdsdb.rdsdb import RedisDB
 from maindb.pg import PostgresDB
+from sms.sms import MessageBot
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +61,8 @@ app_state = {
     "mqtt_client": None,
     "notification_config": None,
     "active_leaks": set(),
-    "notification_queue": asyncio.Queue()
+    "notification_queue": asyncio.Queue(),
+    "sms_bot": MessageBot()
 }
 
 def init_db():
@@ -201,6 +205,30 @@ async def root():
         "active_leaks": len(app_state["active_leaks"]),
         "total_devices": len(app_state["devices"])
     }
+
+@app.post("/sms") # Default route for Twilio to hit
+async def reply_sms(request: Request):
+    sms_bot = app_state["sms_bot"]
+    # Reset response client for new request
+    sms_bot.reset_response()
+    
+    form = await request.form()
+    body = form.get('Body')
+
+    if body.lower() == 'hello':
+        sms_bot.reply_sms("Hi!")
+    elif body.lower() == 'bye':
+        sms_bot.reply_sms("Goodbye")
+    else:
+        # Default response for unrecognized messages
+        sms_bot.reply_sms("Thanks for your message!")
+    
+    logger.info(f"Received SMS: {body}, responding with: {sms_bot.response_client}")
+
+    return Response(
+        content=str(sms_bot.response_client),
+        media_type="application/xml"
+    )
 
 
 # TODO: Add a specific user id for the devices
@@ -383,6 +411,52 @@ async def permit_join(
         logger.error(f"Error publishing permit join message to {topic}: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to publish permit join: {str(e)}")
     
+class Command(str, Enum):
+    ON = "ON"
+    OFF = "OFF"
+
+    def to_payload(self) -> dict:
+        return {"state": self.value}
+
+class SendCommandRequest(BaseModel):
+    command: Command
+    ieee_address: str
+
+@app.post("/zigbee/send-command")
+def send_command(
+    command: SendCommandRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """Send a command to a device"""
+    
+    if not mqtt_monitor.connected:
+        print(f"MQTT not connected. Broker: {settings.MQTT_BROKER}:{settings.MQTT_PORT}")
+        logger.error(f"MQTT not connected. Broker: {settings.MQTT_BROKER}:{settings.MQTT_PORT}")
+        raise HTTPException(
+            status_code=503,
+            detail=f"MQTT not connected to {settings.MQTT_BROKER}:{settings.MQTT_PORT}"
+        )
+    
+    device_serial = current_user.get('device_serial')
+    ieee_address = command.get('ieee_address')
+    
+    # Construct the topic using the device serial
+    topic = f"zigbee2mqtt/senchi-{device_serial}/{ieee_address}/set"
+    
+    result = mqtt_monitor.send_device_command(topic, command.to_payload())
+    
+    if result:
+        logger.info(f"Command sent to {topic} successfully")
+        return {
+            "message": f"Command sent to {topic} successfully",
+            "topic": topic,
+            "device_serial": device_serial,
+            "command": command.command,
+            "ieee_address": ieee_address
+        }
+    else:
+        logger.error(f"MQTT publish failed with rc={result}")
+        raise HTTPException(status_code=500, detail=f"MQTT publish failed with rc={result}")
 
 def broadcast_device_update(user_id: str, device_data: dict):
     """Broadcast device updates to connected WebSocket clients for a specific user"""
