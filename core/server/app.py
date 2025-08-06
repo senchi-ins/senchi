@@ -9,14 +9,17 @@ from config import settings
 from api.v1.api import api_router
 from db.pg import PostgresDB
 from db.rds import RedisDB
+from sms.sms import MessageBot
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     db = PostgresDB()
     redis_db = RedisDB()
+    sms_bot = MessageBot()
     try:
         app.state.db = db
         app.state.redis_db = redis_db
+        app.state.sms_bot = sms_bot
         redis_db.connect()
         db.execute_query("""
         CREATE TABLE IF NOT EXISTS assessment_responses (
