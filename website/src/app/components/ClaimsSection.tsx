@@ -22,7 +22,7 @@ export default function ClaimsSection() {
       step: 3,
       icon: Camera,
       title: "Smart Assessment",
-      description: "Our adjusters use Halo data for faster, more accurate claim assessment. Many claims processed remotely.",
+      description: "Our adjusters use HomeGuard data for faster, more accurate claim assessment. Many claims processed remotely.",
       timeframe: "24-48 hours"
     },
     {

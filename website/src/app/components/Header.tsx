@@ -23,17 +23,17 @@ export default function Header() {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
             <a href="#halo" className="text-gray-600 hover:text-senchi-primary transition-colors">
-              Senchi Halo
+              Senchi HomeGuard
             </a>
             <a href="#plans" className="text-gray-600 hover:text-senchi-primary transition-colors">
               Plans
             </a>
-            <a href="#do-good" className="text-gray-600 hover:text-senchi-primary transition-colors">
+            {/* <a href="#do-good" className="text-gray-600 hover:text-senchi-primary transition-colors">
               Do Good
-            </a>
+            </a> */}
             <Button asChild className="bg-senchi-primary hover:bg-senchi-primary/90 text-white px-4 py-2" size="sm">
               <Link href="/ext-assessment" className="flex items-center gap-2">
-                Take our external assessment
+                Take our home assessment
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </Button>
@@ -60,7 +60,7 @@ export default function Header() {
                 className="block px-3 py-2 text-gray-600 hover:text-senchi-primary transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Senchi Halo
+                Senchi HomeGuard
               </a>
               <a
                 href="#coverage"

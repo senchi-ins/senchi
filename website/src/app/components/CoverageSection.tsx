@@ -12,9 +12,8 @@ export default function CoverageSection() {
       image: '/assets/abnb_home.png',
       features: [
         "24/7 leak monitoring and alerts",
-        "Smart water shutoff",
-        "Smart leak detection",
-        "Smart water usage tracking",
+        "Set up in <5 minutes",
+        "Non-intrusive sensor installation",
       ]
     },
     {
@@ -24,9 +23,19 @@ export default function CoverageSection() {
       image: '/assets/abnb_condo.png',
       features: [
         "Multi-property smart monitoring",
-        "Consolidated view of all properties",
-        "Emergency event alerts",
+        "Emergency event alerts across portfolio",
         "Tenant support tools",
+      ]
+    },
+    {
+      icon: Building,
+      title: "For Insurers",
+      description: "Improve loss ratios and reduce claims through non-intrusive monitoring.",
+      image: '/assets/insurer.png',
+      features: [
+        "Decrease loss ratio across portfolio",
+        "Reduce claims",
+        "Improve customer satisfaction",
       ]
     }
   ];
@@ -35,51 +44,55 @@ export default function CoverageSection() {
     <section id="plans" className="py-16 sm:py-24 bg-gradient-to-b from-white to-senchi-accent-light/20">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+        <div className="text-center max-w-4xl mx-auto mb-20">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6 leading-tight">
             External Protective Plans for Residences
           </h2>
-          <p className="text-lg text-gray-600">
+          <p className="text-lg text-gray-600 leading-relaxed max-w-3xl mx-auto">
             Professional external protection for homeowners and property managers. These are not insurance products, but proactive plans enhanced with smart technology for unprecedented claim prevention and peace of mind.
           </p>
         </div>
 
         {/* Plan Options */}
-        <div className="grid lg:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        <div className="grid lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {planOptions.map((option, index) => (
-            <Card key={index} className="border-gray-100 hover:border-senchi-primary/20 hover:shadow-lg transition-all duration-300">
-              <CardHeader className="text-center">
-                <div className="w-32 h-32 mx-auto mb-4 flex items-center justify-center">
-                  <Image
-                    src={option.image}
-                    alt={`${option.title} insurance illustration`}
-                    width={128}
-                    height={128}
-                    className="w-50 h-50 object-contain mx-auto mb-4"
-                  />
+            <Card key={index} className="border-gray-100 hover:border-senchi-primary/20 hover:shadow-lg transition-all duration-300 h-full flex flex-col">
+              <CardHeader className="text-center pb-6">
+                <div className="h-28 mx-auto mb-6 flex justify-center">
+                  <div className={`flex items-end justify-center ${
+                    index === 1 ? 'w-20 h-20' : 'w-28 h-28'
+                  }`}>
+                    <Image
+                      src={option.image}
+                      alt={`${option.title} illustration`}
+                      width={300}
+                      height={300}
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
                 </div>
-                <CardTitle className="text-2xl text-gray-900">
+                <CardTitle className="text-xl font-bold text-gray-900 mb-2">
                   {option.title}
                 </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <CardDescription className="text-gray-600 text-center">
+                <CardDescription className="text-gray-600 text-sm leading-relaxed">
                   {option.description}
                 </CardDescription>
-                <ul className="space-y-2 flex flex-col items-center w-full mx-auto max-w-xs ml-8">
+              </CardHeader>
+              <CardContent className="flex-1 flex flex-col">
+                <ul className="space-y-3 mb-8 flex-1">
                   {option.features.map((feature, featureIndex) => (
-                    <li key={featureIndex} className="flex items-center space-x-2 w-full justify-start">
-                      <div className="w-1.5 h-1.5 bg-senchi-primary rounded-full flex-shrink-0"></div>
-                      <span className="text-sm text-gray-600 text-left">{feature}</span>
+                    <li key={featureIndex} className="flex items-start space-x-3">
+                      <div className="w-2 h-2 bg-senchi-primary rounded-full flex-shrink-0 mt-2"></div>
+                      <span className="text-sm text-gray-600 leading-relaxed">{feature}</span>
                     </li>
                   ))}
                 </ul>
                 <Button 
                   asChild
-                  className="w-full bg-senchi-primary hover:bg-senchi-primary/90 mt-6"
+                  className="w-full bg-senchi-primary hover:bg-senchi-primary/90 text-white font-medium"
                   size="lg"
                 >
-                  <a href="#waitlist-email">Get {option.title}</a>
+                  <a href="mailto:mike@senchi.ca?subject=Interest in Senchi HomeGuard">Get {option.title}</a>
                 </Button>
               </CardContent>
             </Card>
@@ -87,9 +100,9 @@ export default function CoverageSection() {
         </div>
 
         {/* Call to Action */}
-        <div className="text-center mt-16">
-          <p className="text-gray-600 mb-6">
-            All plans include Senchi Halo smart monitoring and Do Good charitable giving program
+        <div className="text-center mt-20">
+          <p className="text-gray-600 text-lg font-medium">
+            All plans include Senchi HomeGuard smart monitoring.
           </p>
         </div>
       </div>
