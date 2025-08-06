@@ -1,22 +1,6 @@
-import os
-import asyncio
-import hashlib
-import jwt
 import logging
-import uuid
-from datetime import datetime, timedelta
 
-from server.api.v1.utils.utils import decode_jwt, hash_password, verify_password
-from fastapi import APIRouter, HTTPException, Depends, Body, Request
-from typing import List, Optional
-from pydantic import BaseModel
-
-from schemas.auth import (
-    TokenResponse,
-    LoginRequest,
-    UserInfoResponse,
-    RegisterRequest
-)
+from fastapi import APIRouter, Request, Response
 
 
 logger = logging.getLogger(__name__)
@@ -29,12 +13,24 @@ router = APIRouter()
 @router.post("/") # Default route for Twilio to hit
 async def reply_sms(request: Request):
     sms_bot = request.app.state.sms_bot
+    # Reset response client for new request
+    sms_bot.reset_response()
+    
     form = await request.form()
     body = form.get('Body')
 
-    if body == 'hello':
+    if body.lower() == 'hello':
         sms_bot.reply_sms("Hi!")
-    elif body == 'bye':
+    elif body.lower() == 'bye':
         sms_bot.reply_sms("Goodbye")
-    return str(sms_bot.response_client)
+    else:
+        # Default response for unrecognized messages
+        sms_bot.reply_sms("Thanks for your message!")
+    
+    logger.info(f"Received SMS: {body}, responding with: {sms_bot.response_client}")
+
+    return Response(
+        content=str(sms_bot.response_client),
+        media_type="application/xml"
+    )
 

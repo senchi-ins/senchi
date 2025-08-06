@@ -27,3 +27,6 @@ class MessageBot:
     def reply_sms(self, message, to_number=None):
         success = self.response_client.message(message)
         return success
+    
+    def reset_response(self):
+        self.response_client = MessagingResponse()
