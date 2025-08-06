@@ -16,10 +16,14 @@ struct DeviceUpdatePayload: Codable {
     let trigger_count: Int?
 }
 
-class WebSocketManager: ObservableObject {
+class WebSocketManager: NSObject, ObservableObject {
     @Published var devices: [Device] = []
     @Published var deviceCount: Int = 0
-    @Published var isConnected: Bool = false
+    @Published var isConnected: Bool = false {
+        didSet {
+            print("🔍 isConnected changed from \(oldValue) to \(isConnected)")
+        }
+    }
     
     private var webSocket: URLSessionWebSocketTask?
     private var timer: Timer?
@@ -45,6 +49,7 @@ class WebSocketManager: ObservableObject {
     }
     
     func updateProperty(_ newProperty: String) {
+        print("🔍 WebSocketManager: Updating property from '\(selectedProperty)' to '\(newProperty)'")
         selectedProperty = newProperty
         fetchDevices()
     }
@@ -54,7 +59,10 @@ class WebSocketManager: ObservableObject {
         let token = loadTokenFromKeychain()
         
         guard let token = token else {
-
+            print("❌ No JWT token found in keychain")
+            DispatchQueue.main.async {
+                self.isConnected = false
+            }
             return
         }
         
@@ -62,20 +70,28 @@ class WebSocketManager: ObservableObject {
         print("🔍 Constructing WebSocket URL: \(wsUrlString)")
         
         guard let url = URL(string: wsUrlString) else {
-
+            print("❌ Invalid WebSocket URL: \(wsUrlString)")
+            DispatchQueue.main.async {
+                self.isConnected = false
+            }
             return
         }
     
-        let session = URLSession(configuration: .default)
-        webSocket = session.webSocketTask(with: url)
+        var request = URLRequest(url: url)
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.timeoutInterval = 10.0
         
-        print("Resuming WebSocket connection...")
+        let session = URLSession(configuration: .default)
+        webSocket = session.webSocketTask(with: request)
+        
+        // Set delegate BEFORE resuming
+        webSocket?.delegate = self
+        
+        print("🔍 Starting WebSocket connection...")
         webSocket?.resume()
         
-        DispatchQueue.main.async {
-            print("Setting initial connection status to true")
-            self.isConnected = true
-        }
+        // Don't set isConnected to true immediately - wait for delegate callback
+        print("🔍 Waiting for WebSocket delegate callbacks...")
         
         print("Starting message reception...")
         receiveMessage()
@@ -85,7 +101,10 @@ class WebSocketManager: ObservableObject {
             self?.sendHeartbeat()
         }
         
-        fetchDevices()
+        // Fetch devices after a short delay to allow connection to establish
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            self.fetchDevices()
+        }
     }
     
     func connect() {
@@ -120,10 +139,12 @@ class WebSocketManager: ObservableObject {
             return
         }
         
+        print("🔍 WebSocketManager: Fetching devices for property '\(selectedProperty)' (will send '\(selectedProperty.capitalized)')")
+        
         // Create DeviceRequest body with property_id support
         var requestBody: [String: Any] = [
             "user_id": userId,
-            "property_name": selectedProperty
+            "property_name": selectedProperty.capitalized
         ]
         
         // Add property_id if available (for future use)
@@ -154,8 +175,10 @@ class WebSocketManager: ObservableObject {
                 
                 do {
                     let devices = try JSONDecoder().decode([Device].self, from: data)
+                    print("🔍 WebSocketManager: Setting devices array to \(devices.count) devices")
                     self?.devices = devices
                     self?.deviceCount = devices.count
+                    print("🔍 WebSocketManager: devices array now contains \(self?.devices.count ?? 0) devices")
                     print("Fetched \(devices.count) devices from API")
                 } catch {
                     print("Failed to parse devices response: \(error)")
@@ -166,26 +189,35 @@ class WebSocketManager: ObservableObject {
     }
     
     private func receiveMessage() {
-        print("Setting up message receiver...")
+        print("🔍 Setting up message receiver...")
         webSocket?.receive { [weak self] result in
+            print("🔍 WebSocket receive callback triggered")
             DispatchQueue.main.async {
                 switch result {
                 case .success(let message):
-                    print("WebSocket message received successfully")
+                    print("✅ WebSocket message received successfully")
                     self?.handleMessage(message)
 
                     if !(self?.isConnected ?? false) {
-                        print("Setting connection status to true after message")
+                        print("🔧 Setting connection status to true after message")
                         self?.isConnected = true
                     }
 
+                    print("🔄 Setting up next message receiver...")
                     self?.receiveMessage()
                 case .failure(let error):
-                    print("WebSocket receive error: \(error)")
+                    print("❌ WebSocket receive error: \(error)")
                     self?.isConnected = false
+                    
+                    // Check if it's a connection error
+                    if let urlError = error as? URLError {
+                        print("🔍 URL Error code: \(urlError.code.rawValue)")
+                        print("🔍 URL Error description: \(urlError.localizedDescription)")
+                    }
+                    
                     // Attempt to reconnect after a delay
                     DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-                        print("Attempting automatic reconnection...")
+                        print("🔄 Attempting automatic reconnection...")
                         self?.setupWebSocket()
                     }
                 }
@@ -226,12 +258,18 @@ class WebSocketManager: ObservableObject {
             case "connection_established":
                 print("WebSocket connection established with server")
                 DispatchQueue.main.async {
-                    self.isConnected = true
+                    if !self.isConnected {
+                        print("🔧 Setting isConnected to true after connection_established")
+                        self.isConnected = true
+                    }
                 }
             case "heartbeat_response":
                 print("Heartbeat response received")
                 DispatchQueue.main.async {
-                    self.isConnected = true
+                    if !self.isConnected {
+                        print("🔧 Setting isConnected to true after heartbeat response")
+                        self.isConnected = true
+                    }
                 }
             case "heartbeat":
                 print("Received heartbeat")
@@ -287,16 +325,18 @@ class WebSocketManager: ObservableObject {
     }
     
     private func sendHeartbeat() {
+        print("💓 Sending heartbeat...")
         let heartbeat = ["type": "heartbeat"]
         if let data = try? JSONSerialization.data(withJSONObject: heartbeat),
            let text = String(data: data, encoding: .utf8) {
             webSocket?.send(.string(text)) { error in
                 if let error = error {
-                    print("Failed to send heartbeat: \(error)")
+                    print("❌ Failed to send heartbeat: \(error)")
                     DispatchQueue.main.async {
                         self.isConnected = false
                     }
                 } else {
+                    print("✅ Heartbeat sent successfully")
                     // If heartbeat succeeds, ensure we're marked as connected
                     DispatchQueue.main.async {
                         if !self.isConnected {
@@ -305,6 +345,8 @@ class WebSocketManager: ObservableObject {
                     }
                 }
             }
+        } else {
+            print("❌ Failed to create heartbeat message")
         }
     }
     
@@ -332,6 +374,27 @@ class WebSocketManager: ObservableObject {
         }
         
         return token
+    }
+}
+
+// MARK: - URLSessionWebSocketDelegate
+extension WebSocketManager: URLSessionWebSocketDelegate {
+    func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didOpenWithProtocol protocol: String?) {
+        print("✅ WebSocket connection opened successfully - DELEGATE CALLED")
+        DispatchQueue.main.async {
+            print("🔧 Setting isConnected to true in delegate")
+            self.isConnected = true
+        }
+    }
+    
+    func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
+        print("❌ WebSocket connection closed with code: \(closeCode)")
+        if let reason = reason, let reasonString = String(data: reason, encoding: .utf8) {
+            print("❌ Close reason: \(reasonString)")
+        }
+        DispatchQueue.main.async {
+            self.isConnected = false
+        }
     }
 }
 

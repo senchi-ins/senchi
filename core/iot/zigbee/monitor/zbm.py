@@ -811,8 +811,21 @@ class Monitor:
             import traceback
             logger.error(f"Full traceback: {traceback.format_exc()}")
 
-    def start(self):
+    def send_device_command(self, topic: str,  command: dict) -> bool:
+        """
+        Send a command to a device. Currently, only supports turning on/off the shutoff valve.
+        """
+        payload = json.dumps(command)
+        result = self.client.publish(topic, payload)
+        if result.rc == 0:
+            print(f"Successfully sent command to {topic}")
+            logger.info(f"Successfully sent command to {topic}")
+        else:
+            logger.error(f"Failed to send command to {topic}: rc={result.rc}")
+            return False
+        return True
 
+    def start(self):
         try:
             if hasattr(settings, 'MQTT_USERNAME') and hasattr(settings, 'MQTT_PASSWORD'):
                 self.client.username_pw_set(settings.MQTT_USERNAME, settings.MQTT_PASSWORD)

@@ -51,9 +51,8 @@ struct LoginView: View {
                             .fontWeight(.medium)
                             .foregroundColor(.black)
                         
-                        TextField("Enter your password", text: $password)
+                        SecureField("Enter your password", text: $password)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .keyboardType(.emailAddress)
                             .autocapitalization(.none)
                             .disableAutocorrection(true)
                     }

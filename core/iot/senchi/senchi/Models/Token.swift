@@ -5,12 +5,14 @@ import SwiftUI
 
 struct TokenSetupRequest: Codable {
     let deviceSerial: String
+    let password: String
+    let email: String
+    let fullName: String
     let pushToken: String?
-    let email: String?
-    let fullName: String?
     
     enum CodingKeys: String, CodingKey {
         case deviceSerial = "device_serial"
+        case password = "password"
         case pushToken = "push_token"
         case email = "email"
         case fullName = "full_name"

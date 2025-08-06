@@ -24,4 +24,5 @@ dependencies = [
     "psycopg2-binary>=2.9.10",
     "pyjwt>=2.10.1",
     "httpx[http2]>=0.28.1",
+    "twilio>=9.7.0",
 ]

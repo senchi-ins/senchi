@@ -5,6 +5,7 @@ struct AccountSettings: View {
     // MARK: - Beta Placeholder (Original implementation commented out below)
     
     @EnvironmentObject private var userSettings: UserSettings
+    @EnvironmentObject private var authManager: AuthManager
     
     var body: some View {
         NavigationView {
@@ -92,11 +93,9 @@ struct AccountSettings: View {
                     .cornerRadius(8)
                 }
                 
-                // Sign Out (Kept for beta)
                 Button(action: {
                     Task {
                         // Clear the keychain by calling logout on AuthManager
-                        let authManager = await AuthManager()
                         authManager.logout()
                         
                         // Update user settings
@@ -108,6 +107,26 @@ struct AccountSettings: View {
                     HStack {
                         Image(systemName: "arrow.right.square.fill")
                         Text("Sign Out").fontWeight(.semibold)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.red)
+                    .foregroundColor(.white)
+                    .cornerRadius(8)
+                }
+                
+                // Delete account
+                Button(action: {
+                    Task {
+                        try await authManager.deleteAccount()
+                        
+                        // Update user settings
+                        userSettings.loggedIn = false
+                    }
+                }) {
+                    HStack {
+                        Image(systemName: "arrow.right.square.fill")
+                        Text("Delete account").fontWeight(.semibold)
                     }
                     .frame(maxWidth: .infinity)
                     .padding()

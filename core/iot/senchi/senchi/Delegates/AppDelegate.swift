@@ -19,10 +19,11 @@ class AppDelegate: NSObject, UIApplicationDelegate, ObservableObject {
     
     func application(_ application: UIApplication,
                      didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-        print("✅ AppDelegate: didRegisterForRemoteNotificationsWithDeviceToken called!")
-        print("✅ Device token data length: \(deviceToken.count) bytes")
+        let tokenString = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
+            
+        print("📱 Received device token: \(tokenString)")
+        
         pushNotificationManager.handleDeviceToken(deviceToken)
-        print(deviceToken)
     }
     
     func application(_ application: UIApplication,
@@ -62,11 +63,15 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         case "leak_alert":
             // Navigate to leak alert screen
             NotificationCenter.default.post(name: .showLeakAlert, object: data)
+            // Also navigate to predictions tab (tab 2)
+            NotificationCenter.default.post(name: .navigateToTab, object: 2)
         case "device_update":
             // Navigate to device status screen
             NotificationCenter.default.post(name: .showDeviceUpdate, object: data)
+            // Also navigate to predictions tab (tab 2)
+            NotificationCenter.default.post(name: .navigateToTab, object: 2)
         default:
-            print("Unknown notification type: \(type)")
+            NotificationCenter.default.post(name: .navigateToTab, object: 2)
         }
     }
 }

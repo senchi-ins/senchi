@@ -6,13 +6,15 @@ struct HomeTabContent: View {
     @EnvironmentObject var userSettings: UserSettings
     @EnvironmentObject var pushManager: PushNotificationManager
     @EnvironmentObject var authManager: AuthManager
-    @StateObject private var webSocketManager = WebSocketManager(userId: "")
+    @State private var webSocketManager: WebSocketManager?
     @State private var savingsAmount: Double = 0
-    @State private var homeHealthScore: Double = 1.0
     @State private var testResult: String = ""
     @State private var isTesting: Bool = false
-    @State private var selectedProperty: String = "main"
+    @State private var selectedProperty: String = "Main"
     @State private var showingPropertySelector = false
+    @State private var refreshTrigger = false
+    @State private var connectionStatus = false
+    @State private var deviceList: [Device] = []
     
     init() {
         // Initialize with empty user ID - will be updated when available
@@ -56,9 +58,15 @@ struct HomeTabContent: View {
     }
     
     private func initializeWebSocketManager() {
-        // Get user_id from userInfo if available
-        if let userInfo = userSettings.userInfo, !userInfo.user_id.isEmpty {
-            webSocketManager.updateUserId(userInfo.user_id)
+        // Only initialize if we have a valid user ID and WebSocketManager doesn't exist yet
+        if let userInfo = userSettings.userInfo, !userInfo.user_id.isEmpty, webSocketManager == nil {
+            print("🔍 HomeView: Creating new WebSocketManager for user \(userInfo.user_id)")
+            let manager = WebSocketManager(userId: userInfo.user_id)
+            webSocketManager = manager
+            // Trigger UI update by setting up the WebSocket
+            manager.setupWebSocket()
+        } else {
+            print("🔍 HomeView: WebSocketManager already exists or no userInfo available")
         }
     }
     
@@ -68,9 +76,9 @@ struct HomeTabContent: View {
                 // Connection Status Indicator
                 HStack {
                     Circle()
-                        .fill(webSocketManager.isConnected ? SenchiColors.senchiGreen : SenchiColors.senchiRed)
+                        .fill(connectionStatus ? SenchiColors.senchiGreen : SenchiColors.senchiRed)
                         .frame(width: 12, height: 12)
-                    Text(webSocketManager.isConnected ? "Connected" : "Disconnected")
+                    Text(connectionStatus ? "Connected" : "Disconnected")
                         .font(.caption)
                         .foregroundColor(.gray)
                     Spacer()
@@ -120,6 +128,8 @@ struct HomeTabContent: View {
                     }
                 }
                 // Health Score
+                // TODO: create a complete algorithm factoring in p(leak) and the external health score
+                // weight 50/50 for now, adjust long term
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
@@ -128,9 +138,9 @@ struct HomeTabContent: View {
                                 .foregroundColor(.gray)
                             // TODO: Update to read from api
                             HStack(alignment: .center, spacing: 8) {
-                                Text("\(homeHealthScore, format: .percent.precision(.fractionLength(0)))")
+                                Text("\(userSettings.homeHealthScore, format: .percent.precision(.fractionLength(0)))")
                                     .font(.title2).fontWeight(.bold)
-                                    .foregroundColor(SenchiColors.senchiGrey)
+                                    .foregroundColor(userSettings.homeHealthScore < 0.3 ? SenchiColors.senchiRed : SenchiColors.senchiGreen)
                                 Spacer()
                                 // TODO: Make this dynamic
 //                                HStack(spacing: 4) {
@@ -143,20 +153,18 @@ struct HomeTabContent: View {
                             }
                         }
                     }
-                    ProgressView(value: homeHealthScore)
-                        .accentColor(SenchiColors.senchiGrey)
-                    Text("Coming soon!")
-                        .font(.caption2)
-                        .foregroundColor(.gray)
+                    ProgressView(value: userSettings.homeHealthScore)
+                        .accentColor(userSettings.homeHealthScore < 0.3 ? SenchiColors.senchiRed : SenchiColors.senchiGreen)
                 }
                 .padding()
                 .background(RoundedRectangle(cornerRadius: 14).stroke(Color.gray.opacity(0.15)))
                 // Device/Savings
                 HStack(spacing: 16) {
                     VStack {
-                        Text("\(webSocketManager.deviceCount)")
+                        Text("\(webSocketManager?.deviceCount ?? 0)")
                             .font(.title2).fontWeight(.bold)
                             .foregroundColor(.black)
+                            .id(refreshTrigger) // Force refresh when property changes
                         Text("Connected Devices")
                             .font(.caption)
                             .foregroundColor(.gray)
@@ -182,10 +190,30 @@ struct HomeTabContent: View {
                         .font(.headline)
                         .foregroundColor(.black)
                     Spacer()
+                    
+                    // Debug refresh button
+                    Button(action: {
+                        print("🔍 HomeView: Manual refresh triggered")
+                        webSocketManager?.fetchDevices()
+                        refreshTrigger.toggle()
+                    }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "arrow.clockwise")
+                                .foregroundColor(SenchiColors.senchiBlue)
+                            Text("Refresh")
+                                .foregroundColor(SenchiColors.senchiBlue)
+                        }
+                        .font(.caption)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(SenchiColors.senchiBlue.opacity(0.1))
+                        .cornerRadius(6)
+                    }
+                    
                     Button(action: {
                         Task {
                             do {
-                                let result = try await permitJoin(duration: 60)
+                                let result = try await permitJoin(authManager: authManager, duration: 60)
                                 print("Permit join successful: \(result)")
                                 
                                 // Success haptic feedback
@@ -216,22 +244,37 @@ struct HomeTabContent: View {
                 }
                 // Device Cards from API
                 VStack(spacing: 12) {
-                    ForEach(webSocketManager.devices) { device in
-                        DeviceCardView(device: device)
+                    if !deviceList.isEmpty {
+                        ForEach(deviceList) { device in
+                            DeviceCardView(device: device)
+                        }
+                        .id(refreshTrigger) // Force refresh when property changes
+                    } else {
+                        Text("Loading devices...")
+                            .foregroundColor(.gray)
+                            .padding()
                     }
                 }
             }
             .padding(20)
         }
         .refreshable {
-            webSocketManager.reconnect()
+            webSocketManager?.reconnect()
         }
         .onAppear {
             initializeWebSocketManager()
             
-            webSocketManager.fetchDevices()
+            webSocketManager?.fetchDevices()
             Task {
                 savingsAmount = await calculateSavings()
+            }
+            
+            // Set up a timer to update connection status and device list
+            Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+                if let manager = webSocketManager {
+                    connectionStatus = manager.isConnected
+                    deviceList = manager.devices
+                }
             }
         }
         .onReceive(userSettings.$userInfo) { newUserInfo in
@@ -244,88 +287,14 @@ struct HomeTabContent: View {
             PropertySelectorView(
                 selectedProperty: $selectedProperty,
                 onPropertySelected: { newProperty in
+                    print("🔍 HomeView: Property selected: '\(newProperty)'")
                     selectedProperty = newProperty
                     // Update WebSocket manager with new property
-                    webSocketManager.updateProperty(newProperty)
+                    webSocketManager?.updateProperty(newProperty)
+                    // Trigger UI refresh
+                    refreshTrigger.toggle()
                 }
             )
         }
     }
 }
-
-struct PropertySelectorView: View {
-    @Binding var selectedProperty: String
-    let onPropertySelected: (String) -> Void
-    @EnvironmentObject var userSettings: UserSettings
-    @Environment(\.dismiss) private var dismiss
-    
-    private func formatPropertyName(_ propertyName: String) -> String {
-        return propertyName.replacingOccurrences(of: "_", with: " ")
-            .split(separator: " ")
-            .map { $0.capitalized }
-            .joined(separator: " ")
-    }
-    `
-    private var properties: [String] {
-        getProperties(userId: (userSettings.userInfo?.user_id ?? "") as String)
-    }
-    
-    var body: some View {
-        NavigationView {
-            List {
-                ForEach(properties, id: \.self) { property in
-                    Button(action: {
-                        onPropertySelected(property)
-                        dismiss()
-                    }) {
-                        HStack(spacing: 12) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(formatPropertyName(property))
-                                    .font(.headline)
-                                    .foregroundColor(.primary)
-                                Text("Property description")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                            Spacer()
-                            if property == selectedProperty {
-                                Image(systemName: "checkmark")
-                                    .foregroundColor(SenchiColors.senchiBlue)
-                                    .font(.headline)
-                            }
-                        }
-                        .padding(.vertical, 4)
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                }
-                
-                Section {
-                    Button(action: {
-                        // TODO: Add new property functionality
-                        print("Add new property")
-                    }) {
-                        HStack(spacing: 12) {
-                            Image(systemName: "plus.circle.fill")
-                                .foregroundColor(SenchiColors.senchiBlue)
-                                .font(.headline)
-                            Text("Add New Property")
-                                .foregroundColor(SenchiColors.senchiBlue)
-                                .font(.headline)
-                        }
-                        .padding(.vertical, 4)
-                    }
-                }
-            }
-            .navigationTitle("Select Property")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                }
-            }
-        }
-    }
-}
-
