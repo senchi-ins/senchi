@@ -29,7 +29,8 @@ router = APIRouter()
 @router.post("/") # Default route for Twilio to hit
 async def reply_sms(request: Request):
     sms_bot = request.app.state.sms_bot
-    body = request.values.get('Body', None)
+    form = await request.form()
+    body = form.get('Body')
 
     if body == 'hello':
         sms_bot.reply_sms("Hi!")
