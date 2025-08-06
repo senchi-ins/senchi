@@ -24,6 +24,6 @@ class MessageBot:
         )
         return message.sid
     
-    def reply_sms(self, message, to_number):
+    def reply_sms(self, message, to_number=None):
         success = self.response_client.message(message)
         return success
