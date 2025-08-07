@@ -1,0 +1,273 @@
+{
+    "description": "Physics-based leak progression profiles for realistic pipe failure simulation",
+    "leak_types": {
+      "micro_pinhole": {
+        "name": "Micro Pinhole Leak",
+        "description": "Small, constant leak from manufacturing defect or minor corrosion",
+        "probability": 0.12,
+        "characteristics": {
+          "initial_area_mm2": [0.05, 0.2],
+          "progression_type": "constant",
+          "duration_hours": [168, 8760],
+          "flow_coefficient": 0.6,
+          "pressure_dependency": "sqrt",
+          "seasonal_bias": "none",
+          "material_susceptibility": {
+            "Copper": 1.0,
+            "PEX-A": 0.3,
+            "PEX-B": 0.4,
+            "CPVC": 0.7,
+            "PVC": 0.5
+          },
+          "location_preferences": {
+            "joints": 0.6,
+            "straight_pipe": 0.4
+          }
+        }
+      },
+      "gradual_corrosion": {
+        "name": "Gradual Corrosion Leak",
+        "description": "Progressive corrosion creating expanding leak over days to weeks",
+        "probability": 0.15,
+        "characteristics": {
+          "initial_area_mm2": [0.1, 0.5],
+          "final_area_mm2": [2.0, 8.0],
+          "progression_type": "exponential",
+          "duration_hours": [48, 336],
+          "growth_rate_per_hour": [0.015, 0.035],
+          "flow_coefficient": 0.65,
+          "pressure_dependency": "sqrt",
+          "seasonal_bias": {
+            "winter": 1.3,
+            "spring": 1.1,
+            "summer": 0.8,
+            "fall": 1.0
+          },
+          "material_susceptibility": {
+            "Copper": 1.0,
+            "PEX-A": 0.1,
+            "PEX-B": 0.2,
+            "CPVC": 0.9,
+            "PVC": 0.4
+          },
+          "location_preferences": {
+            "joints": 0.7,
+            "straight_pipe": 0.3
+          },
+          "age_acceleration": {
+            "0-10_years": 1.0,
+            "10-20_years": 1.5,
+            "20-30_years": 2.2,
+            "30+_years": 3.5
+          }
+        }
+      },
+      "freeze_burst": {
+        "name": "Freeze Burst",
+        "description": "Sudden catastrophic failure due to water freezing in pipe",
+        "probability": 0.08,
+        "characteristics": {
+          "initial_area_mm2": [15.0, 50.0],
+          "progression_type": "instantaneous",
+          "duration_hours": [0.5, 6.0],
+          "flow_coefficient": 0.8,
+          "pressure_dependency": "sqrt",
+          "seasonal_restriction": ["december", "january", "february"],
+          "temperature_threshold_C": -2.0,
+          "material_susceptibility": {
+            "Copper": 1.0,
+            "PEX-A": 0.3,
+            "PEX-B": 0.4,
+            "CPVC": 0.8,
+            "PVC": 0.9
+          },
+          "location_preferences": {
+            "exterior_walls": 0.4,
+            "unheated_spaces": 0.3,
+            "joints": 0.2,
+            "straight_pipe": 0.1
+          },
+          "time_of_day_bias": {
+            "midnight_to_6am": 0.6,
+            "6am_to_noon": 0.2,
+            "noon_to_6pm": 0.1,
+            "6pm_to_midnight": 0.1
+          }
+        }
+      },
+      "pressure_burst": {
+        "name": "Pressure Burst",
+        "description": "Progressive over-pressure failure leading to catastrophic rupture",
+        "probability": 0.11,
+        "characteristics": {
+          "trigger_pressure_kPa": [550, 750],
+          "pre_failure_duration_hours": [0.5, 12.0],
+          "initial_area_mm2": [0.5, 2.0],
+          "final_area_mm2": [25.0, 100.0],
+          "progression_type": "sigmoid",
+          "flow_coefficient": 0.75,
+          "pressure_dependency": "sqrt",
+          "seasonal_bias": "none",
+          "material_susceptibility": {
+            "Copper": 0.7,
+            "PEX-A": 1.0,
+            "PEX-B": 1.2,
+            "CPVC": 1.5,
+            "PVC": 1.3
+          },
+          "location_preferences": {
+            "joints": 0.5,
+            "service_line": 0.3,
+            "main_trunk": 0.2
+          },
+          "pressure_surge_correlation": 0.8
+        }
+      },
+      "joint_failure": {
+        "name": "Joint/Connection Failure",
+        "description": "Failure at pipe joints, fittings, or connections",
+        "probability": 0.18,
+        "characteristics": {
+          "initial_area_mm2": [1.0, 5.0],
+          "final_area_mm2": [3.0, 15.0],
+          "progression_type": "linear",
+          "duration_hours": [2, 48],
+          "flow_coefficient": 0.5,
+          "pressure_dependency": "linear",
+          "seasonal_bias": {
+            "winter": 1.2,
+            "spring": 1.0,
+            "summer": 0.9,
+            "fall": 1.1
+          },
+          "material_susceptibility": {
+            "Copper": 1.0,
+            "PEX-A": 0.8,
+            "PEX-B": 0.9,
+            "CPVC": 1.3,
+            "PVC": 1.1
+          },
+          "location_preferences": {
+            "joints": 1.0,
+            "straight_pipe": 0.0
+          },
+          "installation_quality_factor": [0.7, 1.3]
+        }
+      },
+      "erosion_leak": {
+        "name": "Erosion-Induced Leak",
+        "description": "High-velocity flow causing gradual pipe wall erosion",
+        "probability": 0.06,
+        "characteristics": {
+          "initial_area_mm2": [0.2, 1.0],
+          "final_area_mm2": [5.0, 20.0],
+          "progression_type": "power_law",
+          "duration_hours": [72, 720],
+          "flow_coefficient": 0.7,
+          "pressure_dependency": "sqrt",
+          "velocity_threshold_m_s": 1.8,
+          "seasonal_bias": "none",
+          "material_susceptibility": {
+            "Copper": 0.8,
+            "PEX-A": 1.2,
+            "PEX-B": 1.0,
+            "CPVC": 1.5,
+            "PVC": 1.3
+          },
+          "location_preferences": {
+            "bends": 0.4,
+            "tees": 0.3,
+            "straight_pipe": 0.3
+          }
+        }
+      }
+    },
+    "progression_models": {
+      "constant": {
+        "description": "Leak area remains constant over time",
+        "formula": "A(t) = A_initial"
+      },
+      "linear": {
+        "description": "Linear progression from initial to final area",
+        "formula": "A(t) = A_initial + (A_final - A_initial) * (t / t_duration)"
+      },
+      "exponential": {
+        "description": "Exponential growth with specified growth rate",
+        "formula": "A(t) = A_initial * exp(growth_rate * t)"
+      },
+      "sigmoid": {
+        "description": "S-curve progression for pressure bursts",
+        "formula": "A(t) = A_initial + (A_final - A_initial) / (1 + exp(-k * (t - t_midpoint)))"
+      },
+      "power_law": {
+        "description": "Power law progression for erosion",
+        "formula": "A(t) = A_initial * (1 + t/t_ref)^exponent"
+      },
+      "instantaneous": {
+        "description": "Immediate jump to final area",
+        "formula": "A(t) = A_final for t > 0"
+      }
+    },
+    "environmental_factors": {
+      "temperature_effects": {
+        "freeze_threshold_C": -2.0,
+        "thermal_expansion_coeff": {
+          "Copper": 1.65e-5,
+          "PEX-A": 1.4e-4,
+          "PEX-B": 1.4e-4,
+          "CPVC": 8.1e-5,
+          "PVC": 8.0e-5
+        }
+      },
+      "pressure_surge_factors": {
+        "water_hammer_amplification": 1.5,
+        "pump_start_surge": 1.3,
+        "valve_closure_surge": 2.0
+      },
+      "water_quality_effects": {
+        "ph_corrosion_factor": {
+          "ph_6.5": 1.5,
+          "ph_7.0": 1.0,
+          "ph_7.5": 0.8,
+          "ph_8.0": 0.6
+        },
+        "chlorine_degradation": {
+          "PEX-A": 0.05,
+          "PEX-B": 0.08,
+          "CPVC": 0.12
+        }
+      }
+    },
+    "failure_locations": {
+      "service_line": {
+        "weight": 0.25,
+        "typical_failures": ["freeze_burst", "gradual_corrosion", "pressure_burst"]
+      },
+      "main_trunk": {
+        "weight": 0.20,
+        "typical_failures": ["joint_failure", "pressure_burst", "erosion_leak"]
+      },
+      "branch_lines": {
+        "weight": 0.35,
+        "typical_failures": ["joint_failure", "micro_pinhole", "gradual_corrosion"]
+      },
+      "fixture_connections": {
+        "weight": 0.20,
+        "typical_failures": ["joint_failure", "micro_pinhole"]
+      }
+    },
+    "detection_characteristics": {
+      "flow_rate_threshold_L_min": {
+        "micro_pinhole": [0.1, 0.5],
+        "gradual_corrosion": [0.5, 3.0],
+        "freeze_burst": [15.0, 60.0],
+        "pressure_burst": [20.0, 80.0],
+        "joint_failure": [2.0, 12.0],
+        "erosion_leak": [3.0, 15.0]
+      },
+      "pressure_drop_characteristics": {
+        "localized_drop_kPa": [5, 25],
+        "system_wide_drop_kPa": [1, 8]
+      }
+    }
+  }

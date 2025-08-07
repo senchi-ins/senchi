@@ -1,0 +1,283 @@
+{
+    "description": "Realistic house plumbing profiles based on North American residential construction standards",
+    "profiles": [
+      {
+        "id": "modern_pex_small",
+        "name": "Modern PEX Small Home (2000+)",
+        "weight": 0.25,
+        "characteristics": {
+          "construction_era": "2000-2024",
+          "house_type": "detached_small",
+          "occupancy": {
+            "min_people": 2,
+            "max_people": 3,
+            "daily_consumption_L": [180, 250]
+          },
+          "main_distribution": {
+            "material": "PEX-B",
+            "diameter_in": 0.75,
+            "diameter_mm": 19.05,
+            "wall_thickness_mm": 2.68,
+            "roughness_mm": 0.007,
+            "total_length_m": 35.0
+          },
+          "branch_lines": {
+            "material": "PEX-B",
+            "diameter_in": 0.5,
+            "diameter_mm": 12.7,
+            "wall_thickness_mm": 1.85,
+            "roughness_mm": 0.007,
+            "avg_length_m": 8.0
+          },
+          "thermal_properties": {
+            "conductivity_W_m_K": 0.4,
+            "heat_transfer_coeff_W_m2_K": 3.0,
+            "ambient_temp_C": 18.0
+          },
+          "pressure_characteristics": {
+            "supply_pressure_kPa": 414,
+            "min_working_pressure_kPa": 138,
+            "max_pressure_kPa": 689
+          }
+        }
+      },
+      {
+        "id": "modern_pex_large",
+        "name": "Modern PEX Large Home (2000+)",
+        "weight": 0.20,
+        "characteristics": {
+          "construction_era": "2000-2024",
+          "house_type": "detached_large",
+          "occupancy": {
+            "min_people": 4,
+            "max_people": 6,
+            "daily_consumption_L": [320, 480]
+          },
+          "main_distribution": {
+            "material": "PEX-B",
+            "diameter_in": 1.0,
+            "diameter_mm": 25.4,
+            "wall_thickness_mm": 3.48,
+            "roughness_mm": 0.007,
+            "total_length_m": 45.0
+          },
+          "branch_lines": {
+            "material": "PEX-B",
+            "diameter_in": 0.75,
+            "diameter_mm": 19.05,
+            "wall_thickness_mm": 2.68,
+            "roughness_mm": 0.007,
+            "avg_length_m": 12.0
+          },
+          "thermal_properties": {
+            "conductivity_W_m_K": 0.4,
+            "heat_transfer_coeff_W_m2_K": 3.0,
+            "ambient_temp_C": 18.0
+          },
+          "pressure_characteristics": {
+            "supply_pressure_kPa": 414,
+            "min_working_pressure_kPa": 138,
+            "max_pressure_kPa": 689
+          }
+        }
+      },
+      {
+        "id": "copper_vintage",
+        "name": "Copper Vintage Home (1980-2000)",
+        "weight": 0.18,
+        "characteristics": {
+          "construction_era": "1980-2000",
+          "house_type": "detached_medium",
+          "occupancy": {
+            "min_people": 3,
+            "max_people": 4,
+            "daily_consumption_L": [220, 320]
+          },
+          "main_distribution": {
+            "material": "Copper",
+            "diameter_in": 0.75,
+            "diameter_mm": 19.05,
+            "wall_thickness_mm": 1.02,
+            "roughness_mm": 0.0015,
+            "total_length_m": 40.0
+          },
+          "branch_lines": {
+            "material": "Copper",
+            "diameter_in": 0.5,
+            "diameter_mm": 12.7,
+            "wall_thickness_mm": 0.89,
+            "roughness_mm": 0.0015,
+            "avg_length_m": 10.0
+          },
+          "thermal_properties": {
+            "conductivity_W_m_K": 400.0,
+            "heat_transfer_coeff_W_m2_K": 10.0,
+            "ambient_temp_C": 18.0
+          },
+          "pressure_characteristics": {
+            "supply_pressure_kPa": 345,
+            "min_working_pressure_kPa": 138,
+            "max_pressure_kPa": 517
+          }
+        }
+      },
+      {
+        "id": "older_copper",
+        "name": "Older Copper Home (1960-1980)",
+        "weight": 0.15,
+        "characteristics": {
+          "construction_era": "1960-1980",
+          "house_type": "detached_medium",
+          "occupancy": {
+            "min_people": 2,
+            "max_people": 4,
+            "daily_consumption_L": [200, 300]
+          },
+          "main_distribution": {
+            "material": "Copper",
+            "diameter_in": 0.75,
+            "diameter_mm": 19.05,
+            "wall_thickness_mm": 1.24,
+            "roughness_mm": 0.003,
+            "total_length_m": 38.0
+          },
+          "branch_lines": {
+            "material": "Copper",
+            "diameter_in": 0.5,
+            "diameter_mm": 12.7,
+            "wall_thickness_mm": 0.89,
+            "roughness_mm": 0.003,
+            "avg_length_m": 9.0
+          },
+          "thermal_properties": {
+            "conductivity_W_m_K": 400.0,
+            "heat_transfer_coeff_W_m2_K": 10.0,
+            "ambient_temp_C": 18.0
+          },
+          "pressure_characteristics": {
+            "supply_pressure_kPa": 310,
+            "min_working_pressure_kPa": 138,
+            "max_pressure_kPa": 483
+          }
+        }
+      },
+      {
+        "id": "mixed_pex_copper",
+        "name": "Mixed PEX/Copper Retrofit (1990-2010)",
+        "weight": 0.12,
+        "characteristics": {
+          "construction_era": "1990-2010",
+          "house_type": "detached_medium",
+          "occupancy": {
+            "min_people": 3,
+            "max_people": 5,
+            "daily_consumption_L": [240, 380]
+          },
+          "main_distribution": {
+            "material": "Copper",
+            "diameter_in": 0.75,
+            "diameter_mm": 19.05,
+            "wall_thickness_mm": 1.02,
+            "roughness_mm": 0.002,
+            "total_length_m": 25.0
+          },
+          "branch_lines": {
+            "material": "PEX-B",
+            "diameter_in": 0.5,
+            "diameter_mm": 12.7,
+            "wall_thickness_mm": 1.85,
+            "roughness_mm": 0.007,
+            "avg_length_m": 15.0
+          },
+          "thermal_properties": {
+            "conductivity_W_m_K": 200.0,
+            "heat_transfer_coeff_W_m2_K": 6.5,
+            "ambient_temp_C": 18.0
+          },
+          "pressure_characteristics": {
+            "supply_pressure_kPa": 380,
+            "min_working_pressure_kPa": 138,
+            "max_pressure_kPa": 550
+          }
+        }
+      },
+      {
+        "id": "cpvc_budget",
+        "name": "CPVC Budget Home (1990-2010)",
+        "weight": 0.10,
+        "characteristics": {
+          "construction_era": "1990-2010",
+          "house_type": "detached_small",
+          "occupancy": {
+            "min_people": 2,
+            "max_people": 4,
+            "daily_consumption_L": [160, 280]
+          },
+          "main_distribution": {
+            "material": "CPVC",
+            "diameter_in": 0.75,
+            "diameter_mm": 19.05,
+            "wall_thickness_mm": 2.11,
+            "roughness_mm": 0.0015,
+            "total_length_m": 32.0
+          },
+          "branch_lines": {
+            "material": "CPVC",
+            "diameter_in": 0.5,
+            "diameter_mm": 12.7,
+            "wall_thickness_mm": 1.59,
+            "roughness_mm": 0.0015,
+            "avg_length_m": 8.0
+          },
+          "thermal_properties": {
+            "conductivity_W_m_K": 0.15,
+            "heat_transfer_coeff_W_m2_K": 2.5,
+            "ambient_temp_C": 18.0
+          },
+          "pressure_characteristics": {
+            "supply_pressure_kPa": 345,
+            "min_working_pressure_kPa": 138,
+            "max_pressure_kPa": 620
+          }
+        }
+      }
+    ],
+    "demand_patterns": {
+      "base_patterns": {
+        "weekday": {
+          "description": "Typical weekday water usage pattern",
+          "hourly_multipliers": [0.3, 0.2, 0.2, 0.2, 0.4, 1.2, 2.1, 2.8, 2.2, 1.4, 1.1, 1.2, 1.5, 1.3, 1.1, 1.2, 1.8, 2.4, 2.1, 1.6, 1.2, 0.8, 0.6, 0.4]
+        },
+        "weekend": {
+          "description": "Weekend water usage pattern",
+          "hourly_multipliers": [0.3, 0.2, 0.2, 0.2, 0.3, 0.5, 1.0, 1.8, 2.2, 2.0, 1.8, 1.6, 1.8, 1.5, 1.3, 1.4, 1.6, 1.9, 1.7, 1.4, 1.1, 0.9, 0.7, 0.5]
+        }
+      },
+      "seasonal_factors": {
+        "jan": 0.85, "feb": 0.88, "mar": 0.95, "apr": 1.05,
+        "may": 1.15, "jun": 1.25, "jul": 1.30, "aug": 1.28,
+        "sep": 1.18, "oct": 1.08, "nov": 0.95, "dec": 0.88
+      },
+      "fixture_weights": {
+        "toilet": 0.167,
+        "shower": 0.333,
+        "laundry": 0.222,
+        "dishwasher": 0.056,
+        "faucets": 0.222
+      }
+    },
+    "environmental_factors": {
+      "ground_temperature_C": {
+        "winter": 8.0,
+        "spring": 12.0,
+        "summer": 16.0,
+        "fall": 14.0
+      },
+      "supply_water_temperature_C": {
+        "winter": 4.0,
+        "spring": 10.0,
+        "summer": 12.0,
+        "fall": 10.0
+      }
+    }
+  }

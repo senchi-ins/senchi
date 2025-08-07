@@ -243,15 +243,7 @@ def build_network(cfg, month):
     rough = 130 if cfg["material"] == "Copper" else 160
     service_diam_m = cfg["diameter_in"] * 0.0254  # convert inches → metres (0.75 or 1.0 in)
 
-    wn.add_pipe(
-        "SERVICE_LINE",
-        "MUNICIPAL_SUPPLY",
-        "SERVICE_ENTRY",
-        length=10,
-        diameter=service_diam_m,
-        roughness=rough,
-        initial_status="OPEN",
-    )
+    wn.add_pipe("SERVICE_LINE", "MUNICIPAL_SUPPLY", "SERVICE_ENTRY", length=10, diameter=service_diam_m, roughness=rough, initial_status="OPEN")
 
     # Main trunk – match service diameter (0.75 in or 1 in)
     wn.add_pipe("P_MAIN_1", "SERVICE_ENTRY", "MAIN_TRUNK_1", length=5, diameter=service_diam_m, roughness=rough)
