@@ -1,5 +1,8 @@
+import logging
 from typing import List
 from pydantic import BaseModel
+
+logger = logging.getLogger(__name__)
 
 
 def get_all_model_fields(model_classes: List[BaseModel]) -> List[str]:

@@ -52,6 +52,7 @@ from notifications.noti import NotificationRouter
 from rdsdb.rdsdb import RedisDB
 from maindb.pg import PostgresDB
 from sms.sms import MessageBot
+from iot.zigbee.sms.alerts import Command, SendCommandRequest
 
 logger = logging.getLogger(__name__)
 
@@ -385,82 +386,33 @@ async def permit_join(
     except Exception as e:
         logger.error(f"Error publishing permit join message to {topic}: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to publish permit join: {str(e)}")
-    
-class Command(str, Enum):
-    ON = "ON"
-    OFF = "OFF"
 
-    def to_payload(self) -> dict:
-        return {"state": self.value}
-
-class SendCommandRequest(BaseModel):
-    command: Command
-    device_serial: str
-    ieee_address: str
-
-# TODO: This doesn't need to be an endpoint
-# @app.post("/zigbee/send-command")
-def send_command(command: SendCommandRequest):
-    """Send a command to a device"""
-    
-    if not mqtt_monitor.connected:
-        print(f"MQTT not connected. Broker: {settings.MQTT_BROKER}:{settings.MQTT_PORT}")
-        logger.error(f"MQTT not connected. Broker: {settings.MQTT_BROKER}:{settings.MQTT_PORT}")
-        raise HTTPException(
-            status_code=503,
-            detail=f"MQTT not connected to {settings.MQTT_BROKER}:{settings.MQTT_PORT}"
-        )
-    
-    device_serial = command.device_serial
-    ieee_address = command.ieee_address
-    
-    # Construct the topic using the device serial
-    topic = f"zigbee2mqtt/senchi-{device_serial}/{ieee_address}/set"
-    
-    result = mqtt_monitor.send_device_command(topic, command.command.to_payload())
-    
-    if result:
-        logger.info(f"Command sent to {topic} successfully")
-        return {
-            "message": f"Command sent to {topic} successfully",
-            "topic": topic,
-            "device_serial": device_serial,
-            "command": command.command,
-            "ieee_address": ieee_address
-        }
-    else:
-        logger.error(f"MQTT publish failed with rc={result}")
-        raise HTTPException(status_code=500, detail=f"MQTT publish failed with rc={result}")
-    
-
-@app.post("/sms") # Default route for Twilio to hit
+@app.post("/sms")
 async def reply_sms(request: Request):
+    """Catchall reply thread for SMS messages sent to the twilio phone number"""
     sms_bot = app_state["sms_bot"]
-    # Reset response client for new request
     sms_bot.reset_response()
     
     form = await request.form()
     body = form.get('Body')
-    from_number = form.get('From')  # This is the sender's phone number
-    
-    print(f"Received SMS from {from_number}: {body}")
-    logger.info(f"Received SMS from {from_number}: {body}")
+    from_number = form.get('From')
 
     user_devices = app_state.get("pg_db").get_user_devices_by_phone(from_number)
 
     # TODO: This can be different if its for multiple properties, make sure the context remains to the one with the anomaly detected
     device_serial = user_devices[0].get("serial_number")
 
-    # TODO: Update to be a list of accepted commands
-    # TODO: Initially respond with a list of accepted commands and then route. Long-term, initial messsage will be sent when an anomaly is detected
+    seen_devices = set()
     if body.lower() == 'on':
         sms_bot.reply_sms("Great! Turning on the shutoff valve!")
         # TODO: See if there's a more efficient way to do this
         # Initial thought is to check the device type / try to store more details in the database
         for device in user_devices:
             ieee_address = device.get("ieee_address")
+            seen_devices.add(ieee_address)
             try:
-                send_command(SendCommandRequest(command=Command.ON, ieee_address=ieee_address, device_serial=device_serial))
+                if ieee_address not in seen_devices:
+                    mqtt_monitor.send_command(SendCommandRequest(command=Command.ON, ieee_address=ieee_address, device_serial=device_serial))
             except Exception as e:
                 logger.error(f"Error sending command to {ieee_address}: Device does not support this command. {e}")
     elif body.lower() == 'no':
@@ -470,8 +422,10 @@ async def reply_sms(request: Request):
         sms_bot.reply_sms("Ok. Turning off the shutoff valve!")
         for device in user_devices:
             ieee_address = device.get("ieee_address")
+            seen_devices.add(ieee_address)
             try:
-                send_command(SendCommandRequest(command=Command.OFF, ieee_address=ieee_address, device_serial=device_serial))
+                if ieee_address not in seen_devices:
+                    mqtt_monitor.send_command(SendCommandRequest(command=Command.OFF, ieee_address=ieee_address, device_serial=device_serial))
             except Exception as e:
                 logger.error(f"Error sending command to {ieee_address}: Device does not support this command. {e}")
     else:

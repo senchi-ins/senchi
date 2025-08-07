@@ -128,6 +128,18 @@ class SetupResponse(BaseModel):
     mqtt_config: dict
     setup_instructions: str
 
+class Command(str, Enum):
+    ON = "ON"
+    OFF = "OFF"
+
+    def to_payload(self) -> dict:
+        return {"state": self.value}
+
+class SendCommandRequest(BaseModel):
+    command: Command
+    device_serial: str
+    ieee_address: str
+
 # Exports for server.py, add new notification types here
 # This will automatically update the database columns
 NOTIFICATION_TYPES = [

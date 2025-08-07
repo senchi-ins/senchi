@@ -1,5 +1,4 @@
 import json
-import sys
 import queue
 import time
 import asyncio
@@ -8,12 +7,11 @@ from datetime import datetime
 import logging
 import threading
 
-from fastapi import WebSocket
 import paho.mqtt.client as mqtt
 import pandas as pd
 
 from monitor.config import settings
-from monitor.models import Device, LandlordNotification
+from monitor.models import Device, LandlordNotification, SendCommandRequest
 from maindb.pg import PostgresDB
 
 logger = logging.getLogger(__name__)
@@ -261,7 +259,7 @@ class Monitor:
         except Exception as e:
             logger.warning(f"Error getting device serials from Redis: {e}")
         
-        # If no device serials found, use default
+        # If no device serials found, use default (this is the one used for all pis during development)
         if not device_serials:
             device_serials.add("SNH2025001")
             logger.info("Using default device serial: SNH2025001")
@@ -283,7 +281,6 @@ class Monitor:
         msg: mqtt.MQTTMessage,
     ):
         topic = msg.topic
-        # Some MQTT messages might have empty or non-JSON payloads
         try:
             payload_str = msg.payload.decode("utf-8")
             if not payload_str.strip():
@@ -399,7 +396,6 @@ class Monitor:
                 
                 logger.info(f"Added device: {ieee_address}")
                 
-                # Log new device event to PostgreSQL
                 asyncio.run_coroutine_threadsafe(
                     self.log_device_event(ieee_address, {"event": "device_added", "device_data": curr.dict()}),
                     self.loop
@@ -413,7 +409,6 @@ class Monitor:
                             setattr(existing_device, field, value)
                     logger.info(f"Updated device: {ieee_address}")
                     
-                    # Log device update event to PostgreSQL
                     asyncio.run_coroutine_threadsafe(
                         self.log_device_event(ieee_address, {"event": "device_updated", "device_data": curr.dict()}),
                         self.loop
@@ -611,7 +606,7 @@ class Monitor:
             event_type = payload.get('type', 'unknown')
             data = payload.get('data', {})
             
-            # Insert bridge event into PostgreSQL
+            # TODO: Move this into `pg.py`
             query = """
             INSERT INTO events (device, event_type, event_time, event_location, time_to_stop)
             VALUES (%s, %s, %s, %s, %s)
@@ -704,13 +699,11 @@ class Monitor:
     async def broadcast_device_update(self, device_id: str, payload: Dict):
         """Broadcast device updates to connected WebSocket clients for the device owner"""
         try:
-            # Get device info to find the owner
             device = self.app_state["devices"].get(device_id)
             if not device:
                 logger.warning(f"Device {device_id} not found for broadcast")
                 return
             
-            # Get device owner from database
             pg_db = self.app_state.get("pg_db")
             if not pg_db:
                 logger.warning("PostgreSQL database not available for device owner lookup")
@@ -740,7 +733,6 @@ class Monitor:
             owner_user_id = owner_result[0]['owner_user_id']
             logger.debug(f"Found owner_user_id: {owner_user_id}")
             
-            # Create the message
             message_data = {
                 "friendly_name": getattr(device, 'friendly_name', None),
                 "device_type": getattr(device, 'type', None),
@@ -752,7 +744,6 @@ class Monitor:
                 **payload  # Include all other payload data
             }
             
-            # Serialize any datetime objects
             message_data = self._serialize_datetime_objects(message_data)
             
             message = {
@@ -795,7 +786,7 @@ class Monitor:
             import traceback
             logger.error(f"Full traceback: {traceback.format_exc()}")
 
-    def send_device_command(self, topic: str,  command: dict) -> bool:
+    def _send_device_command(self, topic: str,  command: dict) -> bool:
         """
         Send a command to a device. Currently, only supports turning on/off the shutoff valve.
         """
@@ -808,6 +799,40 @@ class Monitor:
             logger.error(f"Failed to send command to {topic}: rc={result.rc}")
             return False
         return True
+    
+    def send_command(
+        self,
+        command: SendCommandRequest,
+        command_endpoint: str = "set",
+    ):
+        """Send a command to a device.
+        
+        NOTE: Currently only supports the "set" endpoint for the automatic shutoff valve.
+        """
+        device_serial = command.device_serial
+        ieee_address = command.ieee_address
+        
+        # Construct the topic using the device serial
+        topic = f"zigbee2mqtt/senchi-{device_serial}/{ieee_address}/{command_endpoint}"
+        
+        result = self._send_device_command(topic, command.command.to_payload())
+        
+        if result:
+            logger.info(f"Command sent to {topic} successfully")
+            return {
+                "message": f"Command sent to {topic} successfully",
+                "topic": topic,
+                "device_serial": device_serial,
+                "command": command.command,
+                "ieee_address": ieee_address
+            }
+        return {
+            "message": f"Command sent to {topic} unsuccessfully. rc={result.rc}",
+            "topic": topic,
+            "device_serial": device_serial,
+            "command": command.command,
+            "ieee_address": ieee_address
+        }
 
     def start(self):
         try:
@@ -816,10 +841,8 @@ class Monitor:
 
             logging.debug(f"Attempting to connect to MQTT broker: {settings.MQTT_BROKER}:{settings.MQTT_PORT}")
             
-            # Start the network loop in a background thread
             self.client.loop_start()
             
-            # Connect to broker
             result = self.client.connect(
                 settings.MQTT_BROKER, 
                 settings.MQTT_PORT,
