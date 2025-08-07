@@ -409,12 +409,12 @@ async def reply_sms(request: Request):
         # Initial thought is to check the device type / try to store more details in the database
         for device in user_devices:
             ieee_address = device.get("ieee_address")
-            seen_devices.add(ieee_address)
             try:
                 if ieee_address not in seen_devices:
                     mqtt_monitor.send_command(SendCommandRequest(command=Command.ON, ieee_address=ieee_address, device_serial=device_serial))
             except Exception as e:
                 logger.error(f"Error sending command to {ieee_address}: Device does not support this command. {e}")
+            seen_devices.add(ieee_address)
     elif body.lower() == 'no':
         # TODO: Update the accepted commands
         sms_bot.reply_sms("Ok. Leaving it off. Please check on the water leak ASAP.")
@@ -422,12 +422,12 @@ async def reply_sms(request: Request):
         sms_bot.reply_sms("Ok. Turning off the shutoff valve!")
         for device in user_devices:
             ieee_address = device.get("ieee_address")
-            seen_devices.add(ieee_address)
             try:
                 if ieee_address not in seen_devices:
                     mqtt_monitor.send_command(SendCommandRequest(command=Command.OFF, ieee_address=ieee_address, device_serial=device_serial))
             except Exception as e:
                 logger.error(f"Error sending command to {ieee_address}: Device does not support this command. {e}")
+            seen_devices.add(ieee_address)
     else:
         # Default response for unrecognized messages
         sms_bot.reply_sms("Thanks for your message!")
