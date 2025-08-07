@@ -206,31 +206,6 @@ async def root():
         "total_devices": len(app_state["devices"])
     }
 
-@app.post("/sms") # Default route for Twilio to hit
-async def reply_sms(request: Request):
-    sms_bot = app_state["sms_bot"]
-    # Reset response client for new request
-    sms_bot.reset_response()
-    
-    form = await request.form()
-    body = form.get('Body')
-
-    if body.lower() == 'hello':
-        sms_bot.reply_sms("Hi!")
-    elif body.lower() == 'bye':
-        sms_bot.reply_sms("Goodbye")
-    else:
-        # Default response for unrecognized messages
-        sms_bot.reply_sms("Thanks for your message!")
-    
-    logger.info(f"Received SMS: {body}, responding with: {sms_bot.response_client}")
-
-    return Response(
-        content=str(sms_bot.response_client),
-        media_type="application/xml"
-    )
-
-
 # TODO: Add a specific user id for the devices
 @app.post("/devices")
 async def get_devices(
@@ -425,7 +400,7 @@ class SendCommandRequest(BaseModel):
 @app.post("/zigbee/send-command")
 def send_command(
     command: SendCommandRequest,
-    current_user: dict = Depends(get_current_user)
+    # current_user: dict = Depends(get_current_user)
 ):
     """Send a command to a device"""
     
@@ -437,13 +412,16 @@ def send_command(
             detail=f"MQTT not connected to {settings.MQTT_BROKER}:{settings.MQTT_PORT}"
         )
     
-    device_serial = current_user.get('device_serial')
-    ieee_address = command.get('ieee_address')
+    # device_serial = current_user.get('device_serial')
+    device_serial = "second_device"
+    ieee_address = command.ieee_address
     
     # Construct the topic using the device serial
-    topic = f"zigbee2mqtt/senchi-{device_serial}/{ieee_address}/set"
+    # topic = f"zigbee2mqtt/senchi-{device_serial}/{ieee_address}/set"
+    # For testing only
+    topic = f"zigbee2mqtt/{device_serial}/{ieee_address}/set"
     
-    result = mqtt_monitor.send_device_command(topic, command.to_payload())
+    result = mqtt_monitor.send_device_command(topic, command.command.to_payload())
     
     if result:
         logger.info(f"Command sent to {topic} successfully")
@@ -457,6 +435,41 @@ def send_command(
     else:
         logger.error(f"MQTT publish failed with rc={result}")
         raise HTTPException(status_code=500, detail=f"MQTT publish failed with rc={result}")
+    
+
+@app.post("/sms") # Default route for Twilio to hit
+async def reply_sms(request: Request):
+    sms_bot = app_state["sms_bot"]
+    # Reset response client for new request
+    sms_bot.reset_response()
+    
+    form = await request.form()
+    body = form.get('Body')
+
+    # TODO: Get the ieee_address from the database
+    ieee_address = "0xa4c138ebc21645f4"
+
+    # TODO: Update copy
+    if body.lower() == 'on':
+        sms_bot.reply_sms("Great! Turning on the shutoff valve!")
+        # TODO: Pull in the ieee_address from the database
+        send_command(SendCommandRequest(command=Command.ON, ieee_address=ieee_address))
+    elif body.lower() == 'no':
+        sms_bot.reply_sms("Ok. Leaving it off. Please check on the water leak ASAP.")
+        # send_command(SendCommandRequest(command=Command.OFF, ieee_address=ieee_address))
+    elif body.lower() == 'off':
+        sms_bot.reply_sms("Ok. Turning off the shutoff valve!")
+        send_command(SendCommandRequest(command=Command.OFF, ieee_address=ieee_address))
+    else:
+        # Default response for unrecognized messages
+        sms_bot.reply_sms("Thanks for your message!")
+    
+    logger.info(f"Received SMS: {body}, responding with: {sms_bot.response_client}")
+
+    return Response(
+        content=str(sms_bot.response_client),
+        media_type="application/xml"
+    )
 
 def broadcast_device_update(user_id: str, device_data: dict):
     """Broadcast device updates to connected WebSocket clients for a specific user"""

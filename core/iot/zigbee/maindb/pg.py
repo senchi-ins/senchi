@@ -265,3 +265,14 @@ class PostgresDB:
         WHERE location_id = %s
         """
         return self.execute_query(query, (location_id,))
+    
+    # TODO: Verify this works
+    def get_manager_phone_number(self, user_id: str) -> str:
+        """Get a user from a location_id"""
+        query = """
+        SELECT manager_phone_number
+        FROM zb_user_properties u
+        JOIN zb_properties p ON u.property_id = p.id
+        WHERE user_id = %s
+        """
+        return self.execute_query(query, (user_id,))

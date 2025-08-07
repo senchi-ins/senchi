@@ -785,6 +785,8 @@ class Monitor:
                 disconnected_clients = []
                 for websocket in self.app_state["websocket_connections"][owner_user_id]:
                     try:
+                        # TODO: Get the managers number and send a text message saying theres been a leak
+                        # TODO: Eventually, this should notify if the leak is predicted to occur in the next 6 hours
                         await websocket.send_text(json.dumps(message))
                     except Exception as e:
                         logger.error(f"Failed to send device update to WebSocket: {e}")

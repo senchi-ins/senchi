@@ -2,19 +2,19 @@
 services:
   # Central MQTT broker
   # This allows multiple zigbee devices to connect to the same broker
-  mosquitto:
-    image: eclipse-mosquitto:latest
-    ports:
-      - "1883:1883"    # MQTT
-      - "9001:9001"    # WebSocket MQTT
-    volumes:
-      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
-      - ./mosquitto_passwd:/mosquitto/config/passwd
-      - mqtt_data:/mosquitto/data
-      - mqtt_logs:/mosquitto/log
-    restart: unless-stopped
-    networks:
-      - mqtt_network
+  # mosquitto:
+  #   image: eclipse-mosquitto:latest
+  #   ports:
+  #     - "1883:1883"    # MQTT
+  #     - "9001:9001"    # WebSocket MQTT
+  #   volumes:
+  #     - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+  #     - ./mosquitto_passwd:/mosquitto/config/passwd
+  #     - mqtt_data:/mosquitto/data
+  #     - mqtt_logs:/mosquitto/log
+  #   restart: unless-stopped
+  #   networks:
+  #     - mqtt_network
 
   redis:
     image: redis:alpine
@@ -56,7 +56,7 @@ services:
       - "8000:8000"
     environment:
       - DATABASE_URL=postgresql://homeuser:${DB_PASSWORD:-defaultpass}@postgres:5432/home_automation
-      - MQTT_BROKER=mosquitto
+      - MQTT_BROKER=switchyard.proxy.rlwy.net
       - MQTT_PORT=${MQTT_PORT:-1883}
       - SECRET_KEY=${SECRET_KEY}
       - ENVIRONMENT=${ENVIRONMENT:-dev}
@@ -75,7 +75,7 @@ services:
       - ./logs:/app/logs
       - ./configuration.yml:/app/configuration.yml:ro
     depends_on:
-      - mosquitto
+      # - mosquitto
       - redis
       - postgres
     networks:
