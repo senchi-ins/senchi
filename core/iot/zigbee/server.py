@@ -451,9 +451,6 @@ async def reply_sms(request: Request):
     # TODO: This can be different if its for multiple properties, make sure the context remains to the one with the anomaly detected
     device_serial = user_devices[0].get("serial_number")
 
-    # TODO: Get the ieee_address from the database
-    # ieee_address = "0xa4c138ebc21645f4"
-
     # TODO: Update to be a list of accepted commands
     # TODO: Initially respond with a list of accepted commands and then route. Long-term, initial messsage will be sent when an anomaly is detected
     if body.lower() == 'on':
@@ -469,7 +466,6 @@ async def reply_sms(request: Request):
     elif body.lower() == 'no':
         # TODO: Update the accepted commands
         sms_bot.reply_sms("Ok. Leaving it off. Please check on the water leak ASAP.")
-        # send_command(SendCommandRequest(command=Command.OFF, ieee_address=ieee_address))
     elif body.lower() == 'off':
         sms_bot.reply_sms("Ok. Turning off the shutoff valve!")
         for device in user_devices:

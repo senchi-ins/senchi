@@ -33,11 +33,6 @@ class InterviewState(str, Enum):
     FAILED = "FAILED"
     IN_PROGRESS = "IN_PROGRESS"
 
-class PowerSource(str, Enum):
-    BATTERY = "Battery"
-    MAINS = "Mains"
-    UNKNOWN = "Unknown"
-
 class DeviceDefinition(BaseModel):
     description: Optional[str] = None
     model: Optional[str] = None
@@ -70,7 +65,7 @@ class Device(BaseModel):
     type: Optional[DeviceType] = None
     manufacturer: Optional[str] = None
     model: Optional[str] = None
-    power_source: Optional[PowerSource] = None
+    power_source: Optional[str] = None
     software_build_id: Optional[str] = None
     date_code: Optional[str] = None
     

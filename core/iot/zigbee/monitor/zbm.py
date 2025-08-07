@@ -97,23 +97,6 @@ class Monitor:
         except Exception as e:
             logger.error(f"Error subscribing to device topics: {e}")
 
-    # TODO: Delete
-    def _subscribe_to_default_topics(self):
-        """Subscribe to default topics for testing when Redis is unavailable"""
-        print("Subscribing to default topics")
-        default_topics = [
-            "zigbee2mqtt/senchi-SNH2025001/bridge/health",
-            "zigbee2mqtt/senchi-SNH2025001/bridge/devices",
-            "zigbee2mqtt/senchi-SNH2025001/bridge/event",
-            "zigbee2mqtt/senchi-SNH2025001/bridge/response/device/remove",
-        ]
-        for topic in default_topics:
-            try:
-                self.client.subscribe(topic)
-                logger.info(f"Subscribed to default topic: {topic}")
-            except Exception as e:
-                logger.error(f"Failed to subscribe to default topic {topic}: {e}")
-
     def _request_device_list(self):
         """Request the current device list from the bridge to restore device state"""
         try:
@@ -140,7 +123,6 @@ class Monitor:
         """Extract device serial from the last bridge/devices topic received"""
         if hasattr(self, 'current_device_serial') and self.current_device_serial:
             return self.current_device_serial
-        # Default fallback
         return "SNH2025001"
     
     def _store_device_mapping(self, device_serial: str, device: Device):
