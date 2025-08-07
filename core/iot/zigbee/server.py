@@ -47,6 +47,7 @@ from monitor.models import (
 )
 from monitor.zbm import Monitor
 from monitor.utils import get_all_model_fields
+from monitor.models import Command, SendCommandRequest
 from notifications.apns_service import APNsService
 from notifications.noti import NotificationRouter
 from rdsdb.rdsdb import RedisDB
