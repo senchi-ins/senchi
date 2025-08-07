@@ -400,7 +400,7 @@ class SendCommandRequest(BaseModel):
 @app.post("/zigbee/send-command")
 def send_command(
     command: SendCommandRequest,
-    # current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user)
 ):
     """Send a command to a device"""
     
@@ -445,6 +445,13 @@ async def reply_sms(request: Request):
     
     form = await request.form()
     body = form.get('Body')
+    from_number = form.get('From')  # This is the sender's phone number
+    
+    print(f"Received SMS from {from_number}: {body}")
+    logger.info(f"Received SMS from {from_number}: {body}")
+
+    user_devices = app_state.get("pg_db").get_user_devices_by_phone(from_number)
+    print(f"User devices: {user_devices}")
 
     # TODO: Get the ieee_address from the database
     ieee_address = "0xa4c138ebc21645f4"

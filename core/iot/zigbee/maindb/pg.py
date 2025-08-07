@@ -276,3 +276,38 @@ class PostgresDB:
         WHERE user_id = %s
         """
         return self.execute_query(query, (user_id,))
+
+    def get_user_devices_by_phone(self, phone_number: str) -> List[Dict]:
+        """Get all devices for a user by their phone number"""
+        query = """
+        SELECT 
+            dm.ieee_address,
+            dm.friendly_name,
+            dm.device_type,
+            dm.model,
+            dm.manufacturer,
+            dm.last_seen,
+            u.id as user_id,
+            u.full_name,
+            d.serial_number
+        FROM zb_users u
+        JOIN zb_devices d ON u.id = d.owner_user_id
+        JOIN device_mappings dm ON d.serial_number = dm.device_serial
+        WHERE u.phone_number = %s 
+        AND u.is_active = true
+        AND d.device_status = 'active'
+        ORDER BY dm.last_seen DESC
+        """
+        return self.execute_query(query, (phone_number,))
+
+    def update_user_phone_number(self, user_id: str, phone_number: str) -> int:
+        """Update a user's phone number"""
+        query = """
+        UPDATE zb_users 
+        SET phone_number = %s, updated_at = NOW()
+        WHERE id = %s
+        """
+        result = self.execute_insert(query, (phone_number, user_id))
+        if result > 0:
+            logger.info(f"Updated phone number for user {user_id}")
+        return result
