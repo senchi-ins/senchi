@@ -271,8 +271,8 @@ class PostgresDB:
         """Get a user from a location_id"""
         query = """
         SELECT manager_phone_number
-        FROM zb_user_properties u
-        JOIN zb_properties p ON u.property_id = p.id
+        FROM zb_user_properties as u
+        JOIN zb_properties as p ON u.property_id = p.id
         WHERE user_id = %s
         """
         return self.execute_query(query, (user_id,))
@@ -288,14 +288,11 @@ class PostgresDB:
             dm.manufacturer,
             dm.last_seen,
             u.id as user_id,
-            u.full_name,
             d.serial_number
-        FROM zb_users u
-        JOIN zb_devices d ON u.id = d.owner_user_id
-        JOIN device_mappings dm ON d.serial_number = dm.device_serial
-        WHERE u.phone_number = %s 
-        AND u.is_active = true
-        AND d.device_status = 'active'
+        FROM zb_user_properties as u
+        JOIN zb_devices as d ON u.user_id = d.owner_user_id
+        JOIN device_mappings as dm ON d.serial_number = dm.device_serial
+        WHERE u.manager_phone_number = '2899716341'
         ORDER BY dm.last_seen DESC
         """
         return self.execute_query(query, (phone_number,))
