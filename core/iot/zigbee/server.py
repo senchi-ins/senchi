@@ -395,13 +395,12 @@ class Command(str, Enum):
 
 class SendCommandRequest(BaseModel):
     command: Command
+    device_serial: str
     ieee_address: str
 
-@app.post("/zigbee/send-command")
-def send_command(
-    command: SendCommandRequest,
-    current_user: dict = Depends(get_current_user)
-):
+# TODO: This doesn't need to be an endpoint
+# @app.post("/zigbee/send-command")
+def send_command(command: SendCommandRequest):
     """Send a command to a device"""
     
     if not mqtt_monitor.connected:
@@ -412,14 +411,11 @@ def send_command(
             detail=f"MQTT not connected to {settings.MQTT_BROKER}:{settings.MQTT_PORT}"
         )
     
-    # device_serial = current_user.get('device_serial')
-    device_serial = "second_device"
+    device_serial = command.device_serial
     ieee_address = command.ieee_address
     
     # Construct the topic using the device serial
-    # topic = f"zigbee2mqtt/senchi-{device_serial}/{ieee_address}/set"
-    # For testing only
-    topic = f"zigbee2mqtt/{device_serial}/{ieee_address}/set"
+    topic = f"zigbee2mqtt/senchi-{device_serial}/{ieee_address}/set"
     
     result = mqtt_monitor.send_device_command(topic, command.command.to_payload())
     
@@ -451,22 +447,37 @@ async def reply_sms(request: Request):
     logger.info(f"Received SMS from {from_number}: {body}")
 
     user_devices = app_state.get("pg_db").get_user_devices_by_phone(from_number)
-    print(f"User devices: {user_devices}")
+
+    # TODO: This can be different if its for multiple properties, make sure the context remains to the one with the anomaly detected
+    device_serial = user_devices[0].get("serial_number")
 
     # TODO: Get the ieee_address from the database
-    ieee_address = "0xa4c138ebc21645f4"
+    # ieee_address = "0xa4c138ebc21645f4"
 
-    # TODO: Update copy
+    # TODO: Update to be a list of accepted commands
+    # TODO: Initially respond with a list of accepted commands and then route. Long-term, initial messsage will be sent when an anomaly is detected
     if body.lower() == 'on':
         sms_bot.reply_sms("Great! Turning on the shutoff valve!")
-        # TODO: Pull in the ieee_address from the database
-        send_command(SendCommandRequest(command=Command.ON, ieee_address=ieee_address))
+        # TODO: See if there's a more efficient way to do this
+        # Initial thought is to check the device type / try to store more details in the database
+        for device in user_devices:
+            ieee_address = device.get("ieee_address")
+            try:
+                send_command(SendCommandRequest(command=Command.ON, ieee_address=ieee_address, device_serial=device_serial))
+            except Exception as e:
+                logger.error(f"Error sending command to {ieee_address}: Device does not support this command. {e}")
     elif body.lower() == 'no':
+        # TODO: Update the accepted commands
         sms_bot.reply_sms("Ok. Leaving it off. Please check on the water leak ASAP.")
         # send_command(SendCommandRequest(command=Command.OFF, ieee_address=ieee_address))
     elif body.lower() == 'off':
         sms_bot.reply_sms("Ok. Turning off the shutoff valve!")
-        send_command(SendCommandRequest(command=Command.OFF, ieee_address=ieee_address))
+        for device in user_devices:
+            ieee_address = device.get("ieee_address")
+            try:
+                send_command(SendCommandRequest(command=Command.OFF, ieee_address=ieee_address, device_serial=device_serial))
+            except Exception as e:
+                logger.error(f"Error sending command to {ieee_address}: Device does not support this command. {e}")
     else:
         # Default response for unrecognized messages
         sms_bot.reply_sms("Thanks for your message!")
