@@ -52,7 +52,6 @@ from notifications.noti import NotificationRouter
 from rdsdb.rdsdb import RedisDB
 from maindb.pg import PostgresDB
 from sms.sms import MessageBot
-from sms.alerts import Command, SendCommandRequest
 
 logger = logging.getLogger(__name__)
 
