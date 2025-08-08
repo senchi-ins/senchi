@@ -1,6 +1,5 @@
 """Network builder tests."""
-import wntr  # type: ignore
-
+import wntr
 from src.network.builder import build_network_from_profile
 
 

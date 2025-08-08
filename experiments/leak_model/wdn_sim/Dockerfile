@@ -46,18 +46,26 @@ RUN uv sync --python "$(python -c 'import sys; print(".".join(map(str, sys.versi
 # and inside WNTR’s vendored path (used when it falls back to the bundled location).
 RUN set -e && \
     LIB_SRC="/tmp/epanet-build/EPANET/build/lib/libepanet2.so" && \
-    # 1) Install system-wide so ANY Python environment (including the runtime .venv
-    #    that `uv` creates) can locate the library via the dynamic loader.
+    # 1) Install system-wide so ANY Python interpreter can locate the library.
     cp "$LIB_SRC" /usr/local/lib/libepanet22.so && \
     ln -sf /usr/local/lib/libepanet22.so /usr/local/lib/libepanet.so && \
     ldconfig && \
-    # 2) Also copy to the path hard-coded inside WNTR wheels, to cover that code path.
-    SITE_PKGS=$(python -c "import site, json, sys; print(site.getsitepackages()[0])") && \
-    mkdir -p "$SITE_PKGS/wntr/epanet/libepanet/linux-x64/" && \
-    cp "$LIB_SRC" "$SITE_PKGS/wntr/epanet/libepanet/linux-x64/libepanet22.so" && \
-    chmod +x /usr/local/lib/libepanet22.so "$SITE_PKGS/wntr/epanet/libepanet/linux-x64/libepanet22.so" && \
-    echo "=== EPANET shared library installed system-wide and for WNTR ===" && \
-    ls -la /usr/local/lib/libepanet22.so "$SITE_PKGS/wntr/epanet/libepanet/linux-x64/" && \
+    # 2) Copy into the *global* site-packages that WNTR may try first.
+    GLOBAL_SITE_PKGS=$(python -c "import site, sys; print(site.getsitepackages()[0])") && \
+    mkdir -p "$GLOBAL_SITE_PKGS/wntr/epanet/libepanet/linux-x64/" && \
+    cp "$LIB_SRC" "$GLOBAL_SITE_PKGS/wntr/epanet/libepanet/linux-x64/libepanet22.so" && \
+    # 3) Also copy into the uv-managed virtual-env that lives at /app/.venv so
+    #    WNTR works when executed via `uv run ...` (which activates that venv).
+    if [ -f /app/.venv/bin/python ]; then \
+        VENV_SITE_PKGS=$(/app/.venv/bin/python -c "import site,sys;print(site.getsitepackages()[0])") && \
+        mkdir -p "$VENV_SITE_PKGS/wntr/epanet/libepanet/linux-x64/" && \
+        cp "$LIB_SRC" "$VENV_SITE_PKGS/wntr/epanet/libepanet/linux-x64/libepanet22.so" && \
+        chmod +x "$VENV_SITE_PKGS/wntr/epanet/libepanet/linux-x64/libepanet22.so"; \
+    fi && \
+    chmod +x /usr/local/lib/libepanet22.so "$GLOBAL_SITE_PKGS/wntr/epanet/libepanet/linux-x64/libepanet22.so" && \
+    echo "=== EPANET shared library installed in global & venv site-packages ===" && \
+    ls -la /usr/local/lib/libepanet22.so "$GLOBAL_SITE_PKGS/wntr/epanet/libepanet/linux-x64/" || true && \
+    [ -f /app/.venv/bin/python ] && ls -la "$VENV_SITE_PKGS/wntr/epanet/libepanet/linux-x64/" || true && \
     rm -rf /tmp/epanet-build
 
 # Prevent numpy / scipy from using multi-threaded BLAS inside containers

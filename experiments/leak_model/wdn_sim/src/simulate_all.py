@@ -28,6 +28,7 @@ import multiprocessing as mp
 from datetime import datetime, timedelta
 from pathlib import Path
 import json
+import os
 from typing import Tuple, Dict, Any
 
 # Path to house profiles JSON for weighted random selection
@@ -166,7 +167,103 @@ def simulate_cohort(
         for _ in tqdm(results_iter, total=len(jobs), desc="Simulating"):
             pass  # tqdm consumes iterator to update bar
 
-    print("Simulation batch finished. Files written to:", output_dir)
+    print("Simulation batch finished. Individual files written to:", output_dir)
+
+    # ------------------------------------------------------------------
+    # Consolidate individual house files into a single dataset
+    # ------------------------------------------------------------------
+    try:
+        from .io.polars_sink import concatenate_simulation_files  # Lazy import
+
+        file_format = "parquet"  # StreamingSink currently writes parquet by default
+        prefix = os.environ.get("SIM_FILE_PREFIX", "")
+        
+        # Find all individual house files (now with house_id in filename)
+        if prefix:
+            pattern = f"{prefix}_house_*.{file_format}"  # prefix_house_000001_0000.parquet
+        else:
+            pattern = f"simulation_house_*.{file_format}"
+
+        files_to_concat = list(output_dir.glob(pattern))
+        # Exclude the consolidated file if it already exists
+        combined_name = f"{prefix or 'combined'}_all_houses.{file_format}"
+        files_to_concat = [f for f in files_to_concat if f.name != combined_name]
+        
+        print(f"Found {len(files_to_concat)} individual house files to consolidate")
+        if files_to_concat:
+            combined_name = f"{prefix or 'combined'}_all_houses.{file_format}"
+            combined_path = output_dir / combined_name
+            concatenate_simulation_files(files_to_concat, combined_path, file_format=file_format)
+            print("Consolidated file written to", combined_path)
+
+            # --------------------------------------------------------------
+            # Bulk COPY into Postgres
+            # --------------------------------------------------------------
+            try:
+                import psycopg2
+                from psycopg2.extras import execute_values
+                import polars as pl
+
+                db_info = {
+                    "host": os.getenv("DB_HOST", "postgres"),
+                    "port": int(os.getenv("DB_PORT", "5432")),
+                    "dbname": os.getenv("DB_NAME", "wdn"),
+                    "user": os.getenv("DB_USER", "wdn"),
+                    "password": os.getenv("DB_PASSWORD", "wdn_pass"),
+                }
+                conn = psycopg2.connect(**db_info)
+                cur = conn.cursor()
+
+                table_name = "simulation_data"
+
+                # Create table if not exists
+                cur.execute(
+                    f"""
+                    CREATE TABLE IF NOT EXISTS {table_name} (
+                        timestamp TIMESTAMPTZ,
+                        house_id INT,
+                        flow_m3_s DOUBLE PRECISION,
+                        flow_gpm DOUBLE PRECISION,
+                        velocity DOUBLE PRECISION,
+                        totalizer DOUBLE PRECISION,
+                        pressure DOUBLE PRECISION,
+                        downstream_wave_time DOUBLE PRECISION,
+                        upstream_wave_time DOUBLE PRECISION,
+                        delta_t_raw DOUBLE PRECISION,
+                        theta DOUBLE PRECISION,
+                        pipe_diameter DOUBLE PRECISION,
+                        number_of_ultrasonic_reflections INT,
+                        pipe_material TEXT,
+                        leak BOOLEAN,
+                        location TEXT
+                    );
+                    """
+                )
+                conn.commit()
+
+                # Stream Parquet as CSV to COPY FROM STDIN
+                tmp_csv = combined_path.with_suffix(".csv")
+                pl.scan_parquet(combined_path).sink_csv(tmp_csv)
+
+                with open(tmp_csv, "r", encoding="utf-8") as f:
+                    cur.copy_expert(f"COPY {table_name} FROM STDIN WITH (FORMAT CSV, HEADER TRUE)", f)
+                conn.commit()
+                tmp_csv.unlink(missing_ok=True)
+                print("Bulk COPY completed into Postgres table", table_name)
+
+                # Delete intermediate per-house files
+                for f in files_to_concat:
+                    try:
+                        f.unlink(missing_ok=True)
+                    except Exception:
+                        pass
+                print("Intermediate per-house files deleted.")
+            except Exception as exc:
+                print("[WARN] Bulk COPY into Postgres failed:", exc)
+        else:
+            print("[WARN] No individual house files found for consolidation using pattern", pattern)
+    except Exception as exc:
+        print("[WARN] Consolidation step failed:", exc)
 
 # ---------------------------------------------------------------------------
 # CLI entry-point

@@ -85,7 +85,8 @@ class StreamingSink:
                  output_dir: Union[str, Path],
                  file_format: str = "parquet",
                  batch_size: int = 10000,
-                 compression: str = "snappy"):
+                 compression: str = "snappy",
+                 house_id: Optional[int] = None):
         """
         Initialize streaming sink.
         
@@ -94,6 +95,7 @@ class StreamingSink:
             file_format: 'parquet' or 'csv'
             batch_size: Number of rows to accumulate before flushing
             compression: Compression method ('snappy', 'gzip', 'lz4')
+            house_id: Optional house ID for unique filename generation
         """
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -104,6 +106,7 @@ class StreamingSink:
             
         self.batch_size = batch_size
         self.compression = compression
+        self.house_id = house_id
         self._buffer = []
         self._file_counter = 0
         
@@ -138,11 +141,18 @@ class StreamingSink:
         import os
         file_prefix = os.environ.get("SIM_FILE_PREFIX", "")
         if file_prefix:
-            filename = f"{file_prefix}.{self.file_format}"
+            if self.house_id is not None:
+                filename = f"{file_prefix}_house_{self.house_id:06d}_{self._file_counter:04d}.{self.file_format}"
+            else:
+                pid = os.getpid()
+                filename = f"{file_prefix}_{pid}_{self._file_counter:04d}.{self.file_format}"
         else:
             # Fallback to original naming if no prefix is set
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"simulation_batch_{self._file_counter:04d}_{timestamp}.{self.file_format}"
+            if self.house_id is not None:
+                filename = f"simulation_house_{self.house_id:06d}_{self._file_counter:04d}_{timestamp}.{self.file_format}"
+            else:
+                filename = f"simulation_batch_{self._file_counter:04d}_{timestamp}.{self.file_format}"
         filepath = self.output_dir / filename
         
         # Write to disk

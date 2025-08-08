@@ -2,28 +2,56 @@
 
 [JUNCTIONS]
 ;ID                      Elevation       Demand Pattern                 
- StreetConnection                   0               0                            ;
- Meter                   1.6404199475               0                            ;
- Manifold                4.9212598425    15.850323141                            ;
- Kitchen                 4.9212598425               0                            ;
- Bathroom1               4.9212598425               0                            ;
- Laundry                 1.6404199475               0                            ;
+ SERVICE_ENTRY                      0               0                            ;
+ MAIN_TRUNK_1                       0    7.9251615707 demand_pattern             ;
+ MAIN_TRUNK_2                       0               0                            ;
+ UPPER_FLOOR_BRANCH      4.9212598425               0                            ;
+ KITCHEN_BRANCH                     0               0                            ;
+ POWDER_ROOM_BRANCH                 0               0                            ;
+ KITCHEN_SINK                       0               0                            ;
+ DISHWASHER                         0               0                            ;
+ POWDER_ROOM_WC                     0               0                            ;
+ POWDER_ROOM_LAV                    0               0                            ;
+ HOSE_BIBB_FRONT                    0               0                            ;
+ HOSE_BIBB_BACK                     0               0                            ;
+ ENSUITE_WC               9.842519685               0                            ;
+ ENSUITE_LAV              9.842519685               0                            ;
+ ENSUITE_SHOWER           9.842519685               0                            ;
+ FAMILY_BATH_WC           9.842519685               0                            ;
+ FAMILY_BATH_LAV          9.842519685               0                            ;
+ FAMILY_BATH_TUB          9.842519685               0                            ;
+ LAUNDRY_SINK           -8.2020997375               0                            ;
+ WATER_HEATER           -8.2020997375               0                            ;
 
 [RESERVOIRS]
 ;ID                                   Head                  Pattern
- Municipal               138.50476121                            ;
+ MUNICIPAL_SUPPLY        138.50476121                            ;
 
 [TANKS]
 ;ID                              Elevation           Init Level            Min Level            Max Level             Diameter           Min Volume Volume Curve         Overflow            
 
 [PIPES]
 ;ID                   Node1                Node2                              Length             Diameter            Roughness           Minor Loss               Status
- ServiceLine          Municipal            StreetConnection          65.6167979            0.75           0.007               0                 Open   ;
- ToMeter              StreetConnection     Meter                     6.56167979            0.75           0.007               0                 Open   ;
- MainSupply           Meter                Manifold                 19.68503937            0.75           0.007               0                 Open   ;
- ToKitchen            Manifold             Kitchen                  26.24671916             0.5           0.007               0                 Open   ;
- ToBath1              Manifold             Bathroom1                26.24671916             0.5           0.007               0                 Open   ;
- ToLaundry            Manifold             Laundry                  13.12335958             0.5           0.007               0                 Open   ;
+ SERVICE_LINE         MUNICIPAL_SUPPLY     SERVICE_ENTRY            32.80839895            0.75           0.007               0                 Open   ;
+ P_MAIN_1             SERVICE_ENTRY        MAIN_TRUNK_1            16.404199475            0.75           0.007               0                 Open   ;
+ P_MAIN_2             MAIN_TRUNK_1         MAIN_TRUNK_2             26.24671916            0.75           0.007               0                 Open   ;
+ P_KITCHEN_BRANCH     MAIN_TRUNK_1         KITCHEN_BRANCH           9.842519685             0.5           0.007               0                 Open   ;
+ P_KITCHEN_SINK       KITCHEN_BRANCH       KITCHEN_SINK              6.56167979             0.5           0.007               0                 Open   ;
+ P_DISHWASHER         KITCHEN_BRANCH       DISHWASHER              4.9212598425             0.5           0.007               0                 Open   ;
+ P_POWDER_BRANCH      MAIN_TRUNK_1         POWDER_ROOM_BRANCH       13.12335958             0.5           0.007               0                 Open   ;
+ P_POWDER_WC          POWDER_ROOM_BRANCH   POWDER_ROOM_WC            6.56167979             0.5           0.007               0                 Open   ;
+ P_POWDER_LAV         POWDER_ROOM_BRANCH   POWDER_ROOM_LAV         4.9212598425             0.5           0.007               0                 Open   ;
+ P_UPPER_BRANCH       MAIN_TRUNK_2         UPPER_FLOOR_BRANCH       19.68503937             0.5           0.007               0                 Open   ;
+ P_ENS_WC             UPPER_FLOOR_BRANCH   ENSUITE_WC               9.842519685             0.5           0.007               0                 Open   ;
+ P_ENS_LAV            UPPER_FLOOR_BRANCH   ENSUITE_LAV             8.2020997375             0.5           0.007               0                 Open   ;
+ P_ENS_SHWR           UPPER_FLOOR_BRANCH   ENSUITE_SHOWER            6.56167979             0.5           0.007               0                 Open   ;
+ P_FAM_WC             UPPER_FLOOR_BRANCH   FAMILY_BATH_WC           13.12335958             0.5           0.007               0                 Open   ;
+ P_FAM_LAV            UPPER_FLOOR_BRANCH   FAMILY_BATH_LAV         11.482939633             0.5           0.007               0                 Open   ;
+ P_FAM_TUB            UPPER_FLOOR_BRANCH   FAMILY_BATH_TUB          9.842519685             0.5           0.007               0                 Open   ;
+ P_LAUNDRY            MAIN_TRUNK_2         LAUNDRY_SINK            16.404199475             0.5           0.007               0                 Open   ;
+ P_WATER_HEATER       MAIN_TRUNK_2         WATER_HEATER             9.842519685             0.5           0.007               0                 Open   ;
+ P_HOSE_FRONT         MAIN_TRUNK_1         HOSE_BIBB_FRONT          26.24671916             0.5           0.007               0                 Open   ;
+ P_HOSE_BACK          MAIN_TRUNK_2         HOSE_BIBB_BACK           19.68503937             0.5           0.007               0                 Open   ;
 
 [PUMPS]
 ;ID                   Node1                Node2                Properties          
@@ -42,6 +70,10 @@
 
 [PATTERNS]
 ;ID        Multipliers
+
+demand_pattern 0.000500 0.000500 0.000500 0.000500 0.000500 0.000500
+demand_pattern 0.000500 0.000500 0.000500 0.000500 0.000500 0.000500
+demand_pattern 0.000500
 
 [CURVES]
 ;ID         X-Value      Y-Value     
@@ -74,8 +106,8 @@ GLOBAL PRICE           0.0000
 ;Tank ID             Model Fraction
 
 [TIMES]
-DURATION             00:01:00
-HYDRAULIC TIMESTEP   00:01:00
+DURATION             00:00:10
+HYDRAULIC TIMESTEP   00:00:10
 QUALITY TIMESTEP     00:06:00
 PATTERN TIMESTEP     00:05:00
 PATTERN START        00:00:00
@@ -106,13 +138,27 @@ TOLERANCE            0.01
 
 [COORDINATES]
 ;Node      X-Coord    Y-Coord   
-Municipal           0.000000000          0.000000000
-StreetConnection          0.000000000          0.000000000
-Meter               0.000000000          0.000000000
-Manifold            0.000000000          0.000000000
-Kitchen             0.000000000          0.000000000
-Bathroom1           0.000000000          0.000000000
-Laundry             0.000000000          0.000000000
+MUNICIPAL_SUPPLY          0.000000000          0.000000000
+SERVICE_ENTRY          0.000000000          0.000000000
+MAIN_TRUNK_1          0.000000000          0.000000000
+MAIN_TRUNK_2          0.000000000          0.000000000
+UPPER_FLOOR_BRANCH          0.000000000          0.000000000
+KITCHEN_BRANCH          0.000000000          0.000000000
+POWDER_ROOM_BRANCH          0.000000000          0.000000000
+KITCHEN_SINK          0.000000000          0.000000000
+DISHWASHER          0.000000000          0.000000000
+POWDER_ROOM_WC          0.000000000          0.000000000
+POWDER_ROOM_LAV          0.000000000          0.000000000
+HOSE_BIBB_FRONT          0.000000000          0.000000000
+HOSE_BIBB_BACK          0.000000000          0.000000000
+ENSUITE_WC          0.000000000          0.000000000
+ENSUITE_LAV          0.000000000          0.000000000
+ENSUITE_SHOWER          0.000000000          0.000000000
+FAMILY_BATH_WC          0.000000000          0.000000000
+FAMILY_BATH_LAV          0.000000000          0.000000000
+FAMILY_BATH_TUB          0.000000000          0.000000000
+LAUNDRY_SINK          0.000000000          0.000000000
+WATER_HEATER          0.000000000          0.000000000
 
 [VERTICES]
 ;Link      X-Coord    Y-Coord   

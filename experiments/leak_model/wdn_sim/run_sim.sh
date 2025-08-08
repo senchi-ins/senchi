@@ -12,10 +12,10 @@ set -euo pipefail
 # --- Defaults ---------------------------------------------------------------
 export SIM_HOUSES="${SIM_HOUSES:-100}"
 export SIM_DAYS="${SIM_DAYS:-1}"
-export SIM_RESOLUTION="${SIM_RESOLUTION:-1.0}"
+export SIM_RESOLUTION="${SIM_RESOLUTION:-30.0}"
 export SIM_PROCESSES="${SIM_PROCESSES:-0}"
 export SIM_PROFILE="${SIM_PROFILE:-random}"
-export SIM_LIGHT_MODE="${SIM_LIGHT_MODE:-true}"
+export SIM_LIGHT_MODE="${SIM_LIGHT_MODE:-false}"
 export SIM_ENABLE_TSNET="${SIM_ENABLE_TSNET:-false}"
 export SIM_NO_EVENTS="${SIM_NO_EVENTS:-false}"
 export SIM_MEMORY_LIMIT="${SIM_MEMORY_LIMIT:-8G}"
