@@ -5,7 +5,6 @@ description = "Residential water distribution network Monte-Carlo simulator"
 readme = "README.md"
 requires-python = ">=3.11"
 
-# --- Runtime dependencies ---------------------------------------------------
 dependencies = [
     "scipy>=1.13.1",
     "numpy>=1.21.0",

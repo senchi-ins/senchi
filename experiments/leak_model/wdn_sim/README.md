@@ -1,8 +1,33 @@
+## Setup
+
+Install uv and run:
+```bash
+uv sync
+```
+
+## Running a simulation
+
+To run a simulation, simply run the following command:
+
+```bash
+./run_sim.sh [sim_size] # either small, medium, or large
+```
+
+This will run the simulation and output the results to the `data` directory.
+
+More granular options are available:
+
+```bash
+./run_sim.sh custom [homes] [start] [end] [memory_limit] [cpu_limit]
+
+Output will be saved to `output/raw/[sim_size]/[date]/[#_of_houses]h_[#_of_days]_[date]_[time]_all_houses.parquet
+
+
 # Synthetic Home Plumbing System Simulation
 
 ## Purpose
 
-This repository generates **physics‑based synthetic time‑series data** that mimic the readings captured by a clamp‑on ultrasonic water‑flow meter installed on a household’s main supply line.  The data include realistic demand patterns, hydraulic behaviour (Darcy–Weisbach, Bernoulli, Joukowsky water‑hammer effects), sensor noise, progressive leak/burst events, and blockage scenarios.  The resulting dataset—spanning thousands of homes at sub‑second cadence—is intended for training machine‑learning models that predict pipe failures **six hours before they occur**.
+This repository generates **physics‑based synthetic time‑series data** that mimic the readings captured by a clamp‑on ultrasonic water‑flow meter installed on a household’s main valve line.  The data include realistic demand patterns, hydraulic behaviour (Darcy–Weisbach, Bernoulli, Joukowsky water‑hammer effects), sensor noise, progressive leak/burst events, and blockage scenarios.  The resulting dataset—spanning thousands of homes at second cadence—is intended for training machine‑learning models that predict pipe failures **six hours before they occur**.
 
 ---
 
