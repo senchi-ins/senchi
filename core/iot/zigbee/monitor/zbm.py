@@ -281,6 +281,7 @@ class Monitor:
         msg: mqtt.MQTTMessage,
     ):
         topic = msg.topic
+        print(f"Received message on topic: {topic}")
         try:
             payload_str = msg.payload.decode("utf-8")
             if not payload_str.strip():
@@ -336,6 +337,7 @@ class Monitor:
                 )
         # --- Route notification by topic ---
         print(f"Routing message to notification router: {topic}")
+        logger.info(f"Routing message to notification router: {topic}")
         asyncio.run_coroutine_threadsafe(
             self.app_state["notification_router"].route_mqtt_message(topic, payload),
             self.loop
@@ -429,13 +431,6 @@ class Monitor:
             
             # Log sensor events (leaks, battery warnings, etc.)
             await self.log_sensor_event(ieee_address, payload)
-            
-            # Store event in database
-            # if not self.store_device_event(ieee_address, "state_update", payload):
-            #     return
-            
-            # Check for notification triggers
-            # await self.check_notification_triggers(ieee_address, payload)
             
             # Broadcast to WebSocket clients
             await self.broadcast_device_update(ieee_address, payload)
@@ -633,40 +628,6 @@ class Monitor:
             logger.error(f"Error logging bridge event to PostgreSQL: {e}")
             return False
 
-    async def check_notification_triggers(self, device_id: str, payload: Dict):
-        """Check if this update should trigger notifications"""
-        
-        device_name = self.app_state["devices"][device_id]["name"]
-        
-        # Water leak detection
-        water_leak = payload.get("water_leak")
-        if water_leak is True and device_id not in self.app_state["active_leaks"]:
-            self.app_state["active_leaks"].add(device_id)
-            
-            message = f"Leak detected:\nDevice: {device_name}\nTime: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-            await self.send_notification(device_id, message, "leak_alert", priority="high")
-            
-            logging.warning(f"leak alert: {device_name}")
-            
-        elif water_leak is False and device_id in self.app_state["active_leaks"]:
-            # Leak cleared
-            self.app_state["active_leaks"].remove(device_id)
-            
-            message = f"Leak cleared on {device_name}\nTime: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-            await self.send_notification(device_id, message, "leak_cleared", priority="normal")
-            
-            logging.info(f"Leak cleared: {device_name}")
-        
-        low_battery = payload.get("battery")
-        if low_battery is not None and not low_battery:
-            if not self.battery_alert_recently_sent(device_id):
-                message = f"Low battery warning\n\nDevice: {device_name}\nBattery: {low_battery}%"
-                await self.send_notification(device_id, message, "low_battery", priority="normal")
-
-    def battery_alert_recently_sent(self, device_id: str) -> bool:
-        # TODO: Implement this once db is implemented
-        return True
-    
     async def send_notification(
         self, device_id: str, message: str, notification_type: str, priority: str
     ) -> bool:

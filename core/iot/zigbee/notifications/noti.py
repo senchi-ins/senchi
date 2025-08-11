@@ -52,6 +52,7 @@ class NotificationRouter:
                     user_ids = [user_ids]
 
             # Send SMS to all phone numbers
+            print(f"Sending SMS to {phone_numbers}")
             message = f"""
             Senchi HomeGuard has detected a water leak at {location_id}.
 
