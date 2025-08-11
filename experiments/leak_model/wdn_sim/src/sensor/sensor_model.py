@@ -24,15 +24,14 @@ import math
 import numpy as np
 from pathlib import Path
 from typing import Dict, Optional, Tuple
+# -----------------------------------------------------------------------------
+# External physics utilities
+# -----------------------------------------------------------------------------
+from ..physics.temperature import speed_of_sound_water  # Centralised equation
 
 # -----------------------------------------------------------------------------
 # Helper functions
 # -----------------------------------------------------------------------------
-
-def speed_of_sound_water(temperature_c: float) -> float:
-    """Marczak equation for speed of sound in fresh water [m/s]."""
-    return 1404.3 + 4.7 * temperature_c - 0.04 * temperature_c ** 2
-
 
 def deg2rad(deg: float) -> float:
     return deg * math.pi / 180.0
@@ -169,6 +168,9 @@ class UltrasonicMeter:
             velocity_series, pipe_diameter_m, temperature_c)
         
         delta_t = t_down - t_up  # s
+
+        # Speed of sound for each sample (m/s) based on supplied water temperature
+        speed_m_s = speed_of_sound_water(temperature_c)
         
         # Add electronic time jitter (ns resolution)
         jitter_cfg = self.noise_cfg["electronic_noise"]["time_jitter_ns"]
@@ -211,6 +213,7 @@ class UltrasonicMeter:
             "flow_L_s": flow_L_s_final,
             "velocity_m_s": velocity_series,
             "totalizer_L": totalizer,
+            "speed_of_sound_m_s": speed_m_s,
             "signal_strength_db": signal_strength_db,
             "signal_quality_percent": signal_quality_percent,
             "measurement_confidence": measurement_confidence

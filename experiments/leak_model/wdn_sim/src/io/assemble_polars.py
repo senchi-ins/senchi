@@ -66,8 +66,10 @@ def assemble_demand_data(timestamps: List[datetime],
         "delta_t_raw": [None] * n_points,
         "theta": [None] * n_points,
         "pipe_diameter": [None] * n_points,
-        "number_of_ultrasonic_reflections": [None] * n_points,
+        "number_of_traverses": [None] * n_points,
         "pipe_material": [None] * n_points,
+        "water_temperature_C": [None] * n_points,
+        "ambient_temperature_C": [None] * n_points,
         "leak": [False] * n_points,
         "location": [None] * n_points,
     }
@@ -119,6 +121,27 @@ def merge_events_data(base_data: Dict[str, Any],
     return base_data
 
 
+def merge_temperature_data(base_data: Dict[str, Any],
+                          water_temp_C: np.ndarray,
+                          ambient_temp_C: float) -> Dict[str, Any]:
+    """
+    Merge temperature data into base data.
+    
+    Args:
+        base_data: Base simulation data dictionary
+        water_temp_C: Water temperature array (°C)
+        ambient_temp_C: Ambient temperature (°C)
+        
+    Returns:
+        Updated data dictionary
+    """
+    n_points = len(water_temp_C)
+    base_data["water_temperature_C"] = water_temp_C.tolist()
+    base_data["ambient_temperature_C"] = [ambient_temp_C] * n_points
+    
+    return base_data
+
+
 def merge_sensor_data(base_data: Dict[str, Any],
                      sensor_results: Dict[str, np.ndarray]) -> Dict[str, Any]:
     """
@@ -150,12 +173,16 @@ def merge_sensor_data(base_data: Dict[str, Any],
         
     if "delta_t_s" in sensor_results:
         base_data["delta_t_raw"] = sensor_results["delta_t_s"].tolist()
+
+    # Speed of sound (if present)
+    if "speed_of_sound_m_s" in sensor_results:
+        base_data["speed_of_sound_m_s"] = sensor_results["speed_of_sound_m_s"].tolist()
         
     if "signal_quality_percent" in sensor_results:
         # Assign a consistent number of ultrasonic reflections (2 or 4) for the whole run
         consistent_reflections = int(np.random.choice([2, 4]))
         n_samples = len(base_data["timestamp"])
-        base_data["number_of_ultrasonic_reflections"] = [consistent_reflections] * n_samples
+        base_data["number_of_traverses"] = [consistent_reflections] * n_samples
         
     # Add incidence angle if available
     if "theta_rad" in sensor_results:

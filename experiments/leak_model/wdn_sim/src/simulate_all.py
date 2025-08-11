@@ -232,7 +232,7 @@ def simulate_cohort(
                         delta_t_raw DOUBLE PRECISION,
                         theta DOUBLE PRECISION,
                         pipe_diameter DOUBLE PRECISION,
-                        number_of_ultrasonic_reflections INT,
+                        number_of_traverses INT,
                         pipe_material TEXT,
                         leak BOOLEAN,
                         location TEXT

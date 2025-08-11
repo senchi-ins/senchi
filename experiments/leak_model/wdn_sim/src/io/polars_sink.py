@@ -29,8 +29,10 @@ class SimulationSchema:
         "delta_t_raw": pl.Float64,
         "theta": pl.Float64,  # Incidence angle (radians)
         "pipe_diameter": pl.Float64,  # Internal diameter (mm)
-        "number_of_ultrasonic_reflections": pl.Int32,  # Signal quality metric
+        "number_of_traverses": pl.Int32,  # Signal quality metric
         "pipe_material": pl.Utf8,  # e.g. 'PEX', 'Copper', 'PVC'
+        "water_temperature_C": pl.Float64,  # Water temperature at sensor (°C)
+        "ambient_temperature_C": pl.Float64,  # Ambient/room temperature (°C)
         "leak": pl.Boolean,  # Binary indicator (True = leak/burst active)
         "location": pl.Utf8,  # Fixture or segment for the event
     }

@@ -8,6 +8,7 @@ Integrates with TSNet for high-fidelity transient simulation.
 import numpy as np
 from typing import Tuple, Optional, Dict
 import math
+from .temperature import speed_of_sound_water  # Centralised helper
 
 
 class WaterHammerAnalyzer:
@@ -15,7 +16,7 @@ class WaterHammerAnalyzer:
     Analyzes water-hammer effects using Joukowsky equation.
     """
     
-    def __init__(self, pipe_material: str = 'Copper', 
+    def __init__(self, pipe_material: str = 'PEX-B', 
                  fluid_bulk_modulus: float = 2.2e9,
                  fluid_density: float = 999.7):
         """
@@ -184,20 +185,3 @@ def water_density(temperature_c: float) -> float:
     """
     T = max(0, min(40, temperature_c))
     return 999.8395 + 0.0673952*T - 0.00909529*T**2 + 0.000100685*T**3
-
-
-def speed_of_sound_water(temperature_c: float) -> float:
-    """
-    Calculate speed of sound in water.
-    
-    Parameters
-    ----------
-    temperature_c : float
-        Water temperature (°C)
-        
-    Returns
-    -------
-    float
-        Speed of sound (m/s)
-    """
-    return 1404.3 + 4.7*temperature_c - 0.04*temperature_c**2

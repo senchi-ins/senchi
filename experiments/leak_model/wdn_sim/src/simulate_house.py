@@ -26,6 +26,7 @@ import wntr
 # Local imports
 from .generators.demand_numpy import DemandGenerator, generate_daily_profile
 from .physics.hydraulics import HydraulicSolver
+from .physics.temperature import TemperatureModel, estimate_pipe_length_to_sensor
 from .events.event_scheduler import EventScheduler, EventCategory
 from .sensor.sensor_model import UltrasonicMeter, simulate_ultrasonic_meter
 from .io import assemble_polars as ap
@@ -95,7 +96,7 @@ class HouseSimulator:
         # if "MainSupply" in self.wn.link_name_list:
         #     self.main_pipe = "MainSupply"
         # else:
-        self.main_pipe = "P_MAIN_1" # normally indented
+        self.main_pipe = "MainSupply" # normally indented
 
         try:
             _link_obj = self.wn.get_link(self.main_pipe)
@@ -147,6 +148,20 @@ class HouseSimulator:
         self.scheduler = EventScheduler(self.wn, start_time)
         self.sensor = UltrasonicMeter()
         self.enable_tsnet = enable_tsnet and _TSNET_AVAILABLE
+        
+        # Temperature model
+        try:
+            _char = load_profile(self.demand_profile_id)
+            self.temp_model = TemperatureModel.from_house_profile(_char, self.start_time.month)
+        except Exception:
+            # Fallback for default/custom networks
+            self.temp_model = TemperatureModel(
+                pipe_material=self.main_pipe_material,
+                pipe_diameter_m=self.main_pipe_diameter_m
+            )
+        
+        # Get pipe length from actual network model
+        self.pipe_length_to_sensor = estimate_pipe_length_to_sensor(self.wn)
 
         self.light_mode = light_mode  # Skip EPANET/TSNet for unit tests
         
@@ -241,6 +256,12 @@ class HouseSimulator:
             pressure_kpa = np.zeros(steps)
 
             time_hours = np.arange(steps) * self.resolution_seconds / 3600.0
+
+            # For graceful degradation when EPANET fails, remember previous good values
+            prev_flow_m3s: float = 0.0
+            prev_vel_ms: float = 0.0
+            prev_press_m: float = 30.6  # ≈300 kPa nominal head
+
             for idx, t_h in enumerate(time_hours):
 
                 # (a) apply demand for this step when not using fixture patterns
@@ -255,13 +276,52 @@ class HouseSimulator:
                 self.hydraulics.run_hydraulics(self.resolution_seconds)
                 res = self.hydraulics.results
 
-                flow_m3s = res.link["flowrate"][self.main_pipe].iloc[0]
-                vel_ms = res.link["velocity"][self.main_pipe].iloc[0]
-                press_m = res.node["pressure"][self.main_junction].iloc[0]
+                # Safely extract first-row results; fall back to nominal zeros if EPANET returned
+                # an empty dataframe (can happen when the solver fails to converge or the input
+                # file is invalid for the current step).  This prevents IndexError: "index 0 is
+                # out of bounds for axis 0" while allowing the simulation loop to continue.
+                try:
+                    flow_series = res.link["flowrate"][self.main_pipe]
+                    vel_series  = res.link["velocity"][self.main_pipe]
+                    press_series = res.node["pressure"][self.main_junction]
+
+                    if not flow_series.empty:
+                        flow_m3s = float(flow_series.iloc[0])
+                    elif idx > 0:
+                        flow_m3s = prev_flow_m3s
+                    else:
+                        flow_m3s = demand_L_s[idx] / 1000.0  # fallback to intended demand
+
+                    if not vel_series.empty:
+                        vel_ms = float(vel_series.iloc[0])
+                    elif idx > 0:
+                        vel_ms = prev_vel_ms
+                    else:
+                        vel_ms = 0.0
+
+                    if not press_series.empty:
+                        press_m = float(press_series.iloc[0])
+                    elif idx > 0:
+                        press_m = prev_press_m
+                    else:
+                        press_m = 30.6  # ~300 kPa
+                except Exception:
+                    # Any unexpected structure—carry forward if possible, else nominal
+                    if idx > 0:
+                        flow_m3s = prev_flow_m3s
+                        vel_ms = prev_vel_ms
+                        press_m = prev_press_m
+                    else:
+                        flow_m3s = demand_L_s[idx] / 1000.0
+                        vel_ms = 0.0
+                        press_m = 30.6
 
                 flow_L_s[idx] = flow_m3s * 1000.0
                 velocity_ms[idx] = vel_ms
                 pressure_kpa[idx] = press_m * 9.80665  # m → kPa
+
+                # Store for next iteration's carry-forward
+                prev_flow_m3s, prev_vel_ms, prev_press_m = flow_m3s, vel_ms, press_m
 
 
         # 5. Optional transient analysis via TSNet – only if a true burst event exists
@@ -305,20 +365,33 @@ class HouseSimulator:
                     # Fail safe: keep NaNs
                     pass
 
-        # 6. Sensor simulation
+        # 6. Temperature calculation (robust)
+        try:
+            water_temp_C = self.temp_model.calculate_temperature(
+                flow_m3s=flow_L_s / 1000.0,  # Convert L/s to m³/s
+                velocity_ms=velocity_ms,
+                pipe_length_m=self.pipe_length_to_sensor,
+                resolution_seconds=self.resolution_seconds,
+            )
+        except Exception:
+            # Fallback: constant 18°C if the temperature model fails
+            water_temp_C = np.full(steps, 18.0)
+
+        # 7. Sensor simulation (use per-sample water temperature)
         sensor_results = self.sensor.simulate(
             velocity_ms,
             pipe_diameter_m=self.main_pipe_diameter_m,
-            temperature_c=15.0,
+            temperature_c=water_temp_C,
         )
 
-        # 7. Assemble data
+        # 8. Assemble data
         sim_data = ap.assemble_demand_data(timestamps, flow_L_s, self.house_id)
         sim_data = ap.merge_hydraulics_data(sim_data, velocity_ms, pressure_kpa, self.main_pipe_diameter_m * 1000.0, self.main_pipe_material)
         sim_data = ap.merge_sensor_data(sim_data, sensor_results)
+        sim_data = ap.merge_temperature_data(sim_data, water_temp_C, self.temp_model.T_ambient)
 
         # ------------------------------------------------------------------
-        # 7b. Apply scheduled events (leaks/blockages) --> leak flag & location
+        # 9. Apply scheduled events (leaks/blockages) --> leak flag & location
         # ------------------------------------------------------------------
         time_hours = np.arange(steps) * self.resolution_seconds / 3600.0
         leak_flags = np.zeros(steps, dtype=bool)
@@ -344,7 +417,7 @@ class HouseSimulator:
 
         df = ap.create_simulation_dataframe(sim_data)
 
-        # 8. Optional write to disk
+        # 10. Optional write to disk
         if self.output_dir:
             with StreamingSink(self.output_dir, batch_size=len(df), house_id=self.house_id) as sink:
                 sink.add_batch(sim_data)

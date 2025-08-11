@@ -32,7 +32,8 @@
           "thermal_properties": {
             "conductivity_W_m_K": 0.4,
             "heat_transfer_coeff_W_m2_K": 3.0,
-            "ambient_temp_C": 18.0
+            "ambient_temp_C": 18.0,
+            "supply_temp_C": 10.0
           },
           "pressure_characteristics": {
             "supply_pressure_kPa": 414,
@@ -72,7 +73,8 @@
           "thermal_properties": {
             "conductivity_W_m_K": 0.4,
             "heat_transfer_coeff_W_m2_K": 3.0,
-            "ambient_temp_C": 18.0
+            "ambient_temp_C": 18.0,
+            "supply_temp_C": 10.0
           },
           "pressure_characteristics": {
             "supply_pressure_kPa": 414,
@@ -112,7 +114,8 @@
           "thermal_properties": {
             "conductivity_W_m_K": 400.0,
             "heat_transfer_coeff_W_m2_K": 10.0,
-            "ambient_temp_C": 18.0
+            "ambient_temp_C": 18.0,
+            "supply_temp_C": 10.0
           },
           "pressure_characteristics": {
             "supply_pressure_kPa": 345,
@@ -152,7 +155,8 @@
           "thermal_properties": {
             "conductivity_W_m_K": 400.0,
             "heat_transfer_coeff_W_m2_K": 10.0,
-            "ambient_temp_C": 18.0
+            "ambient_temp_C": 18.0,
+            "supply_temp_C": 10.0
           },
           "pressure_characteristics": {
             "supply_pressure_kPa": 310,
@@ -192,7 +196,8 @@
           "thermal_properties": {
             "conductivity_W_m_K": 200.0,
             "heat_transfer_coeff_W_m2_K": 6.5,
-            "ambient_temp_C": 18.0
+            "ambient_temp_C": 18.0,
+            "supply_temp_C": 10.0
           },
           "pressure_characteristics": {
             "supply_pressure_kPa": 380,
@@ -232,7 +237,8 @@
           "thermal_properties": {
             "conductivity_W_m_K": 0.15,
             "heat_transfer_coeff_W_m2_K": 2.5,
-            "ambient_temp_C": 18.0
+            "ambient_temp_C": 18.0,
+            "supply_temp_C": 10.0
           },
           "pressure_characteristics": {
             "supply_pressure_kPa": 345,

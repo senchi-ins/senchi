@@ -21,6 +21,56 @@ from pathlib import Path
 from typing import Optional
 
 import wntr
+import numpy as np  # Added for demand pattern calculations
+
+# ---------------------------------------------------------------------------
+# Legacy-style demand pattern helper (adapted from simulation_old/WDN_sim.py)
+# ---------------------------------------------------------------------------
+
+# Monthly seasonal multipliers copied from the original simulator
+_SEASON_FACTOR = {
+    1: 0.90, 2: 0.90, 3: 1.00, 4: 1.05,
+    5: 1.10, 6: 1.15, 7: 1.20, 8: 1.15,
+    9: 1.05, 10: 1.00, 11: 0.95, 12: 0.90,
+}
+
+
+def _legacy_daily_pattern(
+    month: int = 7,
+    demand_scale: float = 1.0,
+    resolution_seconds: float = 300.0,
+) -> np.ndarray:
+    """Return legacy 24-h household demand pattern (L/s).
+
+    The shape is adapted from `simulation_old/WDN_sim.py::build_daily_pattern` but
+    is resolution-agnostic (defaults to 5-min = 300 s).
+    """
+
+    n_steps = int(24 * 3600 / resolution_seconds)
+    pattern = np.full(n_steps, 0.0003)  # night base
+
+    # Helper to convert hh:mm range to indices
+    def _span(start_hr: float, end_hr: float) -> slice:
+        return slice(int(start_hr * 3600 / resolution_seconds), int(end_hr * 3600 / resolution_seconds))
+
+    # Lawn-watering spike (summer stronger)
+    lawn_amp = 0.0020 if month in (5, 6, 7, 8, 9) else 0.0012
+    pattern[_span(5, 6)] = lawn_amp
+
+    # Morning routine 06:00–09:00
+    pattern[_span(6, 9)] = 0.0010
+
+    # Lunch bump 12:00–13:00
+    pattern[_span(12, 13)] = 0.0006
+
+    # Evening peak 17:00–22:00
+    pattern[_span(17, 22)] = 0.0011
+
+    # Normalise and apply seasonal scaling
+    pattern /= pattern.sum()
+    pattern *= demand_scale * _SEASON_FACTOR.get(month, 1.0)
+
+    return pattern
 
 CONFIG_PATH = Path(__file__).parent.parent.parent / "config" / "house_profiles.json"
 
@@ -88,19 +138,20 @@ def build_default_network() -> wntr.network.WaterNetworkModel:
     (reservoir → service entry → main trunks → fixture branches) and
     provides a robust topology for EPANET.
 
-    Naming convention aligns with the legacy WDN model to ease downstream
+    Naming convention aligns with the profile-based network to ease downstream
     event and leak placement:
-      - Nodes: "MUNICIPAL_SUPPLY", "SERVICE_ENTRY", "MAIN_TRUNK_1", ...
-      - Pipes: "SERVICE_LINE", "P_MAIN_1", "P_MAIN_2", ...
+      - Nodes: "Municipal", "StreetConnection", "Meter", "Manifold", ...
+      - Pipes: "ServiceLine", "ToMeter", "MainSupply", "P_MAIN_2", ...
     """
     wn = wntr.network.WaterNetworkModel()
 
     # Supply head ~ 60 psi ≈ 138.6 ft ≈ 42.27 m; use a round 60 m for margin
-    wn.add_reservoir("MUNICIPAL_SUPPLY", base_head=60)
-    wn.add_junction("SERVICE_ENTRY", elevation=0.0, base_demand=0.0)
+    wn.add_reservoir("Municipal", base_head=60)
+    wn.add_junction("StreetConnection", elevation=0.0, base_demand=0.0)
+    wn.add_junction("Meter", elevation=0.5, base_demand=0.0)
 
     # Routing / branch manifold junctions
-    wn.add_junction("MAIN_TRUNK_1", elevation=0.0, base_demand=0.0)
+    wn.add_junction("Manifold", elevation=1.5, base_demand=0.0)
     wn.add_junction("MAIN_TRUNK_2", elevation=0.0, base_demand=0.0)
     wn.add_junction("UPPER_FLOOR_BRANCH", elevation=1.5, base_demand=0.0)
     wn.add_junction("KITCHEN_BRANCH", elevation=0.0, base_demand=0.0)
@@ -140,17 +191,18 @@ def build_default_network() -> wntr.network.WaterNetworkModel:
         wn.add_pipe(name, n1, n2, length=length, diameter=diameter, roughness=rough)
 
     # Service line & main trunks (match service diameter)
-    add_pipe("SERVICE_LINE", "MUNICIPAL_SUPPLY", "SERVICE_ENTRY", 10.0, service_diam_m, rough_main)
-    add_pipe("P_MAIN_1", "SERVICE_ENTRY", "MAIN_TRUNK_1", 5.0, service_diam_m, rough_main)
-    add_pipe("P_MAIN_2", "MAIN_TRUNK_1", "MAIN_TRUNK_2", 8.0, service_diam_m, rough_main)
+    add_pipe("ServiceLine", "Municipal", "StreetConnection", 10.0, service_diam_m, rough_main)
+    add_pipe("ToMeter", "StreetConnection", "Meter", 2.0, service_diam_m, rough_main)
+    add_pipe("MainSupply", "Meter", "Manifold", 6.0, service_diam_m, rough_main)
+    add_pipe("P_MAIN_2", "Manifold", "MAIN_TRUNK_2", 8.0, service_diam_m, rough_main)
 
     # Kitchen branch
-    add_pipe("P_KITCHEN_BRANCH", "MAIN_TRUNK_1", "KITCHEN_BRANCH", 3.0, branch_diam_m, rough_branch)
+    add_pipe("P_KITCHEN_BRANCH", "Manifold", "KITCHEN_BRANCH", 3.0, branch_diam_m, rough_branch)
     add_pipe("P_KITCHEN_SINK", "KITCHEN_BRANCH", "KITCHEN_SINK", 2.0, branch_diam_m, rough_branch)
     add_pipe("P_DISHWASHER", "KITCHEN_BRANCH", "DISHWASHER", 1.5, branch_diam_m, rough_branch)
 
     # Powder room branch
-    add_pipe("P_POWDER_BRANCH", "MAIN_TRUNK_1", "POWDER_ROOM_BRANCH", 4.0, branch_diam_m, rough_branch)
+    add_pipe("P_POWDER_BRANCH", "Manifold", "POWDER_ROOM_BRANCH", 4.0, branch_diam_m, rough_branch)
     add_pipe("P_POWDER_WC", "POWDER_ROOM_BRANCH", "POWDER_ROOM_WC", 2.0, branch_diam_m, rough_branch)
     add_pipe("P_POWDER_LAV", "POWDER_ROOM_BRANCH", "POWDER_ROOM_LAV", 1.5, branch_diam_m, rough_branch)
 
@@ -168,7 +220,7 @@ def build_default_network() -> wntr.network.WaterNetworkModel:
     add_pipe("P_WATER_HEATER", "MAIN_TRUNK_2", "WATER_HEATER", 3.0, branch_diam_m, rough_branch)
 
     # Hose bibbs
-    add_pipe("P_HOSE_FRONT", "MAIN_TRUNK_1", "HOSE_BIBB_FRONT", 8.0, branch_diam_m, rough_branch)
+    add_pipe("P_HOSE_FRONT", "Manifold", "HOSE_BIBB_FRONT", 8.0, branch_diam_m, rough_branch)
     add_pipe("P_HOSE_BACK", "MAIN_TRUNK_2", "HOSE_BIBB_BACK", 6.0, branch_diam_m, rough_branch)
 
     wn.options.hydraulic.inpfile_units = "LPS"
@@ -191,27 +243,44 @@ def attach_default_demand_pattern(
     The pattern is added but not assigned to any node by default; the caller
     can attach it to desired junctions (e.g., fixtures) as needed.
     """
-    try:
-        # Local import to avoid circulars at module import time
-        from ..generators.demand_numpy import generate_daily_profile  # type: ignore
-        import numpy as np
+    # try:
+    #     # Local import to avoid circulars at module import time
+    #     from ..generators.demand_numpy import generate_daily_profile  # type: ignore
+    #     import numpy as np
 
-        demand_L_s = generate_daily_profile(
-            house_profile=house_profile,
-            resolution_seconds=resolution_seconds,
-            month=month,
-        )
+    #     demand_L_s = generate_daily_profile(
+    #         house_profile=house_profile,
+    #         resolution_seconds=resolution_seconds,
+    #         month=month,
+    #     )
 
-        # Convert to a dimensionless multiplier pattern relative to mean flow
-        demand_m3_s = demand_L_s / 1000.0
-        mean_flow = float(np.maximum(np.mean(demand_m3_s), 1e-6))
-        multipliers = (demand_m3_s / mean_flow).tolist()
+    # Use legacy pattern (L/s) then convert to dimensionless multipliers
+    demand_L_s = _legacy_daily_pattern(
+        month=month,
+        demand_scale=1.0,
+        resolution_seconds=resolution_seconds,
+    )
 
-        pattern_name = "PAT_DEFAULT"
-        wn.add_pattern(pattern_name, multipliers)
-    except Exception:
-        # Best-effort only; safe to ignore if demand generator not available
-        return
+    # # Convert to a dimensionless multiplier pattern relative to mean flow
+    #     demand_m3_s = demand_L_s / 1000.0
+    #     mean_flow = float(np.maximum(np.mean(demand_m3_s), 1e-6))
+    #     multipliers = (demand_m3_s / mean_flow).tolist()
+        
+    # Convert to m³/s and then to multipliers relative to mean
+    demand_m3_s = demand_L_s / 1000.0
+    mean_flow = float(np.maximum(np.mean(demand_m3_s), 1e-6))
+    multipliers = (demand_m3_s / mean_flow).tolist()
+
+        # pattern_name = "PAT_DEFAULT"
+        #     wn.add_pattern(pattern_name, multipliers)
+        # except Exception:
+        #     # Best-effort only; safe to ignore if demand generator not available
+        #     return
+
+    pattern_name = "PAT_DEFAULT"
+    if pattern_name in wn.pattern_name_list:
+        wn.remove_pattern(pattern_name)
+    wn.add_pattern(pattern_name, multipliers)
 
 
 def assign_pattern_to_fixtures(
@@ -224,12 +293,14 @@ def assign_pattern_to_fixtures(
     Base demand is set to 1.0 as a multiplier; the pattern carries shape.
     """
     routing_nodes = {
-        "SERVICE_ENTRY",
-        "MAIN_TRUNK_1",
-        "MAIN_TRUNK_2",
-        "UPPER_FLOOR_BRANCH",
-        "KITCHEN_BRANCH",
-        "POWDER_ROOM_BRANCH",
+        "Municipal",           # Reservoir
+        "StreetConnection",    # Service entry point
+        "Meter",               # Water meter junction
+        "Manifold",            # Main distribution manifold
+        "MAIN_TRUNK_2",        # Secondary trunk line
+        "UPPER_FLOOR_BRANCH",  # Upper floor manifold
+        "KITCHEN_BRANCH",      # Kitchen manifold
+        "POWDER_ROOM_BRANCH",  # Powder room manifold
     }
     for jn in wn.junction_name_list:
         if jn in routing_nodes:

@@ -124,6 +124,10 @@ class EventScheduler:
         # Generate leaks
         leak_gen = LeakGenerator()
         node_list = self.wn.junction_name_list if self.wn else None
+        # Filter out service connection points (too close to municipal supply)
+        if node_list:
+            excluded_nodes = {"StreetConnection", "SERVICE_ENTRY", "Meter"}  # Support both naming schemes
+            node_list = [node for node in node_list if node not in excluded_nodes]
         leaks = leak_gen.generate_leaks(
             duration_days=duration_days,
             network_length_km=network_length_km,
@@ -136,23 +140,27 @@ class EventScheduler:
         for leak in leaks:
             self.add_leak(leak)
             
-        # Generate blockages
-        blockage_gen = BlockageGenerator()
-        pipe_list = self.wn.pipe_name_list if self.wn else None
-        blockages = blockage_gen.generate_blockages(
-            duration_days=duration_days,
-            network_length_km=network_length_km,
-            material=material,
-            age_years=age_years,
-            water_hardness=water_hardness,
-            random_seed=random_seed + 1000 if random_seed else None,
-            available_pipes=pipe_list
-        )
-        
-        for blockage in blockages:
-            self.add_blockage(blockage)
-            
-        print(f"Generated schedule: {len(leaks)} leaks, {len(blockages)} blockages")
+        # ------------------------------------------------------------------
+        # Blockage generation temporarily disabled for stability testing.
+        # The code remains for future re-enablement
+        # ------------------------------------------------------------------
+
+        # blockage_gen = BlockageGenerator()
+        # pipe_list = self.wn.pipe_name_list if self.wn else None
+        # blockages = blockage_gen.generate_blockages(
+        #     duration_days=duration_days,
+        #     network_length_km=network_length_km,
+        #     material=material,
+        #     age_years=age_years,
+        #     water_hardness=water_hardness,
+        #     random_seed=random_seed + 1000 if random_seed else None,
+        #     available_pipes=pipe_list
+        # )
+        # for blockage in blockages:
+        #     self.add_blockage(blockage)
+
+        blockages = []  # Placeholder so downstream print keeps same signature
+        print(f"Generated schedule: {len(leaks)} leaks, {len(blockages)} blockages (blockages disabled)")
         
     def get_active_events(self, time_hours: float) -> List[Tuple[EventCategory, object]]:
         """Get all events active at given time."""

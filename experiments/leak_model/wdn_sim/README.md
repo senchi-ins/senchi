@@ -77,7 +77,7 @@ For each house‑day the engine writes a table with the schema below (matching t
 | `downstream_wave_time`, `upstream_wave_time`, `delta_t_raw` | Transit‑time differentials from TSNet transients     |
 | `theta`                                                    | Incidence angle of ultrasound through pipe wall      |
 | `pipe_diameter`                                            | Internal diameter (mm)                               |
-| `number_of_ultrasonic_reflections`                         | Quality metric for signal path                       |
+| `number_of_traverses`                                      | Quality metric for signal path                       |
 | `pipe_material`                                            | e.g. *PEX*, *Copper*, *PVC*                          |
 | `leak`                                                     | Binary indicator (1 = leak/burst active)             |
 | `location`                                                 | Approximate fixture or segment for the event         |
