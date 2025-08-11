@@ -37,6 +37,7 @@ class NotificationRouter:
             # TODO: Replace with Postgres query
             user_ids = self.db.get_user_from_location_id(location_id)
             user_ids = [(user_id["owner_user_id"], user_id["serial_number"]) for user_id in user_ids]
+            print(f"User IDs: {user_ids}")
 
             relevant_phone_numbers = self.db.get_user_from_phone_number_by_serial(serial_number)
             phone_numbers = [phone_number["manager_phone_number"] for phone_number in relevant_phone_numbers]
@@ -63,7 +64,8 @@ class NotificationRouter:
             # Get push tokens for all users
             push_tokens = []
             for user_id in user_ids:
-                tokens = self.db.get_device_tokens_for_iot_device(user_id[1]) # TODO: Fix naming to make clear this is the serial number
+                serial_number = user_id[1]
+                tokens = self.db.get_device_tokens_for_iot_device(serial_number)
                 if tokens:
                     # Extract device_token from RealDictRow objects
                     for token_row in tokens:

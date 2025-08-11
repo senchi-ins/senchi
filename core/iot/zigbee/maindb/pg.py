@@ -245,8 +245,7 @@ class PostgresDB:
             udt.device_token,
             udt.platform,
             u.id as user_id,
-            u.full_name,
-            dm.friendly_name as device_name
+            u.full_name
         FROM zb_devices d
         JOIN zb_users u ON d.owner_user_id = u.id
         JOIN user_device_tokens udt ON u.id = udt.user_id

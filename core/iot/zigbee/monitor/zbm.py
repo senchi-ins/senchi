@@ -350,6 +350,15 @@ class Monitor:
                     self.handle_device_update(ieee_address, payload), 
                     self.loop
                 )
+        
+        # Only route to notification router for device updates that contain significant events
+        # Skip bridge events, device lists, and other non-device-update messages
+        if self._should_route_to_notification_router(payload):
+            print(f"Routing message to notification router: {topic}")
+            asyncio.run_coroutine_threadsafe(
+                self.app_state["notification_router"].route_mqtt_message(topic, payload),
+                self.loop
+            )
 
     async def handle_device_list(self, devices: List[Dict]):
         i = 0
@@ -442,10 +451,6 @@ class Monitor:
             
             # Broadcast to WebSocket clients
             await self.broadcast_device_update(ieee_address, payload)
-
-            if self._should_route_to_notification_router(payload):
-                print(f"Routing message to notification router: {ieee_address}")
-                await self.app_state["notification_router"].route_mqtt_message(ieee_address, payload)
 
             return True
         except Exception as e:
