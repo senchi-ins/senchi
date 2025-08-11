@@ -295,6 +295,8 @@ class Monitor:
         msg: mqtt.MQTTMessage,
     ):
         topic = msg.topic
+        print(f"Received message on topic: {topic}")
+        logging.info(f"Received message on topic: {topic}")
         try:
             payload_str = msg.payload.decode("utf-8")
             if not payload_str.strip():
@@ -348,14 +350,20 @@ class Monitor:
                     self.handle_device_update(ieee_address, payload), 
                     self.loop
                 )
-
-        if self._should_route_to_notification_router(payload):
-            print(f"Routing message to notification router: {topic}")
-            logger.info(f"Routing message to notification router: {topic}")
-            asyncio.run_coroutine_threadsafe(
-                self.app_state["notification_router"].route_mqtt_message(topic, payload),
-                self.loop
-            )
+            
+            # Only route to notification router for device updates that contain significant events
+            # Skip bridge events, device lists, and other non-device-update messages
+            if self._should_route_to_notification_router(payload):
+                # Track how many times we're calling the notification router for this topic
+                if topic not in self.notification_counter:
+                    self.notification_counter[topic] = 0
+                self.notification_counter[topic] += 1
+                
+                print(f"Routing message to notification router: {topic} (call #{self.notification_counter[topic]})")
+                asyncio.run_coroutine_threadsafe(
+                    self.app_state["notification_router"].route_mqtt_message(topic, payload),
+                    self.loop
+                )
 
     async def handle_device_list(self, devices: List[Dict]):
         i = 0
