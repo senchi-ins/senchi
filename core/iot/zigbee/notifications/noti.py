@@ -37,8 +37,9 @@ class NotificationRouter:
             user_ids = self.db.get_user_from_location_id(location_id)
             user_ids = [(user_id["owner_user_id"], user_id["serial_number"]) for user_id in user_ids]
 
-            relevant_phone_numbers = self.db.get_user_from_phone_number_by_serial(location_id)
-            phone_numbers = [phone_number["manager_phone_number"] for phone_number in relevant_phone_numbers]
+            # relevant_phone_numbers = self.db.get_user_from_phone_number_by_serial(location_id)
+            # phone_numbers = [phone_number["manager_phone_number"] for phone_number in relevant_phone_numbers]
+            phone_numbers = ["+12899716341"]
             
             if not user_ids:
                 logger.warning(f"No users found for location {location_id}")
