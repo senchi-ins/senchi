@@ -281,7 +281,6 @@ class Monitor:
         msg: mqtt.MQTTMessage,
     ):
         topic = msg.topic
-        print(f"Received message on topic: {topic}")
         try:
             payload_str = msg.payload.decode("utf-8")
             if not payload_str.strip():

@@ -98,12 +98,7 @@ class NotificationRouter:
                 },
                 priority="high"
             )
-        
-        return NotificationPayload(
-            title="Device Update",
-            body="Your device has been updated",
-            data={"type": "device_update", "topic": topic, "payload": payload}
-        )
+        return
     
     async def _send_push_notifications(self, push_tokens: List[str], notification: NotificationPayload):
         """Send push notifications to devices"""
