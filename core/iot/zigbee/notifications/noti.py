@@ -31,15 +31,15 @@ class NotificationRouter:
                 return
             
             location_id = topic_parts[1]  # e.g., "rpi-zigbee-abc123"
+            serial_number = location_id.split('-')[-1]
             
             # Get all users for this location
             # TODO: Replace with Postgres query
             user_ids = self.db.get_user_from_location_id(location_id)
             user_ids = [(user_id["owner_user_id"], user_id["serial_number"]) for user_id in user_ids]
 
-            # relevant_phone_numbers = self.db.get_user_from_phone_number_by_serial(location_id)
-            # phone_numbers = [phone_number["manager_phone_number"] for phone_number in relevant_phone_numbers]
-            phone_numbers = ["+12899716341"]
+            relevant_phone_numbers = self.db.get_user_from_phone_number_by_serial(serial_number)
+            phone_numbers = [phone_number["manager_phone_number"] for phone_number in relevant_phone_numbers]
             
             if not user_ids:
                 logger.warning(f"No users found for location {location_id}")
@@ -55,9 +55,7 @@ class NotificationRouter:
             # Send SMS to all phone numbers
             print(f"Sending SMS to {phone_numbers}")
             message = f"""
-            Senchi HomeGuard has detected a water leak at {location_id}.
-
-            Please respond with 'Yes' to turn off the shutoff valve, or 'No' to leave it on.
+            Senchi HomeGuard has detected a water leak at {location_id}. \n\nPlease respond with 'Yes' to turn off the shutoff valve, or 'No' to leave it on.
             """
             for phone_number in phone_numbers:
                 await self.sms_service.send_sms(message, phone_number)
