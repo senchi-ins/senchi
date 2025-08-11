@@ -403,7 +403,7 @@ async def reply_sms(request: Request):
     device_serial = user_devices[0].get("serial_number")
 
     seen_devices = set()
-    if body.lower() == 'on':
+    if body.lower() == 'yes':
         sms_bot.reply_sms("Great! Turning on the shutoff valve!")
         # TODO: See if there's a more efficient way to do this
         # Initial thought is to check the device type / try to store more details in the database
@@ -416,9 +416,6 @@ async def reply_sms(request: Request):
                 logger.error(f"Error sending command to {ieee_address}: Device does not support this command. {e}")
             seen_devices.add(ieee_address)
     elif body.lower() == 'no':
-        # TODO: Update the accepted commands
-        sms_bot.reply_sms("Ok. Leaving it off. Please check on the water leak ASAP.")
-    elif body.lower() == 'off':
         sms_bot.reply_sms("Ok. Turning off the shutoff valve!")
         for device in user_devices:
             ieee_address = device.get("ieee_address")

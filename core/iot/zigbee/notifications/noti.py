@@ -9,6 +9,7 @@ from maindb.pg import PostgresDB
 from models.tokens import TokenResponse, NotificationPayload
 from notifications.apns_service import APNsService
 from cfg import NOTIFICATION_CONFIG
+from sms.sms import MessageBot
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +18,9 @@ class NotificationRouter:
     def __init__(self, db: PostgresDB, apns_service: APNsService):
         self.db = db
         self.apns_service = apns_service
+
+        # TODO: Move this or use the shared instance
+        self.sms_service = MessageBot()
     
     async def route_mqtt_message(self, topic: str, payload: dict):
         """Route MQTT message to correct users"""
@@ -32,6 +36,9 @@ class NotificationRouter:
             # TODO: Replace with Postgres query
             user_ids = self.db.get_user_from_location_id(location_id)
             user_ids = [(user_id["owner_user_id"], user_id["serial_number"]) for user_id in user_ids]
+
+            relevant_phone_numbers = self.db.get_user_from_phone_number_by_serial(location_id)
+            phone_numbers = [phone_number["manager_phone_number"] for phone_number in relevant_phone_numbers]
             
             if not user_ids:
                 logger.warning(f"No users found for location {location_id}")
@@ -60,6 +67,15 @@ class NotificationRouter:
                 await self._send_push_notifications(push_tokens, notification)
                 
                 logger.info(f"Routed message to {len(push_tokens)} users for location {location_id}")
+
+            # Send SMS to all phone numbers
+            message = f"""
+            Senchi HomeGuard has detected a water leak at {location_id}.
+
+            Please respond with 'Yes' to turn off the shutoff valve, or 'No' to leave it on.
+            """
+            for phone_number in phone_numbers:
+                await self.sms_service.send_sms(message, phone_number)
             
         except Exception as e:
             logger.error(f"Failed to route MQTT message: {e}")

@@ -308,3 +308,13 @@ class PostgresDB:
         if result > 0:
             logger.info(f"Updated phone number for user {user_id}")
         return result
+    
+    def get_user_from_phone_number_by_serial(self, serial_number: str) -> Dict:
+        """Get a user from a phone number by their serial number"""
+        query = """
+        select distinct(manager_phone_number) 
+        from zb_devices join zb_user_properties 
+        ON owner_user_id = user_id 
+        WHERE serial_number = %s;
+        """
+        return self.execute_query(query, (serial_number,))

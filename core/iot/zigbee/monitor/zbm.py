@@ -335,6 +335,7 @@ class Monitor:
                     self.loop
                 )
         # --- Route notification by topic ---
+        print(f"Routing message to notification router: {topic}")
         asyncio.run_coroutine_threadsafe(
             self.app_state["notification_router"].route_mqtt_message(topic, payload),
             self.loop
