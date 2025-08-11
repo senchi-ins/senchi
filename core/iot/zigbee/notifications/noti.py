@@ -53,12 +53,12 @@ class NotificationRouter:
                     user_ids = [user_ids]
 
             # Send SMS to all phone numbers
-            print(f"Sending SMS to {phone_numbers}")
-            message = f"""
-            Senchi HomeGuard has detected a water leak at {location_id}. \n\nPlease respond with 'Yes' to turn off the shutoff valve, or 'No' to leave it on.
-            """
-            for phone_number in phone_numbers:
-                self.sms_service.send_sms(message, phone_number)
+            if 'water_leak' in payload:
+                message = f"""
+                Senchi HomeGuard has detected a water leak at {location_id}. \n\nPlease respond with 'Yes' to turn off the shutoff valve, or 'No' to leave it on.
+                """
+                for phone_number in phone_numbers:
+                    self.sms_service.send_sms(message, phone_number)
             
             # Get push tokens for all users
             push_tokens = []
@@ -72,15 +72,16 @@ class NotificationRouter:
             
             if push_tokens:
                 notification = await self._create_notification(topic, payload)
-                
-                await self._send_push_notifications(push_tokens, notification)
+
+                if notification:
+                    await self._send_push_notifications(push_tokens, notification)
                 
                 logger.info(f"Routed message to {len(push_tokens)} users for location {location_id}")
             
         except Exception as e:
             logger.error(f"Failed to route MQTT message: {e}")
     
-    async def _create_notification(self, topic: str, payload: dict) -> NotificationPayload:
+    async def _create_notification(self, topic: str, payload: dict) -> Optional[NotificationPayload]:
         """Create notification based on MQTT message"""
         # Example: Handle leak detection
         # TODO: Generalize this to handle other types of notifications
