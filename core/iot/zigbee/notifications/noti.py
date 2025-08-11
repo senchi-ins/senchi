@@ -50,6 +50,15 @@ class NotificationRouter:
                     user_ids = json.loads(user_ids)
                 except json.JSONDecodeError:
                     user_ids = [user_ids]
+
+            # Send SMS to all phone numbers
+            message = f"""
+            Senchi HomeGuard has detected a water leak at {location_id}.
+
+            Please respond with 'Yes' to turn off the shutoff valve, or 'No' to leave it on.
+            """
+            for phone_number in phone_numbers:
+                await self.sms_service.send_sms(message, phone_number)
             
             # Get push tokens for all users
             push_tokens = []
@@ -67,15 +76,6 @@ class NotificationRouter:
                 await self._send_push_notifications(push_tokens, notification)
                 
                 logger.info(f"Routed message to {len(push_tokens)} users for location {location_id}")
-
-            # Send SMS to all phone numbers
-            message = f"""
-            Senchi HomeGuard has detected a water leak at {location_id}.
-
-            Please respond with 'Yes' to turn off the shutoff valve, or 'No' to leave it on.
-            """
-            for phone_number in phone_numbers:
-                await self.sms_service.send_sms(message, phone_number)
             
         except Exception as e:
             logger.error(f"Failed to route MQTT message: {e}")
