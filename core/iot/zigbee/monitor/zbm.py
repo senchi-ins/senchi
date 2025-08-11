@@ -123,6 +123,20 @@ class Monitor:
             return self.current_device_serial
         return "SNH2025001"
     
+    def _should_route_to_notification_router(self, payload: Dict) -> bool:
+        """Determine if a message should be routed to the notification router"""
+        # Only route messages that contain significant events that warrant notifications
+        # Currently, this includes water leak detection
+        if 'water_leak' in payload and payload['water_leak']:
+            return True
+        
+        # TODO: Add other conditions here as needed for different types of alerts
+        # - Battery low alerts
+        # - Device offline alerts
+        # - Temperature/humidity threshold alerts
+        
+        return False
+    
     def _store_device_mapping(self, device_serial: str, device: Device):
         """Store device mapping in database"""
         try:
@@ -334,13 +348,14 @@ class Monitor:
                     self.handle_device_update(ieee_address, payload), 
                     self.loop
                 )
-        # --- Route notification by topic ---
-        print(f"Routing message to notification router: {topic}")
-        logger.info(f"Routing message to notification router: {topic}")
-        asyncio.run_coroutine_threadsafe(
-            self.app_state["notification_router"].route_mqtt_message(topic, payload),
-            self.loop
-        )
+
+        if self._should_route_to_notification_router(payload):
+            print(f"Routing message to notification router: {topic}")
+            logger.info(f"Routing message to notification router: {topic}")
+            asyncio.run_coroutine_threadsafe(
+                self.app_state["notification_router"].route_mqtt_message(topic, payload),
+                self.loop
+            )
 
     async def handle_device_list(self, devices: List[Dict]):
         i = 0
