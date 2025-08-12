@@ -1,41 +1,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import Image from 'next/image';
-import { Brain, AlertTriangle, TrendingDown, Clock, Wifi, Shield, Droplets, Activity, Settings, Bot } from "lucide-react";
+import { Brain, AlertTriangle, TrendingDown, Shield, Droplets, Activity, Settings } from "lucide-react";
 
 
 export default function HaloSection() {
-  const features = [
-    {
-      icon: Brain,
-      title: "AI-Powered Predictions",
-      description: "Advanced machine learning algorithms analyze patterns to predict potential claims before they occur."
-    },
-    {
-      icon: AlertTriangle,
-      title: "Early Warning System", 
-      description: "Get instant alerts about potential issues in and around your home, from water leaks to incoming severe weather."
-    },
-    {
-      icon: TrendingDown,
-      title: "Risk Reduction",
-      description: "Proactive maintenance recommendations help prevent costly damage and reduce insurance claims."
-    },
-    {
-      icon: Clock,
-      title: "24/7 Monitoring",
-      description: "Continuous monitoring of your smart home devices ensures round-the-clock protection."
-    },
-    {
-      icon: Wifi,
-      title: "Smart Integration",
-      description: "Seamlessly connects with popular smart home platforms and IoT devices."
-    },
-    {
-      icon: Bot,
-      title: "Autonomous Mitigation",
-      description: "Autonomous routing of plumbers, electricians, and other service providers to stop damages"
-    }
-  ];
 
   const sensors = [
     {
@@ -63,36 +31,45 @@ export default function HaloSection() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <div className="inline-flex items-center rounded-full bg-white px-4 py-2 text-sm mb-4">
-            <Brain className="h-4 w-4 text-senchi-primary mr-2" />
-            Senchi HomeGuard Platform
-          </div>
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-            Smart Home Data Platform
+            Smart sensors that actually work.
           </h2>
           <p className="text-lg text-gray-600">
-            Senchi HomeGuard uses cutting-edge AI and IoT integration to predict claims before they happen, 
-            saving you money while protecting your home.
+            Professional-grade monitoring that catches problems before they become expensive.
           </p>
         </div>
 
-        {/* Features Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-          {features.map((feature, index) => (
-            <Card key={index} className="border-gray-100 hover:border-senchi-primary/20 hover:shadow-lg transition-all duration-300">
-              <CardHeader>
-                <div className="w-12 h-12 bg-senchi-accent-light rounded-lg flex items-center justify-center mb-4">
-                  <feature.icon className="h-6 w-6 text-senchi-primary" />
-                </div>
-                <CardTitle className="text-xl">{feature.title}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-gray-600">
-                  {feature.description}
-                </CardDescription>
-              </CardContent>
-            </Card>
-          ))}
+        {/* Three Core Features */}
+        <div className="grid md:grid-cols-3 gap-8 mb-16">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-senchi-accent-light rounded-full flex items-center justify-center mx-auto mb-4">
+              <Brain className="h-8 w-8 text-senchi-primary" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Catch problems 6 hours early</h3>
+            <p className="text-gray-600">
+              Smart sensors detect pressure drops and moisture changes before pipes burst or appliances fail.
+            </p>
+          </div>
+          
+          <div className="text-center">
+            <div className="w-16 h-16 bg-senchi-accent-light rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle className="h-8 w-8 text-senchi-primary" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Water shuts off automatically</h3>
+            <p className="text-gray-600">
+              System immediately stops water flow and sends you alerts, preventing damage while you're away.
+            </p>
+          </div>
+          
+          <div className="text-center">
+            <div className="w-16 h-16 bg-senchi-accent-light rounded-full flex items-center justify-center mx-auto mb-4">
+              <TrendingDown className="h-8 w-8 text-senchi-primary" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Trusted plumbers dispatched</h3>
+            <p className="text-gray-600">
+              Pre-vetted contractors arrive quickly to fix the issue before it becomes expensive.
+            </p>
+          </div>
         </div>
 
         {/* How it Works */}

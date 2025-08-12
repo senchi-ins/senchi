@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "./ui/button";
-import { Shield, Zap, Thermometer, Droplets, Lock, Wifi, Battery, TrendingUp, CheckCircle, AlertTriangle, Bot } from "lucide-react";
+import { Shield, Zap, Thermometer, Droplets, Lock, Wifi, Battery, TrendingUp, CheckCircle, AlertTriangle } from "lucide-react";
 // import { addToWaitlist } from "@/utils/waitlist";
 import { useState } from "react";
 
@@ -33,85 +33,54 @@ export default function HeroSection() {
   };
 
   return (
-    <section className="relative py-16 sm:py-24 bg-senchi-footer overflow-hidden">
+    <section className="relative bg-gradient-to-b from-senchi-primary via-senchi-primary-light/50 to-white overflow-hidden" style={{ marginTop: '-4rem', paddingTop: '4rem' }}>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col lg:flex-row gap-12 items-stretch">
           {/* Content */}
-          <div className="flex-1 flex flex-col">
-            <div className="space-y-4 mb-8">
-              {/* <div className="inline-flex items-center rounded-full bg-senchi-accent-light px-4 py-2 text-sm">
-                <Zap className="h-4 w-4 text-senchi-primary mr-2" />
-                Smart Risk Prevention for Every Home
-              </div> */}
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
-                Smart Risk Prevention for
-                <span className="text-senchi-primary"> Every Home</span>
-              </h1>
-              <p className="text-lg text-gray-600 max-w-xl">
-                Whether you own a home, manage properties, or are a looking to improve your loss ratio,
-                Senchi&apos;s HomeGuard predicts and prevents claims.
-              </p>
-            </div>
-
-            {/* Key Value Propositions */}
-            <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm flex-1">
-              <h3 className="font-semibold text-gray-900 mb-6 text-center">Predictions Powered by Senchi</h3>
-              <div className="grid grid-cols-1 gap-4">
-                <div className="bg-gray-50 rounded-lg p-4 flex items-start gap-4 hover:bg-gray-100 transition-colors duration-200">
-                  <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center border border-gray-200 flex-shrink-0">
-                    <Zap className="h-6 w-6 text-senchi-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900 mb-1">AI predictive protection</h4>
-                    <p className="text-xs text-gray-600">Smart technology that prevents claims before they happen</p>
-                  </div>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-4 flex items-start gap-4 hover:bg-gray-100 transition-colors duration-200">
-                  <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center border border-gray-200 flex-shrink-0">
-                    <Shield className="h-6 w-6 text-senchi-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900 mb-1">Comprehensive monitoring</h4>
-                    <p className="text-xs text-gray-600">Internal sensors and external modelling to provide 360 degree protection</p>
-                  </div>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-4 flex items-start gap-4 hover:bg-gray-100 transition-colors duration-200">
-                  <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center border border-gray-200 flex-shrink-0">
-                    <Bot className="h-6 w-6 text-senchi-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900 mb-1">Autonomous mitigation</h4>
-                    <p className="text-xs text-gray-600">Autonomous routing of plumbers, electricians, and other service providers to stop damages</p>
-                  </div>
+          <div className="flex-1 flex flex-col justify-center">
+            <div className="space-y-8">
+              <div className="space-y-4">
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight">
+                  Water leaks cost $12,000 on average.
+                  <br />
+                  <span className="text-senchi-accent-light">We catch them before they happen.</span>
+                </h1>
+                <p className="text-lg text-gray-100 max-w-2xl">
+                Smart sensors detect temperature, pressure, and other changes days before pipes burst or appliances fail. Save thousands in damage and skip the insurance headache
+                </p>
+              </div>
+              
+              {/* Waitlist Email Field */}
+              <div className="bg-white rounded-xl p-2 shadow-lg max-w-md">
+                <div className="flex flex-col sm:flex-row items-center gap-3">
+                  <input
+                    type="email"
+                    placeholder="Enter your email to join the waitlist"
+                    className="flex-1 px-2 py-3 rounded-lg focus:outline-none text-base"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    disabled={loading}
+                  />
+                  <Button 
+                    className="bg-senchi-primary hover:bg-senchi-primary/80 text-white font-semibold px-8 py-4 rounded-lg shadow-sm" 
+                    size="lg"
+                    onClick={handleJoinWaitlist}
+                    disabled={loading || !email}
+                  >
+                    {loading ? "Joining..." : "Join Waitlist"}
+                  </Button>
                 </div>
               </div>
+              <p className="text-gray-500 text-sm max-w-md">
+                We expect to launch beta with our first customers in Q4 2025.
+              </p>
+                             {status === 'success' && (
+                 <div className="text-green-300 text-sm">You&apos;ve been added to the waitlist!</div>
+               )}
+              {status === 'error' && (
+                <div className="text-red-300 text-sm">There was an error. Please try again.</div>
+              )}
             </div>
-
-            {/* Waitlist Email Field (below the value prop box, outside the card) */}
-            <div id="waitlist-email" className="flex flex-col sm:flex-row items-center gap-2 mt-8 max-w-2xl lg:max-w-4xl xl:max-w-5xl mx-auto w-full">
-              <input
-                type="email"
-                placeholder="Enter your email to join the waitlist"
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-senchi-primary text-sm"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                disabled={loading}
-              />
-              <Button 
-                className="bg-senchi-primary hover:bg-senchi-primary/90 w-full sm:w-auto" 
-                size="lg"
-                onClick={handleJoinWaitlist}
-                disabled={loading || !email}
-              >
-                {loading ? "Joining..." : "Join Waitlist"}
-              </Button>
-            </div>
-            {status === 'success' && (
-              <div className="text-green-600 text-center mb-4">You&apos;ve been added to the waitlist!</div>
-            )}
-            {status === 'error' && (
-              <div className="text-red-600 text-center mb-4">There was an error. Please try again.</div>
-            )}
           </div>
 
           {/* Visual */}
