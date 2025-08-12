@@ -1,0 +1,12 @@
+serial:
+  port: /dev/cu.usbserial-1140
+  adapter: zigate
+mqtt:
+  server: mqtt://localhost:1883
+frontend:
+  enabled: true
+  port: 8080
+permit_join: true
+advanced:
+  channel: 11
+version: 4
