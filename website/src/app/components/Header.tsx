@@ -50,9 +50,9 @@ export default function Header() {
             <a href="#plans" className={`transition-colors ${isScrolled ? 'text-gray-900 hover:text-senchi-primary' : 'text-white hover:text-senchi-accent-light'}`}>
               Plans
             </a>
-            {/* <a href="#do-good" className="text-gray-600 hover:text-senchi-primary transition-colors">
-              Do Good
-            </a> */}
+            <a href="/demo" className={`transition-colors ${isScrolled ? 'text-gray-900 hover:text-senchi-primary' : 'text-white hover:text-senchi-accent-light'}`}>
+              See a demo
+            </a>
             <Button asChild className={`px-4 py-2 transition-colors ${isScrolled ? 'bg-senchi-primary hover:bg-senchi-primary/90 text-white' : 'bg-white hover:bg-gray-100 text-senchi-primary'}`} size="sm">
               <Link href="/ext-assessment" className="flex items-center gap-2">
                 Take our home assessment
@@ -85,18 +85,18 @@ export default function Header() {
                 Senchi HomeGuard
               </a>
               <a
-                href="#coverage"
+                href="#plans"
                 className="block px-3 py-2 text-gray-600 hover:text-senchi-primary transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Coverage
+                Plans
               </a>
               <a
-                href="#do-good"
+                href="#demo"
                 className="block px-3 py-2 text-gray-600 hover:text-senchi-primary transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Do Good
+                See a demo
               </a>
               <Button
                 asChild

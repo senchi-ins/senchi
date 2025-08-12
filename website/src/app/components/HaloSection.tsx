@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import Image from 'next/image';
-import { Brain, AlertTriangle, TrendingDown, Shield, Droplets, Activity, Settings } from "lucide-react";
+import { Brain, AlertTriangle, Car, Shield, Droplets, Activity, Settings } from "lucide-react";
 
 
 export default function HaloSection() {
@@ -45,7 +45,7 @@ export default function HaloSection() {
             <div className="w-16 h-16 bg-senchi-accent-light rounded-full flex items-center justify-center mx-auto mb-4">
               <Brain className="h-8 w-8 text-senchi-primary" />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Catch problems 6 hours early</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Catch leaks early</h3>
             <p className="text-gray-600">
               Smart sensors detect pressure drops and moisture changes before pipes burst or appliances fail.
             </p>
@@ -57,13 +57,13 @@ export default function HaloSection() {
             </div>
             <h3 className="text-xl font-bold text-gray-900 mb-2">Water shuts off automatically</h3>
             <p className="text-gray-600">
-              System immediately stops water flow and sends you alerts, preventing damage while you're away.
+              System immediately stops water flow and sends you alerts, preventing damage while you&apos;re away.
             </p>
           </div>
           
           <div className="text-center">
             <div className="w-16 h-16 bg-senchi-accent-light rounded-full flex items-center justify-center mx-auto mb-4">
-              <TrendingDown className="h-8 w-8 text-senchi-primary" />
+              <Car className="h-8 w-8 text-senchi-primary" />
             </div>
             <h3 className="text-xl font-bold text-gray-900 mb-2">Trusted plumbers dispatched</h3>
             <p className="text-gray-600">
@@ -84,21 +84,21 @@ export default function HaloSection() {
                   <div className="flex-shrink-0 w-8 h-8 bg-senchi-primary text-white rounded-full flex items-center justify-center text-sm font-bold">1</div>
                   <div>
                     <h4 className="font-semibold text-gray-900 mb-2">Connect Your Smart Home</h4>
-                    <p className="text-gray-600">Set up your smart home devices and sensors through our app.</p>
+                    <p className="text-gray-600">Install wireless sensors in 5 minutes. No tools, wiring, or plumber needed.</p>
                   </div>
                 </div>
                 <div className="flex items-start space-x-4">
                   <div className="flex-shrink-0 w-8 h-8 bg-senchi-primary text-white rounded-full flex items-center justify-center text-sm font-bold">2</div>
                   <div>
                     <h4 className="font-semibold text-gray-900 mb-2">AI Analyzes Data</h4>
-                    <p className="text-gray-600">Our AI processes real-time data to identify patterns and potential risks.</p>
+                    <p className="text-gray-600">AI monitors pressure, temperature, and flow 24/7. Detects problems 6 hours before pipes burst.</p>
                   </div>
                 </div>
                 <div className="flex items-start space-x-4">
                   <div className="flex-shrink-0 w-8 h-8 bg-senchi-primary text-white rounded-full flex items-center justify-center text-sm font-bold">3</div>
                   <div>
-                    <h4 className="font-semibold text-gray-900 mb-2">Prevent Claims</h4>
-                    <p className="text-gray-600">Receive alerts and recommendations to prevent issues before they become claims and set up automatic responses to prevent damages.</p>
+                    <h4 className="font-semibold text-gray-900 mb-2">Stops Disasters Automatically</h4>
+                    <p className="text-gray-600">System automatically shuts off water and calls trusted repair services. Damage prevented, not just detected.</p>
                   </div>
                 </div>
               </div>
