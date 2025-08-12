@@ -185,7 +185,7 @@ export default function PropertyDetailPage() {
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-lg p-6 shadow-sm text-center">
             <h1 className="text-xl font-semibold text-gray-900 mb-2">Property Not Found</h1>
-            <p className="text-gray-600">The property you're looking for doesn't exist.</p>
+            <p className="text-gray-600">The property you&apos;re looking for doesn&apos;t exist.</p>
           </div>
         </div>
       </div>
