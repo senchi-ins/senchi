@@ -169,7 +169,11 @@ class EventScheduler:
         # Check leaks
         for leak in self.events[EventCategory.LEAK]:
             if time_hours >= leak.start_time:
-                active.append((EventCategory.LEAK, leak))
+                if getattr(leak, "duration_hours", None) is None:
+                    active.append((EventCategory.LEAK, leak))
+                else:
+                    if time_hours <= leak.start_time + float(leak.duration_hours):
+                        active.append((EventCategory.LEAK, leak))
                 
         # Check blockages
         for blockage in self.events[EventCategory.BLOCKAGE]:

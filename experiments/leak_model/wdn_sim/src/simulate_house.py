@@ -79,19 +79,11 @@ class HouseSimulator:
             self.wn = build_default_network() # normally indented
         self.wn.options.time.hydraulic_timestep = int(max(1, resolution_seconds))
 
-        # Configure default demand patterns on fixtures using DemandGenerator
+        # Demand assignment strategy: inject a single aggregated household demand
+        # at the main junction using a properly scaled EPANET pattern (unitless
+        # multipliers) with base demand equal to the mean flow in m³/s.
+        # This avoids over-allocating 1 L/s at each fixture.
         self.using_pattern_demands = False
-        try:
-            configure_default_demands(
-                self.wn,
-                house_profile=self.demand_profile_id,
-                month=self.start_time.month,
-                resolution_seconds=self.resolution_seconds,
-            )
-            self.using_pattern_demands = True
-        except Exception:
-            # Safe fallback: will inject demand at a single junction
-            self.using_pattern_demands = False
 
         # if "MainSupply" in self.wn.link_name_list:
         #     self.main_pipe = "MainSupply"
@@ -159,6 +151,10 @@ class HouseSimulator:
                 pipe_material=self.main_pipe_material,
                 pipe_diameter_m=self.main_pipe_diameter_m
             )
+            # Apply seasonal indoor temperature to fallback model
+            self.temp_model.T_ambient = self.temp_model.get_seasonal_ambient_temperature(
+                self.start_time.month
+            )
         
         # Get pipe length from actual network model
         self.pipe_length_to_sensor = estimate_pipe_length_to_sensor(self.wn)
@@ -215,14 +211,22 @@ class HouseSimulator:
         # 3. Apply static effects of scheduled events (initial leak emitters, initial blockage diameters)
         self._apply_static_event_effects()
 
-        # 4. Assign demand to network only if we are NOT using fixture patterns
-        if not self.using_pattern_demands and self.main_junction in self.wn.junction_name_list:
-            pat_values = demand_L_s / 1000.0  # L/s to m3/s (EPANET units)
+        # 4. Assign single-junction demand using a proper EPANET pattern (multipliers)
+        if (not self.using_pattern_demands) and (self.main_junction in self.wn.junction_name_list):
+            demand_m3_s = demand_L_s / 1000.0
+            mean_flow = float(max(np.mean(demand_m3_s), 1e-9))
+            multipliers = (demand_m3_s / mean_flow).tolist()
             pattern_name = "demand_pattern"
-            self.wn.add_pattern(pattern_name, pat_values.tolist())
+            if pattern_name in self.wn.pattern_name_list:
+                self.wn.remove_pattern(pattern_name)
+            self.wn.add_pattern(pattern_name, multipliers)
             j = self.wn.get_node(self.main_junction)
-            j.demand_timeseries_list[0].pattern_name = pattern_name
-            j.demand_timeseries_list[0].base_value = 1.0  # Multiplier
+            if not j.demand_timeseries_list:
+                import wntr  # type: ignore
+                self.wn.add_demand(self.main_junction, mean_flow, pattern_name)
+            else:
+                j.demand_timeseries_list[0].pattern_name = pattern_name
+                j.demand_timeseries_list[0].base_value = mean_flow
 
         if self.light_mode:
             # --------------------------------------------------------------
@@ -249,81 +253,46 @@ class HouseSimulator:
                 velocity_ms[idx] = (total_flow_L_s / 1000) / A if total_flow_L_s > 0 else 0.0
         else:
             # --------------------------------------------------------------
-            # 4. High-fidelity per-step EPANET solve with progressive events
+            # 4. High-fidelity EPANET solve over the **full simulation horizon**
             # --------------------------------------------------------------
-            flow_L_s = np.zeros(steps)
-            velocity_ms = np.zeros(steps)
-            pressure_kpa = np.zeros(steps)
 
+            # (a) Ensure all static and time-scheduled events are attached to the
+            #     network before running the solver.  The scheduler only needs to
+            #     be called once per unique event start-time because each leak
+            #     adds an EPANET control that activates itself according to its
+            #     own `start_time` attribute.  Calling it for every hour up to
+            #     the end of the simulation guarantees those controls have been
+            #     created.
             time_hours = np.arange(steps) * self.resolution_seconds / 3600.0
-
-            # For graceful degradation when EPANET fails, remember previous good values
-            prev_flow_m3s: float = 0.0
-            prev_vel_ms: float = 0.0
-            prev_press_m: float = 30.6  # ≈300 kPa nominal head
-
-            for idx, t_h in enumerate(time_hours):
-
-                # (a) apply demand for this step when not using fixture patterns
-                if (not self.using_pattern_demands) and (self.main_junction in self.wn.junction_name_list):
-                    j = self.wn.get_node(self.main_junction)
-                    j.demand_timeseries_list[0].base_value = demand_L_s[idx] / 1000.0
-
-                # (b) update network for active events
+            for t_h in time_hours:
                 self.scheduler.apply_events_to_network(t_h)
 
-                # (c) run EPANET for one hydraulic timestep (quasi-steady)
-                self.hydraulics.run_hydraulics(self.resolution_seconds)
-                res = self.hydraulics.results
+            # (b) One EPANET run for the whole duration – duration equals full
+            #     simulation window; hydraulic timestep already set to
+            #     `self.resolution_seconds` in __init__.
+            self.hydraulics.run_hydraulics(self.duration_seconds)
+            res = self.hydraulics.results
 
-                # Safely extract first-row results; fall back to nominal zeros if EPANET returned
-                # an empty dataframe (can happen when the solver fails to converge or the input
-                # file is invalid for the current step).  This prevents IndexError: "index 0 is
-                # out of bounds for axis 0" while allowing the simulation loop to continue.
-                try:
-                    flow_series = res.link["flowrate"][self.main_pipe]
-                    vel_series  = res.link["velocity"][self.main_pipe]
-                    press_series = res.node["pressure"][self.main_junction]
+            # (c) Extract the full time-series for the pipe and junction of
+            #     interest.  EPANET returns results at every hydraulic time
+            #     step, so the length should match `steps`.  Use `_pad_or_trim`
+            #     for safety.
+            try:
+                flow_series = res.link["flowrate"][self.main_pipe].values  # m³/s
+                vel_series = res.link["velocity"][self.main_pipe].values    # m/s
+                press_series = res.node["pressure"][self.main_junction].values  # m of head
+            except Exception as exc:
+                # If extraction fails, fall back to zeros so downstream code
+                # still executes without crashing.
+                flow_series = np.zeros(steps)
+                vel_series = np.zeros(steps)
+                press_series = np.full(steps, 30.6)  # ≈300 kPa head
 
-                    if not flow_series.empty:
-                        flow_m3s = float(flow_series.iloc[0])
-                    elif idx > 0:
-                        flow_m3s = prev_flow_m3s
-                    else:
-                        flow_m3s = demand_L_s[idx] / 1000.0  # fallback to intended demand
-
-                    if not vel_series.empty:
-                        vel_ms = float(vel_series.iloc[0])
-                    elif idx > 0:
-                        vel_ms = prev_vel_ms
-                    else:
-                        vel_ms = 0.0
-
-                    if not press_series.empty:
-                        press_m = float(press_series.iloc[0])
-                    elif idx > 0:
-                        press_m = prev_press_m
-                    else:
-                        press_m = 30.6  # ~300 kPa
-                except Exception:
-                    # Any unexpected structure—carry forward if possible, else nominal
-                    if idx > 0:
-                        flow_m3s = prev_flow_m3s
-                        vel_ms = prev_vel_ms
-                        press_m = prev_press_m
-                    else:
-                        flow_m3s = demand_L_s[idx] / 1000.0
-                        vel_ms = 0.0
-                        press_m = 30.6
-
-                flow_L_s[idx] = flow_m3s * 1000.0
-                velocity_ms[idx] = vel_ms
-                pressure_kpa[idx] = press_m * 9.80665  # m → kPa
-
-                # Store for next iteration's carry-forward
-                prev_flow_m3s, prev_vel_ms, prev_press_m = flow_m3s, vel_ms, press_m
-
-
+            flow_L_s = self._pad_or_trim(flow_series * 1000.0, steps)     # m³/s → L/s
+            velocity_ms = self._pad_or_trim(vel_series, steps)
+            pressure_kpa = self._pad_or_trim(press_series * 9.80665, steps)  # m → kPa
+          
+         
         # 5. Optional transient analysis via TSNet – only if a true burst event exists
         downstream_wave_time = np.full(steps, np.nan)
         upstream_wave_time = np.full(steps, np.nan)

@@ -149,6 +149,18 @@ class TemperatureModel:
             return self.T_supply + 3.0
         else:  # Spring/Fall
             return self.T_supply
+
+    # -------------------------------------------------------------
+    # NEW: Seasonal indoor/ambient temperature helper
+    # -------------------------------------------------------------
+    def get_seasonal_ambient_temperature(self, month: int) -> float:
+        """Return typical indoor ambient temperature (°C) for season."""
+        if month in {12, 1, 2}:  # Winter
+            return 16.0
+        elif month in {6, 7, 8}:  # Summer
+            return 19.0
+        else:  # Spring / Fall
+            return 18.0
     
     @classmethod
     def from_house_profile(cls, 
@@ -169,25 +181,22 @@ class TemperatureModel:
         TemperatureModel
             Configured temperature model
         """
-        thermal = profile_data.get("thermal_properties", {})
         main_dist = profile_data.get("main_distribution", {})
-        
-        ambient_temp = thermal.get("ambient_temp_C", 18.0)
+
         pipe_material = main_dist.get("material", "Copper")
         pipe_diameter_mm = main_dist.get("diameter_mm", 19.05)
-        
-        # Get supply temperature with seasonal adjustment
-        base_supply_temp = thermal.get("supply_temp_C", 10.0)
-        
+
+        # Create model with default baseline values; seasonals applied below
         model = cls(
-            supply_temp_C=base_supply_temp,
-            ambient_temp_C=ambient_temp,
             pipe_material=pipe_material,
-            pipe_diameter_m=pipe_diameter_mm / 1000.0
+            pipe_diameter_m=pipe_diameter_mm / 1000.0,
         )
         
         # Apply seasonal adjustment
         model.T_supply = model.get_seasonal_supply_temperature(month)
+
+        # Apply seasonal ambient adjustment (new helper)
+        model.T_ambient = model.get_seasonal_ambient_temperature(month)
         
         return model
 

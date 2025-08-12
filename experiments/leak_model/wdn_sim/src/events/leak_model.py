@@ -31,18 +31,22 @@ class LeakEvent:
                  leak_type: LeakType,
                  pipe_material: str = "Copper",
                  system_pressure_kpa: float = 414.0,
-                 random_seed: Optional[int] = None):
+                 random_seed: Optional[int] = None,
+                 duration_hours: Optional[float] = None):
         """Initialize leak event."""
         self.start_time = start_time_hours
         self.location = location
         self.leak_type = leak_type
         self.pipe_material = pipe_material
         self.system_pressure = system_pressure_kpa * 1000  # Pa
+        self.duration_hours = duration_hours  # None = indefinite
         
         if random_seed:
             np.random.seed(random_seed)
             
         self._initialize_parameters()
+        # Ensure leak controls are added only once to the network (idempotent)
+        self._leak_applied: bool = False
         
     def _initialize_parameters(self):
         """Set leak parameters based on type."""
@@ -119,11 +123,19 @@ class LeakEvent:
             node = wn.get_node(self.location)
             area = self.get_leak_area(time_hours)
             
-            if area > 0:
-                node.add_leak(wn, area=area,
-                            discharge_coeff=self.discharge_coeff,
-                            start_time=self.start_time * 3600,
-                            end_time=None)
+            # Add the leak control only once; subsequent calls just return
+            if area > 0 and not self._leak_applied:
+                end_time_sec = None
+                if self.duration_hours is not None and self.duration_hours > 0:
+                    end_time_sec = (self.start_time + self.duration_hours) * 3600
+                node.add_leak(
+                    wn,
+                    area=area,
+                    discharge_coeff=self.discharge_coeff,
+                    start_time=self.start_time * 3600,
+                    end_time=end_time_sec,
+                )
+                self._leak_applied = True
         except Exception as e:
             print(f"Warning: Could not apply leak: {e}")
 
@@ -140,7 +152,29 @@ class LeakGenerator:
             'CPVC': 0.8,
             'PEX-B': 0.5
         }
-        
+        # Duration category weights (short, medium, long, persistent)
+        self.duration_weights = [0.20, 0.50, 0.25, 0.05]
+
+    def _sample_duration_hours(self, rng: np.random.Generator | None = None) -> float:
+        """Sample a realistic leak duration in hours.
+
+        Categories:
+        - short: 10–60 minutes
+        - medium: 1–24 hours
+        - long: 1–7 days
+        - persistent: 7–14 days
+        """
+        _rng = rng if rng is not None else np.random.default_rng()
+        cat = _rng.choice(["short", "medium", "long", "persistent"], p=self.duration_weights)
+        if cat == "short":
+            return float(_rng.uniform(10/60, 60/60))  # hours
+        if cat == "medium":
+            return float(_rng.uniform(1, 24))
+        if cat == "long":
+            return float(_rng.uniform(24, 7*24))
+        # persistent
+        return float(_rng.uniform(7*24, 14*24))
+
     def generate_leaks(self, 
                        duration_days: int,
                        network_length_km: float,
@@ -153,6 +187,7 @@ class LeakGenerator:
         """
         if random_seed is not None:
             np.random.seed(random_seed)
+        rng = np.random.default_rng(random_seed)
 
             
         # Calculate expected leaks
@@ -177,13 +212,16 @@ class LeakGenerator:
                     np.random.choice(available_nodes)
                     if available_nodes else f"junction_{np.random.randint(1, 100)}"
                 )
-                
+            # Sample duration in hours
+            duration_hours = self._sample_duration_hours(rng)
+            
             leak = LeakEvent(
                 start_time_hours=start_time,
                 location=location_choice,
                 leak_type=leak_type,
                 pipe_material=material,
-                random_seed=random_seed + i if random_seed else None
+                random_seed=random_seed + i if random_seed else None,
+                duration_hours=duration_hours,
             )
             leaks.append(leak)
             

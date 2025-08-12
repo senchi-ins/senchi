@@ -126,7 +126,7 @@ def simulate_cohort(
         except Exception as exc:  # pragma: no cover
             print(f"[WARN] Could not load house profiles for weighted selection: {exc}")
 
-    event_incidence = 0.07  # Probability that a house will experience any events in its continuous run
+    event_incidence = 0.50  # Probability that a house will experience any events in its continuous run
 
     duration_seconds = days * seconds_per_day
 
@@ -195,6 +195,14 @@ def simulate_cohort(
             combined_path = output_dir / combined_name
             concatenate_simulation_files(files_to_concat, combined_path, file_format=file_format)
             print("Consolidated file written to", combined_path)
+
+            # Remove per-house files now that they have been merged into a single dataset
+            for f in files_to_concat:
+                try:
+                    f.unlink(missing_ok=True)
+                except Exception:
+                    pass
+            print(f"Deleted {len(files_to_concat)} individual house files after consolidation.")
 
             # --------------------------------------------------------------
             # Bulk COPY into Postgres

@@ -29,7 +29,7 @@ services:
       - SIM_HOUSES=${SIM_HOUSES:-100}
       - SIM_DAYS=${SIM_DAYS:-1}
       - SIM_RESOLUTION=${SIM_RESOLUTION:-10.0}  # seconds
-      - SIM_PROCESSES=${SIM_PROCESSES:-0}       # 0 = use all cores
+      - SIM_PROCESSES=${SIM_PROCESSES:-1}       # 0 = use all cores
       - SIM_OUTPUT=${SIM_OUTPUT:-/app/output/raw}
       - SIM_PROFILE=${SIM_PROFILE:-modern_pex_small}
       - SIM_LIGHT_MODE=${SIM_LIGHT_MODE:-false}

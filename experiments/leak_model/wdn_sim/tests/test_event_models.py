@@ -17,3 +17,19 @@ def test_blockage_headloss_multiplier():
     m0 = blk.get_head_loss_multiplier(0)
     m_end = blk.get_head_loss_multiplier(30 * 24)
     assert m_end > m0 >= 1.0
+
+
+def test_leak_duration_window_active_only_within_bounds():
+    # 2-hour duration
+    leak = LeakEvent( start_time_hours=1.0, location="loc", leak_type=LeakType.PINHOLE, duration_hours=2.0 )
+    from src.events.event_scheduler import EventScheduler, EventCategory
+    es = EventScheduler(wn=None)
+    es.add_leak(leak)
+
+    # Before start
+    assert len([e for e in es.get_active_events(0.5) if e[0] == EventCategory.LEAK]) == 0
+    # During leak
+    assert len([e for e in es.get_active_events(1.5) if e[0] == EventCategory.LEAK]) == 1
+    assert len([e for e in es.get_active_events(2.9) if e[0] == EventCategory.LEAK]) == 1
+    # After end (start 1.0 + 2.0 = 3.0)
+    assert len([e for e in es.get_active_events(3.1) if e[0] == EventCategory.LEAK]) == 0
