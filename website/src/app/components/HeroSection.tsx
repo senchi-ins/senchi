@@ -72,9 +72,9 @@ export default function HeroSection() {
                   </Button>
                 </div>
               </div>
-              <p className="text-gray-500 text-sm max-w-md">
+              {/* <p className="text-gray-500 text-sm max-w-md">
                 We expect to launch beta with our first customers in Q4 2025.
-              </p>
+              </p> */}
               {status === 'success' && (
                 <div className="text-green-300 text-sm">You&apos;ve been added to the waitlist!</div>
               )}
