@@ -50,6 +50,9 @@ export default function Header() {
             <a href="#plans" className={`transition-colors ${isScrolled ? 'text-gray-900 hover:text-senchi-primary' : 'text-white hover:text-senchi-accent-light'}`}>
               Plans
             </a>
+            <a href="/about" className={`transition-colors ${isScrolled ? 'text-gray-900 hover:text-senchi-primary' : 'text-white hover:text-senchi-accent-light'}`}>
+              About Us
+            </a>
             <a href="/demo" className={`transition-colors ${isScrolled ? 'text-gray-900 hover:text-senchi-primary' : 'text-white hover:text-senchi-accent-light'}`}>
               See a demo
             </a>
