@@ -31,7 +31,7 @@ export default function Header() {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <div className="flex items-center">
-            <div className="flex items-center space-x-2">
+            <Link href="/" className="flex items-center space-x-2">
               <Image 
                 src={isScrolled ? "/senchi-dark.png" : "/senchi.png"} 
                 alt="Senchi logo" 
@@ -39,7 +39,7 @@ export default function Header() {
                 height={500} 
                 className="h-24 w-auto" 
               />
-            </div>
+            </Link>
           </div>
 
           {/* Desktop Navigation */}
