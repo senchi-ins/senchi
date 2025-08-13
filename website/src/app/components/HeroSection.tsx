@@ -47,7 +47,7 @@ export default function HeroSection() {
                   <span className="text-white">We catch them before they happen.</span>
                 </h1>
                 <p className="text-lg text-gray-100 max-w-2xl">
-                Smart sensors detect temperature, pressure, and other changes days before pipes burst or appliances fail. Save thousands in damage and skip the insurance headache
+                Smart sensors detect temperature, flow, and other changes hours before pipes burst or appliances fail. Save thousands in damage and skip the insurance headache
                 </p>
               </div>
               
