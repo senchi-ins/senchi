@@ -19,7 +19,7 @@ export default function Footer() {
               <Image src="/senchi.png" alt="Senchi logo" width={1000} height={1000} className="h-8 w-auto" />
             </div>
             <p className="text-gray-600 max-w-sm"> 
-              AI powered prediction meets charitable giving for complete protection.
+              Stopping water damage before it happens to save you time and money.
             </p>
             <div className="flex space-x-4">
               {/* <a href="#" className="text-gray-400 hover:text-senchi-primary transition-colors" aria-label="Follow us on X">
