@@ -39,7 +39,7 @@ class NotificationRouter:
             user_ids = [(user_id["owner_user_id"], user_id["serial_number"]) for user_id in user_ids]
             print(f"User IDs: {user_ids}")
 
-            relevant_phone_numbers = self.db.get_user_from_phone_number_by_serial(serial_number)
+            relevant_phone_numbers = self.db.get_user_from_phone_number_by_serial(serial_number, user_ids[0][0])
             phone_numbers = [phone_number["manager_phone_number"] for phone_number in relevant_phone_numbers]
             
             if not user_ids:
