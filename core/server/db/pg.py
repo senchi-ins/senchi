@@ -249,6 +249,12 @@ class PostgresDB:
         """
         return self.execute_query(query, (user_id,))
     
+    def get_property_by_id(self, property_id: str) -> Optional[dict]:
+        query = """
+        SELECT id, name, address, property_type, description FROM zb_properties WHERE id = %s
+        """
+        return self.execute_with_return(query, (property_id,))
+    
     def add_property(self, user_id: str, name: str, address: str = None, role: str = 'owner', added_by: str = None) -> bool:
         query = """
         INSERT INTO zb_properties (name, address, property_type, description, timezone, is_active)

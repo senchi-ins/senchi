@@ -18,3 +18,7 @@ class AddManagerPhoneNumberRequest(BaseModel):
     property_id: str
     phone_number: str
     role: Optional[str] = 'Manager'
+
+class AddManagerPhoneNumberResponse(BaseModel):
+    success: bool
+    response: str

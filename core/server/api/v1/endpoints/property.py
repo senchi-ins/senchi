@@ -14,7 +14,8 @@ from pydantic import BaseModel
 from schemas.property import (
     PropertyResponse,
     PropertyRequest,
-    AddManagerPhoneNumberRequest
+    AddManagerPhoneNumberRequest,
+    AddManagerPhoneNumberResponse
 )
 
 
@@ -62,7 +63,7 @@ async def add_property(
 async def add_manager_phone_number(
     property_request: AddManagerPhoneNumberRequest,
     request: Request,
-) -> PropertyResponse:
+) -> AddManagerPhoneNumberResponse:
     success = request.app.state.db.add_manager_phone_number(
         property_request.user_id,
         property_request.property_id, 
