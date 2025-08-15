@@ -9,3 +9,6 @@ class PropertyRequest(BaseModel):
 class PropertyResponse(BaseModel):
     id: str
     name: str
+    address: Optional[str] = None
+    property_type: Optional[str] = None
+    description: Optional[str] = None

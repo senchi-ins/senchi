@@ -245,7 +245,7 @@ class PostgresDB:
     
     def get_properties(self, user_id: str) -> Optional[List[str]]:
         query = """
-        SELECT id, name FROM zb_properties WHERE id IN (SELECT property_id FROM zb_user_properties WHERE user_id = %s)
+        SELECT id, name, address, property_type, description FROM zb_properties WHERE id IN (SELECT property_id FROM zb_user_properties WHERE user_id = %s)
         """
         return self.execute_query(query, (user_id,))
     

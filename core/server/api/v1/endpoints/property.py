@@ -31,11 +31,17 @@ async def list_properties(
     request: Request,
 ) -> List[PropertyResponse]:
     properties = request.app.state.db.get_properties(property_request.user_id)
-    print(f"properties: {properties}")
     if not properties:
         return []
     
-    properties = [PropertyResponse(id=property['id'], name=property['name']) for property in properties]
+    properties = [
+        PropertyResponse(
+            id=property['id'], 
+            name=property['name'], 
+            address=property['address'], 
+            property_type=property['property_type'], 
+            description=property['description']
+        ) for property in properties]
     return properties
 
 
