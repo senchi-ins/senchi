@@ -131,7 +131,7 @@ struct DeviceCardView: View {
         
         if let waterLeak = device.water_leak {
             if waterLeak {
-                details.append("🚨 WATER LEAK DETECTED!")
+                details.append("WATER LEAK DETECTED")
             } else {
                 details.append("No leaks detected")
             }
@@ -141,24 +141,8 @@ struct DeviceCardView: View {
             details.append("⚠️ Battery low")
         }
         
-        if let linkQuality = device.linkquality {
-            details.append("Signal: \(linkQuality)")
-        }
-        
         if let temperature = device.device_temperature {
             details.append("Temperature: \(String(format: "%.1f°C", temperature))")
-        }
-        
-        if let voltage = device.voltage {
-            details.append("Voltage: \(voltage)mV")
-        }
-        
-        if let triggerCount = device.trigger_count {
-            details.append("Triggers: \(triggerCount)")
-        }
-        
-        if let powerOutages = device.power_outage_count {
-            details.append("Power outages: \(powerOutages)")
         }
         
         // Only show connection status if no other details

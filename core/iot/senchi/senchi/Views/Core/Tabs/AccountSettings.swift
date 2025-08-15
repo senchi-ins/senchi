@@ -6,6 +6,7 @@ struct AccountSettings: View {
     
     @EnvironmentObject private var userSettings: UserSettings
     @EnvironmentObject private var authManager: AuthManager
+    @State private var showingReconnectionModal = false
     
     var body: some View {
         NavigationView {
@@ -78,17 +79,15 @@ struct AccountSettings: View {
                 .background(Color.gray.opacity(0.05))
                 .cornerRadius(16)
                 
-                // Push Token Extractor (Temporary for testing)
-                NavigationLink(destination: PushTokenExtractor()) {
+                Button(action: {
+                    showingReconnectionModal = true
+                }) {
                     HStack {
-                        Image(systemName: "bell.badge")
-                        Text("Push Token Extractor").fontWeight(.semibold)
-                        Spacer()
-                        Image(systemName: "chevron.right").foregroundColor(.gray)
+                        Text("Reconnect \(ApplicationConfig.hubName)").fontWeight(.semibold)
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(Color.blue)
+                    .background(SenchiColors.senchiBlue)
                     .foregroundColor(.white)
                     .cornerRadius(8)
                 }
@@ -143,6 +142,9 @@ struct AccountSettings: View {
             .padding(20)
             }
             .background(Color.white.ignoresSafeArea())
+        }
+        .sheet(isPresented: $showingReconnectionModal) {
+            DeviceReconnectionModal()
         }
     }
 }

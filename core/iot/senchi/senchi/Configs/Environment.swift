@@ -13,5 +13,5 @@ class UserSettings: ObservableObject {
     
     // TODO: Remove this and make API call
     // Also TODO: Make this less hacky
-    @Published var homeHealthScore: Double = 0.18
+    @Published var homeHealthScore: Double = 0.70
 }
