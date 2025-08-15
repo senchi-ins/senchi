@@ -64,7 +64,7 @@ async def add_manager_phone_number(
     request: Request,
 ) -> PropertyResponse:
     success = request.app.state.db.add_manager_phone_number(
-        property_request.user_id, 
+        property_request.user_id,
         property_request.property_id, 
         property_request.phone_number,
         property_request.role
