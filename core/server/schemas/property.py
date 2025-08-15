@@ -12,3 +12,9 @@ class PropertyResponse(BaseModel):
     address: Optional[str] = None
     property_type: Optional[str] = None
     description: Optional[str] = None
+
+class AddManagerPhoneNumberRequest(BaseModel):
+    user_id: str
+    property_id: str
+    phone_number: str
+    role: Optional[str] = 'Manager'

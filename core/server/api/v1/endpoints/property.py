@@ -13,7 +13,8 @@ from pydantic import BaseModel
 
 from schemas.property import (
     PropertyResponse,
-    PropertyRequest
+    PropertyRequest,
+    AddManagerPhoneNumberRequest
 )
 
 
@@ -56,3 +57,18 @@ async def add_property(
     if not success:
         raise HTTPException(status_code=500, detail="Failed to add property")
     return PropertyResponse(id=property_request.user_id, name="New Property")
+
+@router.post("/add-manager-phone-number")
+async def add_manager_phone_number(
+    property_request: AddManagerPhoneNumberRequest,
+    request: Request,
+) -> PropertyResponse:
+    success = request.app.state.db.add_manager_phone_number(
+        property_request.user_id, 
+        property_request.property_id, 
+        property_request.phone_number,
+        property_request.role
+    )
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to add manager phone number")
+    return {"success": True, "response": "Manager phone number added successfully"}

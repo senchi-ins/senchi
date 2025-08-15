@@ -277,3 +277,10 @@ class PostgresDB:
         DELETE FROM zb_users WHERE id = %s CASCADE
         """
         return self.execute_insert(query, (user_id,))
+    
+    def add_manager_phone_number(self, user_id: str, property_id: str, phone_number: str, role: str = 'manager') -> bool:
+        query = """
+        INSERT INTO zb_user_properties (user_id, property_id, role, manager_phone_number)
+        VALUES (%s, %s, %s, %s)
+        """
+        return self.execute_insert(query, (user_id, property_id, role, phone_number))

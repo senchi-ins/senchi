@@ -71,6 +71,7 @@ CREATE TABLE IF NOT EXISTS zb_user_properties (
     role VARCHAR(50) DEFAULT 'tenant' CHECK (role IN ('owner', 'manager', 'tenant', 'viewer')),
     added_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     added_by UUID REFERENCES zb_users(id),
+    manager_phone_number VARCHAR(20),
     
     UNIQUE(user_id, property_id)
 );
