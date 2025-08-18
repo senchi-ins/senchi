@@ -1,6 +1,9 @@
+"use client"
+
 import React from 'react';
-import { Home, Settings, User2, ChevronUp, CreditCard, LogOut, Wrench, Users } from "lucide-react"
+import { Home, Settings, User2, ChevronUp, CreditCard, LogOut } from "lucide-react"
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import {
     Sidebar,
     SidebarContent,
@@ -19,29 +22,19 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/app/components/ui/dropdown-menu"
-import { CommandSearch } from './Search';
+import { CommandSearch } from './CommandSearch';
 
 
   const items = [
     {
       title: "Properties",
-      url: "#",
+      url: "/product",
       icon: Home,
-      badge: "10", // Alert for number of homes with issues
-    },
-    {
-      title: "Maintenance",
-      url: "#",
-      icon: Wrench,
-    },
-    {
-      title: "Tenant Management",
-      url: "#",
-      icon: Users,
+      // badge: "10", // TODO: Link this alert to api
     },
     {
       title: "Settings",
-      url: "#",
+      url: "/product/settings",
       icon: Settings,
     },
 ]
@@ -66,6 +59,17 @@ const accountItems = [
 const userName = "John Doe"
 
 export default function ProductSidebar() {
+  const router = useRouter();
+
+  const handleMouseEnter = (url: string) => {
+    // Preload the page on hover
+    router.prefetch(url);
+  };
+
+  const handleNavigation = (url: string) => {
+    // Force navigation even if we're in the same section
+    router.push(url);
+  };
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="p-2">
@@ -89,16 +93,18 @@ export default function ProductSidebar() {
             <SidebarMenu>
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <a href={item.url}>
-                      <item.icon className="group-data-[collapsible=icon]:h-4 group-data-[collapsible=icon]:w-4" />
-                      <span className="group-data-[collapsible=icon]:hidden group-data-[collapsible=icon]:text-sm">{item.title}</span>
-                      {item.badge && (
-                        <span className="ml-auto bg-senchi-primary p-2 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium group-data-[collapsible=icon]:absolute group-data-[collapsible=icon]:-top-1 group-data-[collapsible=icon]:-right-1 group-data-[collapsible=icon]:ml-0 group-data-[collapsible=icon]:w-5 group-data-[collapsible=icon]:h-5 group-data-[collapsible=icon]:text-[10px]">
-                          {item.badge}
-                        </span>
-                      )}
-                    </a>
+                  <SidebarMenuButton 
+                    className="group w-full"
+                    onMouseEnter={() => handleMouseEnter(item.url)}
+                    onClick={() => handleNavigation(item.url)}
+                  >
+                    <item.icon className="group-data-[collapsible=icon]:h-4 group-data-[collapsible=icon]:w-4" />
+                    <span className="group-data-[collapsible=icon]:hidden group-data-[collapsible=icon]:text-sm">{item.title}</span>
+                    {/* {item.badge && (
+                      <span className="ml-auto bg-senchi-primary p-2 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium group-data-[collapsible=icon]:absolute group-data-[collapsible=icon]:-top-1 group-data-[collapsible=icon]:-right-1 group-data-[collapsible=icon]:ml-0 group-data-[collapsible=icon]:w-5 group-data-[collapsible=icon]:h-5 group-data-[collapsible=icon]:text-[10px]">
+                        {item.badge}
+                      </span>
+                    )} */}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}

@@ -1,7 +1,7 @@
 "use client"
 
-import React, { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation';
+import React, { useEffect, useState, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation';
 import Search from './search'
 import { 
     fetchLocationSurvey, 
@@ -10,11 +10,21 @@ import {
     createSurveyAndRedirect
 } from '../api/survey/survey'
 
-export default function ExternalAssessment() {
+function ExternalAssessmentContent() {
     const [input, setInput] = useState("");
     const [enterPressed, setEnterPressed] = useState(false);
     const [survey, setSurvey] = useState<LocationRiskResponse | null>(null);
     const router = useRouter();
+    const searchParams = useSearchParams();
+
+    // Check for address parameter and auto-trigger survey
+    useEffect(() => {
+        const addressParam = searchParams.get('address');
+        if (addressParam && !enterPressed) {
+            setInput(addressParam);
+            setEnterPressed(true);
+        }
+    }, [searchParams, enterPressed]);
 
     useEffect(() => {
         if (enterPressed) {
@@ -47,7 +57,7 @@ export default function ExternalAssessment() {
                 i++;
             }
 
-            await createSurveyAndRedirect(surveyContent as CreateSurveyRequest, router);
+            await createSurveyAndRedirect(surveyContent as CreateSurveyRequest);
         };
         handleSurvey();
     }, [survey, router]);
@@ -57,4 +67,17 @@ export default function ExternalAssessment() {
             <Search setInput={setInput} input={input} setEnterPressed={setEnterPressed} />
         </div>
     )
+}
+
+export default function ExternalAssessment() {
+    return (
+        <Suspense fallback={
+            <div className="flex flex-col items-center justify-center h-screen bg-senchi-footer">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                <p className="mt-4 text-white">Loading...</p>
+            </div>
+        }>
+            <ExternalAssessmentContent />
+        </Suspense>
+    );
 }

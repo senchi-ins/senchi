@@ -2,6 +2,7 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { Home, Wifi, Droplets, ChevronRight } from "lucide-react";
 
+
 interface PropertyScore {
   overall: number;
   internal: number;
@@ -22,19 +23,29 @@ interface PropertyAlert {
 interface PropertyOverviewProps {
   id: string;
   address: string;
+  name: string;
+  property_type: string;
+  description: string;
   scores: PropertyScore;
+  total_savings: number;
   devices: PropertyDevice;
   alert?: PropertyAlert;
 }
 
 export default function PropertyOverview({ 
   id,
-  address, 
+  address,
+  name,
+  property_type,
+  description,
   scores, 
+  total_savings,
   devices, 
-  alert 
+  alert
 }: PropertyOverviewProps) {
   const router = useRouter();
+
+  console.log(`property_type: ${property_type}, name: ${name}, description: ${description}, total_savings: ${total_savings}`);
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'bg-green-400 text-white';
     if (score >= 70) return 'bg-yellow-400 text-white';
@@ -48,6 +59,7 @@ export default function PropertyOverview({
   };
 
   const handleClick = () => {
+    // Simply navigate to the property page - it will fetch all data from the API
     router.push(`/product/${id}`);
   };
 

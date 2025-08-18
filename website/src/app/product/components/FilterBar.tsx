@@ -5,17 +5,21 @@ import { Search, ChevronDown, Plus } from "lucide-react";
 
 interface Property {
   id: string;
-  address: string;
-  propertyId: string;
-  scores: {
+  name: string;
+  address?: string;
+  propertyId?: string;
+  property_type?: string;
+  description?: string;
+  scores?: {
     overall: number;
     internal: number;
     external: number;
   };
-  devices: {
+  devices?: {
     connected: number;
     total: number;
   };
+  total_savings?: number;
   alert?: {
     type: string;
     message: string;
@@ -40,7 +44,7 @@ export function FilterBar({ properties, onPropertySelect, onFilterChange, onAddP
   const severityOptions = ['High', 'Medium', 'Low'];
 
   const filteredProperties = properties.filter(property =>
-    property.address.toLowerCase().includes(searchQuery.toLowerCase())
+    (property.address || property.name).toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleSearchSubmit = () => {
@@ -56,7 +60,7 @@ export function FilterBar({ properties, onPropertySelect, onFilterChange, onAddP
   };
 
   const handlePropertySelect = (property: Property) => {
-    setSearchQuery(property.address);
+    setSearchQuery(property.address || property.name);
     setShowSuggestions(false);
     onPropertySelect(property);
   };
@@ -101,7 +105,7 @@ export function FilterBar({ properties, onPropertySelect, onFilterChange, onAddP
                   className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
                   onClick={() => handlePropertySelect(property)}
                 >
-                  {property.address}
+                  {property.address || property.name}
                 </div>
               ))}
               </div>

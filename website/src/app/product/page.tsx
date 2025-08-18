@@ -1,26 +1,30 @@
 "use client"
 
 import React, { useState } from 'react';
+import { useProperties } from '@/contexts/PropertiesContext';
 
-import SidebarProvider from './components/SidebarProvider';
 import { SectionCards } from './components/Card';
 import { Line } from './components/Line';
 import { FilterBar } from './components/FilterBar';
 import PropertyOverview from './components/PropertyOverview';
 
-interface Property {
+interface UserProperty {
   id: string;
-  address: string;
-  propertyId: string;
-  scores: {
+  name: string;
+  address?: string;
+  propertyId?: string;
+  property_type?: string;
+  description?: string;
+  scores?: {
     overall: number;
     internal: number;
     external: number;
   };
-  devices: {
+  devices?: {
     connected: number;
     total: number;
   };
+  total_savings?: number;
   alert?: {
     type: string;
     message: string;
@@ -29,56 +33,15 @@ interface Property {
 }
 
 export default function ProductPage() {
-  const [allProperties] = useState<Property[]>([
-    {
-      id: '1',
-      address: '123 Maple Street, Toronto, ON',
-      propertyId: '123-maple-street',
-      scores: { overall: 77, internal: 79, external: 73 },
-      devices: { connected: 5, total: 6 },
-      alert: {
-        type: 'water_flow',
-        message: 'Abnormal water flow detected in kitchen sink',
-        severity: 'medium'
-      }
-    },
-    {
-      id: '2',
-      address: '456 Oak Avenue, Vancouver, BC',
-      propertyId: '456-oak-avenue',
-      scores: { overall: 85, internal: 82, external: 88 },
-      devices: { connected: 6, total: 6 }
-    },
-    {
-      id: '3',
-      address: '789 Pine Road, Calgary, AB',
-      propertyId: '789-pine-road',
-      scores: { overall: 92, internal: 90, external: 94 },
-      devices: { connected: 4, total: 5 },
-      alert: {
-        type: 'temperature',
-        message: 'High temperature detected in basement',
-        severity: 'low'
-      }
-    },
-    {
-      id: '4',
-      address: '321 Elm Drive, Montreal, QC',
-      propertyId: '321-elm-drive',
-      scores: { overall: 68, internal: 65, external: 71 },
-      devices: { connected: 3, total: 6 },
-      alert: {
-        type: 'pressure',
-        message: 'Low water pressure detected',
-        severity: 'low'
-      }
-    }
-  ]);
-
-  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+  const { properties: allProperties, isLoading, error } = useProperties();
+  const [selectedProperty, setSelectedProperty] = useState<UserProperty | null>(null);
   const [selectedFilter, setSelectedFilter] = useState<string>('Alert severity');
-  const [filteredProperties, setFilteredProperties] = useState<Property[]>(allProperties);
+  const [filteredProperties, setFilteredProperties] = useState<UserProperty[]>(allProperties);
 
+  // Update filtered properties when allProperties changes
+  React.useEffect(() => {
+    setFilteredProperties(allProperties);
+  }, [allProperties]);
   // Filter properties based on search and filter criteria
   const filterProperties = (searchQuery: string, filter: string) => {
     let filtered = allProperties;
@@ -86,8 +49,9 @@ export default function ProductPage() {
     // Apply search filter
     if (searchQuery) {
       filtered = filtered.filter(property =>
-        property.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        property.propertyId.toLowerCase().includes(searchQuery.toLowerCase())
+        property.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (property.address && property.address.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (property.propertyId && property.propertyId.toLowerCase().includes(searchQuery.toLowerCase()))
       );
     }
 
@@ -102,7 +66,7 @@ export default function ProductPage() {
     setFilteredProperties(filtered);
   };
 
-  const handlePropertySelect = (property: Property) => {
+  const handlePropertySelect = (property: UserProperty) => {
     setSelectedProperty(property);
     console.log('Property selected:', property);
     // Handle property selection - you can update state here
@@ -125,35 +89,69 @@ export default function ProductPage() {
     // Handle add property - you can open modal or navigate here
   };
 
-  return (
-    <div>
-      <SidebarProvider>
-        <div className="pl-1">
-          <SectionCards />
-          <Line thickness={1} color="#e5e7eb" className="my-2 mx-10 pl-10" />
-          <FilterBar 
-            properties={allProperties}
-            onPropertySelect={handlePropertySelect}
-            onFilterChange={handleFilterChange}
-            onAddProperty={handleAddProperty}
-            onSearchChange={handleSearchChange}
-          />
-          
-          {/* Property Overview Cards */}
-          <div className="space-y-4 mt-8">
-            {filteredProperties.map((property) => (
-              <PropertyOverview
-                key={property.id}
-                id={property.id}
-                address={property.address}
-                scores={property.scores}
-                devices={property.devices}
-                alert={property.alert}
-              />
-            ))}
-          </div>
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading your properties...</p>
         </div>
-      </SidebarProvider>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="pl-1">
+      <SectionCards />
+      <Line thickness={1} color="#e5e7eb" className="my-2 mx-10 pl-10" />
+      <FilterBar 
+        properties={allProperties}
+        onPropertySelect={handlePropertySelect}
+        onFilterChange={handleFilterChange}
+        onAddProperty={handleAddProperty}
+        onSearchChange={handleSearchChange}
+      />
+      
+      <div className="space-y-4 mt-8">
+        {filteredProperties.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-gray-600">No properties found. Add your first property to get started.</p>
+          </div>
+        ) : (
+          filteredProperties.map((property) => (
+            <PropertyOverview
+              key={property.id}
+              id={property.id}
+              name={property.name || property.propertyId || ''}
+              address={property.address || property.name}
+              property_type={property.property_type || ''}
+              description={property.description || ''}
+              scores={property.scores || { overall: 0, internal: 0, external: 0 }}
+              devices={property.devices || { connected: 0, total: 0 }}
+              total_savings={property.total_savings || 0}
+              alert={property.alert}
+            />
+          ))
+        )}
+      </div>
     </div>
   )
 }
