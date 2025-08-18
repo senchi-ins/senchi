@@ -39,6 +39,8 @@ async def list_properties(
     if not properties:
         return []
     
+    alerts = PropertyAlerts(**property['alerts']) if property['alerts'] else None
+    
     properties = [
         PropertyResponse(
             id=property['id'], 
@@ -55,7 +57,7 @@ async def list_properties(
                 connected=property['devices_connected'],
                 total=property['devices_total']
             ),
-            alerts=PropertyAlerts(**property['alerts'])
+            alerts=alerts
         ) for property in properties]
     return properties
 
