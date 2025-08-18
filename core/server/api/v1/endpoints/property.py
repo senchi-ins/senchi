@@ -12,6 +12,9 @@ from typing import List, Optional
 from pydantic import BaseModel
 
 from schemas.property import (
+    PropertyScores,
+    PropertyDevices,
+    PropertyAlerts,
     PropertyResponse,
     PropertyRequest,
     AddManagerPhoneNumberRequest,
@@ -42,7 +45,17 @@ async def list_properties(
             name=property['name'], 
             address=property['address'], 
             property_type=property['property_type'], 
-            description=property['description']
+            description=property['description'],
+            scores=PropertyScores(
+                overall=property['scores_overall'],
+                internal=property['scores_internal'],
+                external=property['scores_external']
+            ),
+            devices=PropertyDevices(
+                connected=property['devices_connected'],
+                total=property['devices_total']
+            ),
+            alerts=PropertyAlerts(**property['alerts'])
         ) for property in properties]
     return properties
 
