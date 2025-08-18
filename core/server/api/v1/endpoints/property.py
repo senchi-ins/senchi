@@ -39,7 +39,7 @@ async def list_properties(
     if not properties:
         return []
     
-    alerts = PropertyAlerts(**property['alerts']) if property['alerts'] else None
+    # alerts = PropertyAlerts(**property['alerts']) if property['alerts'] else None
     
     properties = [
         PropertyResponse(
