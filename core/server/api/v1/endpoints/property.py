@@ -68,7 +68,7 @@ async def get_alerts(
     alerts = request.app.state.db.get_alerts(property_request.property_id)
     if not alerts:
         return None
-    formatted_alerts = [PropertyAlerts(**alert) for alert in alerts]
+    formatted_alerts = [PropertyAlerts(**alert['alert']) for alert in alerts]
     print(formatted_alerts)
     return formatted_alerts
 
