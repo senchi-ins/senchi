@@ -7,6 +7,9 @@ class PropertyRequest(BaseModel):
     user_id: str
     property_name: Optional[str] = None
 
+class AlertRequest(BaseModel):
+    property_id: str
+
 class PropertyScores(BaseModel):
     overall: Optional[float] = None
     internal: Optional[float] = None

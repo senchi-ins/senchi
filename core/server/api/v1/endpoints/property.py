@@ -18,7 +18,8 @@ from schemas.property import (
     PropertyResponse,
     PropertyRequest,
     AddManagerPhoneNumberRequest,
-    AddManagerPhoneNumberResponse
+    AddManagerPhoneNumberResponse,
+    AlertRequest
 )
 
 
@@ -61,7 +62,7 @@ async def list_properties(
 
 @router.get("/alerts")
 async def get_alerts(
-    property_request: PropertyRequest,
+    property_request: AlertRequest,
     request: Request,
 ) -> PropertyAlerts:
     alerts = request.app.state.db.get_alerts(property_request.property_id)
