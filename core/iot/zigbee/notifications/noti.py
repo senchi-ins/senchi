@@ -59,6 +59,7 @@ class NotificationRouter:
                 Senchi HomeGuard has detected a water leak at {location_id}. \n\nPlease respond with 'Yes' to turn off the shutoff valve, or 'No' to leave it on.
                 """
                 for phone_number in phone_numbers:
+                    print(f"Sending SMS to {phone_number}")
                     self.sms_service.send_sms(message, phone_number)
             
             # Get push tokens for all users
