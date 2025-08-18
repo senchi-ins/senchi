@@ -1,4 +1,3 @@
-import { useRouter } from 'next/navigation';
 
 
 export const SENCHI_API_BASE = process.env.NEXT_PUBLIC_SENCHI_API_URL;
@@ -59,8 +58,7 @@ export interface CreateSurveyResponse {
 }
 
 export async function createSurveyAndRedirect(
-  surveyData: CreateSurveyRequest,
-  router: ReturnType<typeof useRouter>
+  surveyData: CreateSurveyRequest
 ): Promise<void> {
   try {
     const response = await fetch(`${SURVEY_WEB_URL}/api/proxy-create-survey`, {
@@ -76,7 +74,8 @@ export async function createSurveyAndRedirect(
 
     const data: CreateSurveyResponse = await response.json();
 
-    router.push(`${SURVEY_WEB_URL}/survey/${data.id}/landing`);
+    // Open survey in new tab instead of navigating
+    window.open(`${SURVEY_WEB_URL}/survey/${data.id}/landing`, '_blank');
   } catch (error: unknown) {
     // Handle error (show toast, modal, etc.)
     alert((error as Error).message || 'An error occurred');

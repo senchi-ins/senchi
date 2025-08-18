@@ -1,6 +1,6 @@
 "use client";
-import React, { useRef, useState } from "react";
-import { motion } from "framer-motion";
+import React, { useRef, useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 
 const SENCHI_MAIN = "#240DBF";
 const blurb = "Please enter your address to get a risk assessment specific to your location";
@@ -16,9 +16,19 @@ export default function Search({ input, setInput, setEnterPressed }: SearchProps
   const [loading, setLoading] = useState(false);
   const [morphed, setMorphed] = useState(false);
   const autocompleteService = useRef<google.maps.places.AutocompleteService | null>(null);
+  const searchParams = useSearchParams();
 
-  // Load Google Places API
-  React.useEffect(() => {
+  // Check for address parameter and auto-trigger
+  useEffect(() => {
+    const addressParam = searchParams.get('address');
+    if (addressParam && !morphed) {
+      setInput(addressParam);
+      setMorphed(true);
+      setEnterPressed(true);
+    }
+  }, [searchParams, setInput, setEnterPressed, morphed]);
+
+  useEffect(() => {
     if (!window.google) {
       const script = document.createElement("script");
       script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`;
@@ -59,32 +69,18 @@ export default function Search({ input, setInput, setEnterPressed }: SearchProps
   };
 
   return (
-    <motion.div
-      animate={
-        morphed
-          ? {
-              top: 32,
-              left: "50%",
-              x: "-50%",
-              y: 0,
-              position: "fixed",
-              width: 400,
-              scale: 0.85,
-              zIndex: 50,
-            }
-          : {
-              top: "50%",
-              left: "50%",
-              x: "-50%",
-              y: "-50%",
-              position: "fixed",
-              width: 600,
-              scale: 1,
-              zIndex: 50,
-            }
-      }
-      transition={{ type: "spring", stiffness: 400, damping: 40 }}
-      style={{ maxWidth: "98vw" }}
+    <div
+      style={{ 
+        maxWidth: "98vw",
+        top: morphed ? 32 : "50%",
+        left: "50%",
+        transform: morphed 
+          ? "translateX(-50%)" 
+          : "translate(-50%, -50%)",
+        position: "fixed",
+        width: morphed ? 400 : 600,
+        zIndex: 50,
+      }}
     >
       {!morphed && (
         <h1 className="text-2xl font-bold text-senchi-main mb-6 text-center">{blurb}</h1>
@@ -169,6 +165,6 @@ export default function Search({ input, setInput, setEnterPressed }: SearchProps
           ))}
         </div>
       )}
-    </motion.div>
+    </div>
   );
 }

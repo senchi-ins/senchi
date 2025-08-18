@@ -3,17 +3,17 @@ export function SectionCards() {
     {
       id: 1,
       title: "Total Savings",
-      value: "$47,012",
+      value: "$1,012.00",
     },
     {
       id: 2,
       title: "Claims Avoided",
-      value: "$40,012",
+      value: "$900.00",
     },
     {
       id: 3,
       title: "Premium Savings",
-      value: "$7,000",
+      value: "$112.00",
     },
   ];
 

@@ -43,7 +43,7 @@ export default function Header() {
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-8">
+          <nav className="hidden md:flex items-center space-x-6">
             <a href="#halo" className={`transition-colors ${isScrolled ? 'text-gray-900 hover:text-senchi-primary' : 'text-white hover:text-senchi-accent-light'}`}>
               Senchi HomeGuard
             </a>
@@ -53,9 +53,14 @@ export default function Header() {
             <a href="/about" className={`transition-colors ${isScrolled ? 'text-gray-900 hover:text-senchi-primary' : 'text-white hover:text-senchi-accent-light'}`}>
               About Us
             </a>
-            <a href="/demo" className={`transition-colors ${isScrolled ? 'text-gray-900 hover:text-senchi-primary' : 'text-white hover:text-senchi-accent-light'}`}>
+            <a href="mailto:mike@senchi.ca?subject=interested in seeing a demo" className={`transition-colors ${isScrolled ? 'text-gray-900 hover:text-senchi-primary' : 'text-white hover:text-senchi-accent-light'}`}>
               See a demo
             </a>
+            <Button asChild className={`px-4 py-2 transition-colors ${isScrolled ? 'bg-senchi-primary hover:bg-senchi-primary/90 text-white' : 'bg-white hover:bg-gray-100 text-senchi-primary'}`} size="sm">
+              <Link href="/login" className="flex items-center gap-2">
+                Sign in
+              </Link>
+            </Button>
             <Button asChild className={`px-4 py-2 transition-colors ${isScrolled ? 'bg-senchi-primary hover:bg-senchi-primary/90 text-white' : 'bg-white hover:bg-gray-100 text-senchi-primary'}`} size="sm">
               <Link href="/ext-assessment" className="flex items-center gap-2">
                 Take our home assessment
