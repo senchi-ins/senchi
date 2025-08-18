@@ -60,7 +60,7 @@ async def list_properties(
         ) for property in properties]
     return properties
 
-@router.get("/alerts")
+@router.post("/alerts")
 async def get_alerts(
     property_request: AlertRequest,
     request: Request,
