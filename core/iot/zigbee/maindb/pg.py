@@ -259,7 +259,7 @@ class PostgresDB:
     def get_user_from_location_id(self, location_id: str) -> Dict:
         """Get a user from a location_id"""
         query = """
-        SELECT owner_user_id, serial_number
+        SELECT owner_user_id, serial_number, property_id
         FROM zb_devices
         WHERE location_id = %s
         """
@@ -318,3 +318,11 @@ class PostgresDB:
         WHERE serial_number = %s AND user_id = %s;
         """
         return self.execute_query(query, (serial_number, user_id))
+    
+    def insert_alert(self, property_id: str, alert: Dict):
+        """Insert an alert into the database"""
+        query = """
+        INSERT INTO zb_property_alerts (property_id, alert)
+        VALUES (%s, %s)
+        """
+        return self.execute_insert(query, (property_id, alert))
