@@ -64,7 +64,7 @@ async def list_properties(
 async def get_alerts(
     property_request: AlertRequest,
     request: Request,
-) -> PropertyAlerts:
+) -> List[PropertyAlerts]:
     alerts = request.app.state.db.get_alerts(property_request.property_id)
     if not alerts:
         return PropertyAlerts(alert_type="", message="", severity="")
