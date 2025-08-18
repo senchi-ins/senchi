@@ -60,7 +60,11 @@ class NotificationRouter:
                 """
                 for phone_number in phone_numbers:
                     print(f"Sending SMS to {phone_number}")
-                    self.sms_service.send_sms(message, phone_number)
+                    try:
+                        self.sms_service.send_sms(message, phone_number)
+                        logger.info(f"Successfully sent SMS to {phone_number}")
+                    except Exception as e:
+                        logger.error(f"Failed to send SMS to {phone_number}: {str(e)}")
             
             # Get push tokens for all users
             push_tokens = []
