@@ -323,6 +323,6 @@ class PostgresDB:
         """Insert an alert into the database"""
         query = """
         INSERT INTO zb_property_alerts (property_id, alert)
-        VALUES (%s, %s)
+        VALUES (%s, %s::jsonb)
         """
         return self.execute_insert(query, (property_id, alert))
