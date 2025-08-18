@@ -28,6 +28,7 @@ class PropertyAlerts(BaseModel):
     alert_type: Optional[str] = None
     message: Optional[str] = None
     severity: Optional[AlertSeverity] = None
+    timestamp: Optional[str] = None
 
 class PropertyResponse(BaseModel):
     id: str
