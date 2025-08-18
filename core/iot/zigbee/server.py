@@ -398,6 +398,7 @@ async def reply_sms(request: Request):
     from_number = form.get('From')
 
     user_devices = app_state.get("pg_db").get_user_devices_by_phone(from_number)
+    print(f"User devices: {user_devices}")
 
     # TODO: This can be different if its for multiple properties, make sure the context remains to the one with the anomaly detected
     device_serial = user_devices[0].get("serial_number")

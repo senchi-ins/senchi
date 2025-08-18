@@ -278,6 +278,7 @@ class PostgresDB:
 
     def get_user_devices_by_phone(self, phone_number: str) -> List[Dict]:
         """Get all devices for a user by their phone number"""
+        # TODO: Update this since user id may differ if a PM is managing multiple properties
         query = """
         SELECT 
             dm.ieee_address,
@@ -291,7 +292,7 @@ class PostgresDB:
         FROM zb_user_properties as u
         JOIN zb_devices as d ON u.user_id = d.owner_user_id
         JOIN device_mappings as dm ON d.serial_number = dm.device_serial
-        WHERE u.manager_phone_number = '2899716341'
+        WHERE u.manager_phone_number = %s
         ORDER BY dm.last_seen DESC
         """
         return self.execute_query(query, (phone_number,))
