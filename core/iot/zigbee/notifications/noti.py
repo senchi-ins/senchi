@@ -34,8 +34,7 @@ class NotificationRouter:
             serial_number = location_id.split('-')[-1]
             
             user_ids = self.db.get_user_from_location_id(location_id)
-            user_ids = [(user_id["owner_user_id"], user_id["serial_number"]) for user_id in user_ids]
-            property_id = [user_id["property_id"] for user_id in user_ids][0]
+            user_ids = [(user_id["owner_user_id"], user_id["serial_number"], user_id["property_id"]) for user_id in user_ids]
 
             relevant_phone_numbers = self.db.get_user_from_phone_number_by_serial(serial_number, user_ids[0][0])
             phone_numbers = [phone_number["manager_phone_number"] for phone_number in relevant_phone_numbers]
@@ -62,7 +61,7 @@ class NotificationRouter:
                     "severity": "high",
                     "timestamp": datetime.now().isoformat(),
                 }
-                self.db.insert_alert(property_id, alert)
+                self.db.insert_alert(user_ids[0][2], alert)
             
             # Get push tokens for all users
             push_tokens = []
