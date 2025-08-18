@@ -35,7 +35,7 @@ class PropertyResponse(BaseModel):
     scores: Optional[PropertyScores] = None
     devices: Optional[PropertyDevices] = None
     total_savings: Optional[float] = None
-    alerts: Optional[dict] = None
+    alerts: Optional[PropertyAlerts] = None
 
 class AddManagerPhoneNumberRequest(BaseModel):
     user_id: str

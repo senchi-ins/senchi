@@ -39,8 +39,6 @@ async def list_properties(
     if not properties:
         return []
     
-    # alerts = PropertyAlerts(**property['alerts']) if property['alerts'] else None
-    
     properties = [
         PropertyResponse(
             id=property['id'], 
@@ -58,10 +56,16 @@ async def list_properties(
                 total=property['devices_total']
             ),
             total_savings=property['total_savings'],
-            # alerts=alerts
         ) for property in properties]
     return properties
 
+@router.get("/alerts")
+async def get_alerts(
+    property_request: PropertyRequest,
+    request: Request,
+) -> PropertyAlerts:
+    alerts = request.app.state.db.get_alerts(property_request.property_id)
+    return alerts
 
 @router.post("/add")
 async def add_property(

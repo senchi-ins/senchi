@@ -245,9 +245,15 @@ class PostgresDB:
     
     def get_properties(self, user_id: str) -> Optional[List[str]]:
         query = """
-        SELECT id, name, address, property_type, description, scores_overall, scores_internal, scores_external, devices_connected, devices_total, total_savings, alerts FROM zb_properties WHERE id IN (SELECT property_id FROM zb_user_properties WHERE user_id = %s)
+        SELECT id, name, address, property_type, description, scores_overall, scores_internal, scores_external, devices_connected, devices_total, total_savings FROM zb_properties WHERE id IN (SELECT property_id FROM zb_user_properties WHERE user_id = %s)
         """
         return self.execute_query(query, (user_id,))
+    
+    def get_alerts(self, property_id: str) -> Optional[List[dict]]:
+        query = """
+        SELECT alert from zb_property_alerts WHERE property_id = %s
+        """
+        return self.execute_query(query, (property_id,))
     
     def get_property_by_id(self, property_id: str) -> Optional[dict]:
         query = """
