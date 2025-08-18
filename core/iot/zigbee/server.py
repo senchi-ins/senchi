@@ -396,6 +396,7 @@ async def reply_sms(request: Request):
     form = await request.form()
     body = form.get('Body')
     from_number = form.get('From')
+    print(f"From number: {from_number}")
 
     user_devices = app_state.get("pg_db").get_user_devices_by_phone(from_number)
     print(f"User devices: {user_devices}")
