@@ -61,7 +61,9 @@ class NotificationRouter:
                     "severity": "high",
                     "timestamp": datetime.now().isoformat(),
                 }
-                self.db.insert_alert(user_ids[0][2], alert)
+                property_id = user_ids[0][2]
+                print(f"Property ID: {property_id}")
+                self.db.insert_alert(property_id, alert)
             
             # Get push tokens for all users
             push_tokens = []
