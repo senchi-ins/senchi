@@ -321,8 +321,9 @@ class PostgresDB:
     
     def insert_alert(self, property_id: str, alert: Dict):
         """Insert an alert into the database"""
+        alert_json = json.dumps(alert)
         query = """
         INSERT INTO zb_property_alerts (property_id, alert)
         VALUES (%s, %s::jsonb)
         """
-        return self.execute_insert(query, (property_id, alert))
+        return self.execute_insert(query, (property_id, alert_json))
