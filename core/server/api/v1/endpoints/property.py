@@ -68,8 +68,9 @@ async def get_alerts(
     alerts = request.app.state.db.get_alerts(property_request.property_id)
     if not alerts:
         return None
-    print(alerts)
-    return [PropertyAlerts(**alert) for alert in alerts]
+    formatted_alerts = [PropertyAlerts(**alert) for alert in alerts]
+    print(formatted_alerts)
+    return formatted_alerts
 
 @router.post("/add")
 async def add_property(
