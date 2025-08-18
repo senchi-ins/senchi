@@ -113,10 +113,11 @@ export default function LoginPage() {
               variant="outline" 
               className="w-full mt-4"
               onClick={() => {
-                router.push('/create')
+                // router.push('/create')
+                window.open('mailto:mike@senchi.ca?subject=interested in seeing a demo', '_blank');
               }}
             >
-              Create account
+              Contact us to see a demo!
             </Button>
           </div>
         </CardContent>
