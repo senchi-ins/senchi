@@ -57,6 +57,7 @@ async def list_properties(
                 connected=property['devices_connected'],
                 total=property['devices_total']
             ),
+            total_savings=property['total_savings'],
             # alerts=alerts
         ) for property in properties]
     return properties
