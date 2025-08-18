@@ -245,9 +245,21 @@ class PostgresDB:
     
     def get_properties(self, user_id: str) -> Optional[List[str]]:
         query = """
-        SELECT id, name FROM zb_properties WHERE id IN (SELECT property_id FROM zb_user_properties WHERE user_id = %s)
+        SELECT id, name, address, property_type, description, scores_overall, scores_internal, scores_external, devices_connected, devices_total, total_savings FROM zb_properties WHERE id IN (SELECT property_id FROM zb_user_properties WHERE user_id = %s)
         """
         return self.execute_query(query, (user_id,))
+    
+    def get_alerts(self, property_id: str) -> Optional[List[dict]]:
+        query = """
+        SELECT alert from zb_property_alerts WHERE property_id = %s
+        """
+        return self.execute_query(query, (property_id,))
+    
+    def get_property_by_id(self, property_id: str) -> Optional[dict]:
+        query = """
+        SELECT id, name, address, property_type, description FROM zb_properties WHERE id = %s
+        """
+        return self.execute_with_return(query, (property_id,))
     
     def add_property(self, user_id: str, name: str, address: str = None, role: str = 'owner', added_by: str = None) -> bool:
         query = """
@@ -277,3 +289,10 @@ class PostgresDB:
         DELETE FROM zb_users WHERE id = %s CASCADE
         """
         return self.execute_insert(query, (user_id,))
+    
+    def add_manager_phone_number(self, user_id: str, property_id: str, phone_number: str, role: str = 'manager') -> bool:
+        query = """
+        INSERT INTO zb_user_properties (user_id, property_id, role, added_by, manager_phone_number)
+        VALUES (%s, %s, %s, %s, %s)
+        """
+        return self.execute_insert(query, (user_id, property_id, role, user_id, phone_number))

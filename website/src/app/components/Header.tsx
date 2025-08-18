@@ -31,7 +31,7 @@ export default function Header() {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <div className="flex items-center">
-            <div className="flex items-center space-x-2">
+            <Link href="/" className="flex items-center space-x-2">
               <Image 
                 src={isScrolled ? "/senchi-dark.png" : "/senchi.png"} 
                 alt="Senchi logo" 
@@ -39,7 +39,7 @@ export default function Header() {
                 height={500} 
                 className="h-24 w-auto" 
               />
-            </div>
+            </Link>
           </div>
 
           {/* Desktop Navigation */}
@@ -49,6 +49,9 @@ export default function Header() {
             </a>
             <a href="#plans" className={`transition-colors ${isScrolled ? 'text-gray-900 hover:text-senchi-primary' : 'text-white hover:text-senchi-accent-light'}`}>
               Plans
+            </a>
+            <a href="/about" className={`transition-colors ${isScrolled ? 'text-gray-900 hover:text-senchi-primary' : 'text-white hover:text-senchi-accent-light'}`}>
+              About Us
             </a>
             <a href="mailto:mike@senchi.ca?subject=interested in seeing a demo" className={`transition-colors ${isScrolled ? 'text-gray-900 hover:text-senchi-primary' : 'text-white hover:text-senchi-accent-light'}`}>
               See a demo

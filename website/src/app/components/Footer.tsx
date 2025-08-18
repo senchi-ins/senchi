@@ -16,7 +16,7 @@ export default function Footer() {
           {/* Company Info */}
           <div className="space-y-4">
             <div className="flex items-center">
-              <Image src="/senchi.png" alt="Senchi logo" width={1000} height={1000} className="h-8 w-auto" />
+              <Image src="/senchi-dark.png" alt="Senchi logo" width={1000} height={1000} className="h-12 w-auto" />
             </div>
             <p className="text-gray-600 max-w-sm"> 
               Stopping water damage before it happens to save you time and money.

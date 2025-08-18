@@ -12,8 +12,14 @@ from typing import List, Optional
 from pydantic import BaseModel
 
 from schemas.property import (
+    PropertyScores,
+    PropertyDevices,
+    PropertyAlerts,
     PropertyResponse,
-    PropertyRequest
+    PropertyRequest,
+    AddManagerPhoneNumberRequest,
+    AddManagerPhoneNumberResponse,
+    AlertRequest
 )
 
 
@@ -31,13 +37,40 @@ async def list_properties(
     request: Request,
 ) -> List[PropertyResponse]:
     properties = request.app.state.db.get_properties(property_request.user_id)
-    print(f"properties: {properties}")
     if not properties:
         return []
     
-    properties = [PropertyResponse(id=property['id'], name=property['name']) for property in properties]
+    properties = [
+        PropertyResponse(
+            id=property['id'], 
+            name=property['name'], 
+            address=property['address'], 
+            property_type=property['property_type'], 
+            description=property['description'],
+            scores=PropertyScores(
+                overall=property['scores_overall'],
+                internal=property['scores_internal'],
+                external=property['scores_external']
+            ),
+            devices=PropertyDevices(
+                connected=property['devices_connected'],
+                total=property['devices_total']
+            ),
+            total_savings=property['total_savings'],
+        ) for property in properties]
     return properties
 
+@router.post("/alerts")
+async def get_alerts(
+    property_request: AlertRequest,
+    request: Request,
+) -> Optional[List[PropertyAlerts]]:
+    alerts = request.app.state.db.get_alerts(property_request.property_id)
+    if not alerts:
+        return None
+    formatted_alerts = [PropertyAlerts(**alert['alert']) for alert in alerts]
+    print(formatted_alerts)
+    return formatted_alerts
 
 @router.post("/add")
 async def add_property(
@@ -50,3 +83,18 @@ async def add_property(
     if not success:
         raise HTTPException(status_code=500, detail="Failed to add property")
     return PropertyResponse(id=property_request.user_id, name="New Property")
+
+@router.post("/add-manager-phone-number")
+async def add_manager_phone_number(
+    property_request: AddManagerPhoneNumberRequest,
+    request: Request,
+) -> AddManagerPhoneNumberResponse:
+    success = request.app.state.db.add_manager_phone_number(
+        property_request.user_id,
+        property_request.property_id, 
+        property_request.phone_number,
+        property_request.role
+    )
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to add manager phone number")
+    return {"success": True, "response": "Manager phone number added successfully"}
