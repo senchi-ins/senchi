@@ -5,11 +5,12 @@ from pydantic import BaseModel
 
 from external import services
 from schemas.external import (
+    UserAnswer, 
+    AssessmentResponse, 
+    RiskQuestion, 
+    LocationRiskResponse, 
     AddressRequest,
-    LocationRiskResponse,
-    RiskQuestion,
-    UserAnswer,
-    AssessmentResponse
+    WebAssessmentRequest
 )
 from server.api.v1.utils.utils import decode_jwt
 
@@ -89,6 +90,7 @@ async def upload_photo(
 @router.post("/submit-web")
 async def submit_assessment(
     answers: List[UserAnswer],
+    request: Request
 ) -> AssessmentResponse:
     """
     Submit answers to risk assessment questions and get recommendations on the website.
@@ -135,6 +137,9 @@ async def submit_assessment(
             breakdown=results["breakdown"],
             recommendations=recommendations
         )
+        # TODO: Find a better way to get the user_id
+        user_id = "04e81e1e-c044-44d1-8f2d-ae95eebb0d79"
+        request.app.state.db.insert_assessment_response(user_id, assessment_response.model_dump())
         return assessment_response
     except Exception as e:
         print(e)
@@ -224,4 +229,42 @@ async def submit_assessment(
         raise HTTPException(
             status_code=500,
             detail=f"Error processing answers: {str(e)}"
+        ) 
+
+@router.get("/assessments/{user_id}")
+async def get_assessment_responses(
+    user_id: str,
+    request: Request
+) -> List[dict]:
+    """
+    Get all assessment responses for a user.
+    """
+    try:
+        responses = request.app.state.db.get_assessment_responses(user_id)
+        if not responses:
+            return []
+        return responses
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error retrieving assessment responses: {str(e)}"
+        )
+
+@router.get("/assessments/property/{property_id}")
+async def get_assessment_responses_by_property(
+    property_id: str,
+    request: Request
+) -> List[dict]:
+    """
+    Get all assessment responses for a property.
+    """
+    try:
+        responses = request.app.state.db.get_assessment_responses_by_property(property_id)
+        if not responses:
+            return []
+        return responses
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error retrieving assessment responses: {str(e)}"
         ) 

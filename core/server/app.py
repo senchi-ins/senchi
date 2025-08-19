@@ -18,14 +18,6 @@ async def lifespan(app: FastAPI):
         app.state.db = db
         app.state.redis_db = redis_db
         redis_db.connect()
-        db.execute_query("""
-        CREATE TABLE IF NOT EXISTS assessment_responses (
-            id SERIAL PRIMARY KEY,
-            user_id VARCHAR(255) NOT NULL,
-            response JSONB NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-        """)
     except Exception as e:
         print(f"Error initializing database: {e}")
         raise e
