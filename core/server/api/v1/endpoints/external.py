@@ -5,11 +5,11 @@ from pydantic import BaseModel
 
 from external import services
 from schemas.external import (
-    AddressRequest,
-    LocationRiskResponse,
-    RiskQuestion,
-    UserAnswer,
-    AssessmentResponse
+    UserAnswer, 
+    AssessmentResponse, 
+    RiskQuestion, 
+    LocationRiskResponse, 
+    AddressRequest
 )
 from server.api.v1.utils.utils import decode_jwt
 
@@ -89,6 +89,7 @@ async def upload_photo(
 @router.post("/submit-web")
 async def submit_assessment(
     answers: List[UserAnswer],
+    request: Request
 ) -> AssessmentResponse:
     """
     Submit answers to risk assessment questions and get recommendations on the website.
@@ -135,6 +136,11 @@ async def submit_assessment(
             breakdown=results["breakdown"],
             recommendations=recommendations
         )
+        # TODO: Find a better way to get the user_id
+        user_id = "04e81e1e-c044-44d1-8f2d-ae95eebb0d79"
+        # Quick workaround for demo
+        property_id = "98fff33b-435d-4bdb-9833-20858c128fbd"
+        request.app.state.db.insert_assessment_response(user_id, assessment_response.model_dump(), property_id)
         return assessment_response
     except Exception as e:
         print(e)
@@ -208,6 +214,17 @@ async def submit_assessment(
         
         # Generate recommendations
         recommendations = services['recommendation_engine'].get_improvement_recommendations(results)
+
+        # Adjust the scores in the database
+        # TODO: Get the property_id from the user_id
+        property_id = "98fff33b-435d-4bdb-9833-20858c128fbd"
+        property_scores = request.app.state.db.get_property_scores(property_id)
+        try:
+            if property_scores:
+                property_scores['scores_overall'] = (property_scores['scores_internal'] + results['total_score']) / 2
+                request.app.state.db.update_property_scores(property_id, property_scores)
+        except Exception as e:
+            print(f"Error updating property scores: {e}")
         
         assessment_response = AssessmentResponse(
             total_score=results["total_score"],
@@ -224,4 +241,42 @@ async def submit_assessment(
         raise HTTPException(
             status_code=500,
             detail=f"Error processing answers: {str(e)}"
+        ) 
+
+@router.get("/assessments/{user_id}")
+async def get_assessment_responses(
+    user_id: str,
+    request: Request
+) -> List[dict]:
+    """
+    Get all assessment responses for a user.
+    """
+    try:
+        responses = request.app.state.db.get_assessment_responses(user_id)
+        if not responses:
+            return []
+        return responses
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error retrieving assessment responses: {str(e)}"
+        )
+
+@router.get("/assessments/property/{property_id}")
+async def get_assessment_responses_by_property(
+    property_id: str,
+    request: Request
+) -> List[dict]:
+    """
+    Get all assessment responses for a property.
+    """
+    try:
+        responses = request.app.state.db.get_assessment_responses_by_property(property_id)
+        if not responses:
+            return []
+        return responses
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error retrieving assessment responses: {str(e)}"
         ) 

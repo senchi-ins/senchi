@@ -87,16 +87,40 @@ class PostgresDB:
         """
         return self.execute_insert(query, (device_serial, ieee_address))
 
-    def insert_assessment_response(self, user_id: str, response: dict) -> bool:
+    def insert_assessment_response(self, user_id: str, response: dict, property_id: str = None) -> bool:
         """
         Insert an assessment response for a user.
         """
         query = """
-        INSERT INTO assessment_responses (user_id, response, created_at)
-        VALUES (%s, %s, NOW())
+        INSERT INTO zb_assessment_responses (user_id, property_id, response, total_score, points_earned, points_possible, created_at, updated_at)
+        VALUES (%s, %s, %s, %s, %s, %s, NOW(), NOW())
         """
         resp = psycopg2.extras.Json(response)
-        return self.execute_insert(query, (user_id, resp))
+        return self.execute_insert(query, (user_id, property_id, resp, response.get('total_score'), response.get('points_earned'), response.get('points_possible')))
+    
+    def get_assessment_responses(self, user_id: str) -> Optional[List[dict]]:
+        """
+        Get all assessment responses for a user.
+        """
+        query = """
+        SELECT id, user_id, property_id, response, total_score, points_earned, points_possible, created_at, updated_at 
+        FROM zb_assessment_responses 
+        WHERE user_id = %s 
+        ORDER BY created_at DESC
+        """
+        return self.execute_query(query, (user_id,))
+    
+    def get_assessment_responses_by_property(self, property_id: str) -> Optional[List[dict]]:
+        """
+        Get all assessment responses for a property.
+        """
+        query = """
+        SELECT id, user_id, property_id, response, total_score, points_earned, points_possible, created_at, updated_at 
+        FROM zb_assessment_responses 
+        WHERE property_id = %s 
+        ORDER BY created_at DESC
+        """
+        return self.execute_query(query, (property_id,))
 
     def insert_user(
             self, 
@@ -279,9 +303,9 @@ class PostgresDB:
         INSERT INTO zb_user_properties (user_id, property_id, role, added_by)
         VALUES (%s, %s, %s, %s)
         """
-        print(f"query: {query}")
+
         self.execute_insert(query, (user_id, property_id, role, added_by))
-        print(f"success")
+
         return True
 
     def delete_user(self, user_id: str) -> bool:
@@ -296,3 +320,15 @@ class PostgresDB:
         VALUES (%s, %s, %s, %s, %s)
         """
         return self.execute_insert(query, (user_id, property_id, role, user_id, phone_number))
+    
+    def get_property_scores(self, property_id: str) -> Optional[dict]:
+        query = """
+        SELECT scores_overall, scores_internal, scores_external FROM zb_properties WHERE id = %s
+        """
+        return self.execute_with_return(query, (property_id,))
+    
+    def update_property_scores(self, property_id: str, scores: dict) -> bool:
+        query = """
+        UPDATE zb_properties SET scores_overall = %s, scores_internal = %s, scores_external = %s WHERE id = %s
+        """
+        return self.execute_insert(query, (scores['overall'], scores['internal'], scores['external'], property_id))

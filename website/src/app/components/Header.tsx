@@ -32,7 +32,7 @@ export default function Header() {
           {/* Logo */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center space-x-2">
-              <Image 
+              <Image
                 src={isScrolled ? "/senchi-dark.png" : "/senchi.png"} 
                 alt="Senchi logo" 
                 width={1171} 
