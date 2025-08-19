@@ -138,7 +138,9 @@ async def submit_assessment(
         )
         # TODO: Find a better way to get the user_id
         user_id = "04e81e1e-c044-44d1-8f2d-ae95eebb0d79"
-        request.app.state.db.insert_assessment_response(user_id, assessment_response.model_dump())
+        # Quick workaround for demo
+        property_id = "98fff33b-435d-4bdb-9833-20858c128fbd"
+        request.app.state.db.insert_assessment_response(user_id, assessment_response.model_dump(), property_id)
         return assessment_response
     except Exception as e:
         print(e)
