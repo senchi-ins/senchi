@@ -75,11 +75,12 @@ export default function PropertyOverview({
       <div className="flex items-start justify-between">
         {/* Property Identification */}
         <div className="flex items-start gap-4 flex-1">
-          <div className="">
-            <Home className="w-6 h-6 text-black" />
+          <div className="bg-senchi-primary rounded-lg p-2">
+            <Home className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h3 className="text-lg text-gray-900 mb-1">{address}</h3>
+            <h3 className="text-xl text-gray-900 mb-1">{address}</h3>
+            <p className="text-md text-gray-500 mb-1">{description}</p>
             {alert && (
               <div className="flex items-center gap-2 bg-senchi-primary/20 text-black px-3 py-2 rounded-lg max-w-xs mt-2">
                 <Droplets className="w-4 h-4" />

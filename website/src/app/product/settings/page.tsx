@@ -31,6 +31,10 @@ export default function SettingsPage() {
       return;
     }
     
+    // Convert formatted display number to backend format
+    const cleanedNumber = newNumber.replace(/\D/g, '');
+    const backendNumber = `+1${cleanedNumber}`;
+    
     try {
       const response = await fetch('/api/phone', {
         method: 'POST',
@@ -42,7 +46,7 @@ export default function SettingsPage() {
           property_name: newProperty.trim(),
           property_id: selectedProperty.id, // Send the actual property_id
           role: 'manager',
-          number: newNumber.trim(),
+          number: backendNumber,
         }),
       });
 
@@ -66,15 +70,40 @@ export default function SettingsPage() {
   };
 
   const formatPhoneNumber = (number: string) => {
-    // Simple phone number formatting
     const cleaned = number.replace(/\D/g, '');
-    const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
-    if (match) {
-      return `(${match[1]}) ${match[2]}-${match[3]}`;
+    if (cleaned.length === 10) {
+      return `+1${cleaned}`;
+    }
+    if (cleaned.length === 11 && cleaned.startsWith('1')) {
+      return `+${cleaned}`;
+    }
+    if (cleaned.startsWith('1') && number.includes('+')) {
+      return number;
     }
     return number;
   };
 
+  const formatPhoneDisplay = (number: string) => {
+    // Remove all non-digit characters
+    const cleaned = number.replace(/\D/g, '');
+    
+    // Format as (XXX) XXX-XXXX
+    if (cleaned.length <= 3) {
+      return cleaned;
+    } else if (cleaned.length <= 6) {
+      return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3)}`;
+    } else {
+      return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6, 10)}`;
+    }
+  };
+
+  const handlePhoneNumberChange = (value: string) => {
+    const cleaned = value.replace(/\D/g, '');
+    const limited = cleaned.slice(0, 10);
+    const formatted = formatPhoneDisplay(limited);
+    
+    setNewNumber(formatted);
+  };
 
 
   return (
@@ -166,7 +195,7 @@ export default function SettingsPage() {
                     </label>
                     <Input
                       value={newNumber}
-                      onChange={(e) => setNewNumber(e.target.value)}
+                      onChange={(e) => handlePhoneNumberChange(e.target.value)}
                       placeholder="(555) 123-4567"
                       className="w-full"
                     />

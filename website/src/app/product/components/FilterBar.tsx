@@ -37,11 +37,11 @@ interface FilterBarProps {
 
 export function FilterBar({ properties, onPropertySelect, onFilterChange, onAddProperty, onSearchChange }: FilterBarProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedFilter, setSelectedFilter] = useState('Alert severity');
+  const [selectedFilter, setSelectedFilter] = useState('All');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
 
-  const severityOptions = ['High', 'Medium', 'Low'];
+  const severityOptions = ['All', 'High', 'Medium', 'Low'];
 
   const filteredProperties = properties.filter(property =>
     (property.address || property.name).toLowerCase().includes(searchQuery.toLowerCase())
@@ -140,10 +140,10 @@ export function FilterBar({ properties, onPropertySelect, onFilterChange, onAddP
         </div>
       </div>
 
-      {/* Add Property Button */}
+      {/* TODO: Potentially add this button back in the future */}
       <button
         onClick={handleAddProperty}
-        className="flex items-center gap-2 px-4 py-2 bg-senchi-primary text-white rounded-md hover:bg-senchi-primary/90 transition-colors -mr-4"
+        className="flex items-center gap-2 px-4 py-2 bg-white text-white rounded-md transition-colors -mr-4"
       >
         <Plus className="w-4 h-4" />
         <span>Add property</span>

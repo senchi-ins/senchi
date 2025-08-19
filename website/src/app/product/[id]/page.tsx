@@ -5,7 +5,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 
 import { ArrowLeft, Home, Wifi, Droplets, AlertTriangle, Clock, Plus, RefreshCw } from "lucide-react";
 import { fetchLocationSurvey, createSurveyAndRedirect, CreateSurveyRequest } from '../../api/survey/survey';
-
+import { sampleDevices } from './sampleDevices';
 
 
 interface Device {
@@ -18,6 +18,7 @@ interface Device {
   last_seen?: string;
   battery_level?: number;
   signal_strength?: number;
+  ieee_address: string; // Added ieee_address
 }
 
 interface PropertyData {
@@ -167,30 +168,55 @@ const fetchAlerts = async (property_id: string): Promise<Array<{
   }
 };
 
+// TODO: This is a temporary fix to map the device names to the correct names. To be removed
 const transformDevices = (devices: Device[]) => {
-  return devices.map(device => ({
-    name: device.friendly_name || device.name, // Use friendly_name if available, fallback to name
-    location: device.location,
-    connection: device.status,
-    status: getDeviceStatus(device),
-    icon: getDeviceIcon(device.device_type),
-    action: getDeviceAction(device),
-  }));
+  // NOTE: These are real ieee_addresses from the devices, their names are just not stored currently
+  const deviceNameMap: Record<string, {name: string, location: string}> = {
+    '0x00158d008b87f199': {name: 'Leak Sensor', location: 'Kitchen'},
+    '0x00158d008b87f5e7': {name: 'Leak Sensor', location: 'Master Bathroom'},
+    '0xa4c138ebc21645f4': {name: 'Shutoff Valve', location: 'Main Line'},
+    '0x00158d008b91089c': {name: 'Flow Monitor', location: 'Main Line'},
+    '0x00158d008b87f2a1': {name: 'Leak Sensor', location: 'Basement'},
+    '0x00158d008b87f3b2': {name: 'Temperature Sensor', location: 'Utility Room'}
+  };
+
+  return devices.map(device => {
+    const mappedDevice = deviceNameMap[device.ieee_address];
+    
+    return {
+      name: mappedDevice?.name || device.friendly_name || device.name, // Use mapped name if available, fallback to friendly_name, then name
+      location: mappedDevice?.location || device.location,
+      connection: device.status || "connected",
+      status: getDeviceStatus(device),
+      icon: getDeviceIcon(device.device_type),
+      action: getDeviceAction(device),
+    };
+  });
 };
 
+// TODO: Fix this on the backend to properly update the status when something happens
 const getDeviceStatus = (device: Device): string => {
-  switch (device.device_type.toLowerCase()) {
-    case 'leak_sensor':
-      return 'No Leak';
-    case 'water_flow_monitor':
-      return 'Normal Flow';
-    case 'shut_off_valve':
-      return 'Open';
-    case 'temperature_sensor':
-      return 'Normal Temp';
-    default:
-      return 'Active';
+  if (device.status) {
+    return "";
+  } else {
+    return "";
   }
+  // if (!device.status) {
+  //   return "Connected";
+  // } else {
+  //   switch (device.device_type.toLowerCase()) {
+  //     case 'leak_sensor':
+  //       return 'No Leak';
+  //     case 'water_flow_monitor':
+  //       return 'Normal Flow';
+  //     case 'shut_off_valve':
+  //       return 'Open';
+  //     case 'temperature_sensor':
+  //       return 'Normal Temp';
+  //     default:
+  //       return 'Active';
+  //   }
+  // }
 };
 
 const getDeviceIcon = (deviceType: string): string => {
@@ -210,14 +236,6 @@ const getDeviceIcon = (deviceType: string): string => {
 
 const getDeviceAction = (device: Device) => {
   // Add actions based on device type and status
-  if (device.device_type.toLowerCase() === 'shut_off_valve') {
-    return {
-      label: 'Close Valve',
-      type: 'danger' as const,
-      onClick: () => console.log('Close valve for device:', device.id)
-    };
-  }
-  
   if (device.status === 'warning') {
     return {
       label: 'Reset Alert',
@@ -238,6 +256,7 @@ const propertyRecommendations: Record<string, Array<{
   location: 'internal' | 'external';
   component: string;
 }>> = {
+  // TODO: Remove this once we have the recommendation generation working
   // Specific recommendations for property ID: 0563f455-4cda-4203-8e37-51ed73604f73
   "0563f455-4cda-4203-8e37-51ed73604f73": [
     {
@@ -269,142 +288,6 @@ const propertyRecommendations: Record<string, Array<{
       component: "Roof"
     },
   ],
-  
-  // Default recommendations for any property
-  default: [
-    {
-      id: 1,
-      action: "Install water leak sensors",
-      severity: "high",
-      rationale: "Early detection of water leaks can prevent significant property damage and reduce insurance claims",
-      location: "internal",
-      component: "Water System"
-    },
-    {
-      id: 2,
-      action: "Upgrade electrical panel",
-      severity: "medium",
-      rationale: "Current panel may not handle modern electrical demands, increasing fire risk",
-      location: "internal",
-      component: "Connectivity"
-    },
-    {
-      id: 3,
-      action: "Install smart thermostat",
-      severity: "medium",
-      rationale: "Improve energy efficiency and reduce heating/cooling costs",
-      location: "internal",
-      component: "Appliances"
-    }
-  ],
-  
-  // Recommendations for residential properties
-  residential: [
-    {
-      id: 1,
-      action: "Install water leak sensors",
-      severity: "high",
-      rationale: "Residential properties are particularly vulnerable to water damage from burst pipes and appliance failures",
-      location: "internal",
-      component: "Water System"
-    },
-    {
-      id: 2,
-      action: "Replace roof shingles",
-      severity: "medium",
-      rationale: "Older residential roofs often need maintenance to prevent water damage and extend lifespan",
-      location: "external",
-      component: "Water System"
-    },
-    {
-      id: 3,
-      action: "Add security cameras",
-      severity: "medium",
-      rationale: "Residential properties benefit from security monitoring to deter break-ins and provide evidence",
-      location: "external",
-      component: "Connectivity"
-    },
-    {
-      id: 4,
-      action: "Install smart thermostat",
-      severity: "low",
-      rationale: "Smart thermostats can significantly reduce energy costs in residential properties",
-      location: "internal",
-      component: "Appliances"
-    }
-  ],
-  
-  // Recommendations for commercial properties
-  commercial: [
-    {
-      id: 1,
-      action: "Upgrade electrical panel",
-      severity: "high",
-      rationale: "Commercial properties have higher electrical demands and require robust electrical systems",
-      location: "internal",
-      component: "Connectivity"
-    },
-    {
-      id: 2,
-      action: "Install comprehensive fire suppression system",
-      severity: "high",
-      rationale: "Commercial properties require advanced fire protection systems for safety and compliance",
-      location: "internal",
-      component: "Safety Systems"
-    },
-    {
-      id: 3,
-      action: "Add security cameras and access control",
-      severity: "medium",
-      rationale: "Commercial properties need robust security systems to protect assets and monitor access",
-      location: "external",
-      component: "Connectivity"
-    },
-    {
-      id: 4,
-      action: "Implement HVAC monitoring",
-      severity: "medium",
-      rationale: "Commercial HVAC systems require continuous monitoring to prevent costly breakdowns",
-      location: "internal",
-      component: "Appliances"
-    }
-  ],
-  
-  // Recommendations for rental properties
-  rental: [
-    {
-      id: 1,
-      action: "Install water leak sensors",
-      severity: "high",
-      rationale: "Rental properties need early leak detection to prevent damage and reduce liability",
-      location: "internal",
-      component: "Water System"
-    },
-    {
-      id: 2,
-      action: "Add security cameras",
-      severity: "medium",
-      rationale: "Rental properties benefit from security monitoring to protect against damage and unauthorized access",
-      location: "external",
-      component: "Connectivity"
-    },
-    {
-      id: 3,
-      action: "Install smart locks",
-      severity: "medium",
-      rationale: "Smart locks provide secure access control and eliminate the need for physical key management",
-      location: "external",
-      component: "Connectivity"
-    },
-    {
-      id: 4,
-      action: "Add smoke and CO detectors",
-      severity: "low",
-      rationale: "Enhanced safety monitoring is essential for rental property compliance and tenant safety",
-      location: "internal",
-      component: "Safety Systems"
-    }
-  ]
 };
 
 // Function to get recommendations for a specific property
@@ -457,18 +340,32 @@ export default function PropertyDetailPage() {
     try {
       const devices = await fetchDevices(propertyName);
       
-      const transformedDevices = transformDevices(devices);
+      // Use sample devices if API returns empty list
+      const devicesToUse = devices.length === 0 ? sampleDevices : devices;
+      
+      const transformedDevices = transformDevices(devicesToUse);
       setProperty(prev => prev ? {
         ...prev,
         devices: {
           ...prev.devices,
           list: transformedDevices,
-          connected: devices.filter(d => d.status === 'connected').length,
-          total: devices.length
+          connected: devicesToUse.filter(d => d.status === 'connected').length,
+          total: devicesToUse.length
         }
       } : null);
     } catch (error) {
       console.error('Failed to fetch devices:', error);
+      // Use sample devices as fallback if API fails
+      const transformedDevices = transformDevices(sampleDevices);
+      setProperty(prev => prev ? {
+        ...prev,
+        devices: {
+          ...prev.devices,
+          list: transformedDevices,
+          connected: sampleDevices.filter(d => d.status === 'connected').length,
+          total: sampleDevices.length
+        }
+      } : null);
     } finally {
       setDevicesLoading(false);
     }
@@ -748,7 +645,9 @@ export default function PropertyDetailPage() {
                   'Take Assessment'
                 )}
               </button>
-              <button className="bg-senchi-primary text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-senchi-primary/90 transition-colors">
+              <button 
+                onClick={() => alert('Setting HomeGuard Hub to pairing mode...')}
+                className="bg-senchi-primary text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-senchi-primary/90 transition-colors">
                 <Plus className="w-4 h-4" />
                 Add a device
               </button>
