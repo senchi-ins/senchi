@@ -24,7 +24,14 @@ export async function GET(request: NextRequest) {
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     start(controller) {
-      const sendEvent = (data: any) => {
+      const sendEvent = (data: { alerts: {
+        id: string;
+        type: string;
+        message: string;
+        severity: 'high' | 'medium' | 'low';
+        timestamp: string;
+        details?: string;
+      }[] }) => {
         const event = `data: ${JSON.stringify(data)}\n\n`;
         controller.enqueue(encoder.encode(event));
       };

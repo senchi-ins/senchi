@@ -20,7 +20,7 @@ export default function Search({ input, setInput, setEnterPressed }: SearchProps
 
   // Check for address parameter and auto-trigger
   useEffect(() => {
-    const addressParam = searchParams.get('address');
+    const addressParam = searchParams?.get('address');
     if (addressParam && !morphed) {
       setInput(addressParam);
       setMorphed(true);

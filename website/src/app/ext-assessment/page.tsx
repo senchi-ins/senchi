@@ -19,7 +19,7 @@ function ExternalAssessmentContent() {
 
     // Check for address parameter and auto-trigger survey
     useEffect(() => {
-        const addressParam = searchParams.get('address');
+        const addressParam = searchParams?.get('address');
         if (addressParam && !enterPressed) {
             setInput(addressParam);
             setEnterPressed(true);

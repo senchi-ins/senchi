@@ -547,10 +547,10 @@ export default function PropertyDetailPage() {
 
   useEffect(() => {
     const loadProperty = async () => {
-      if (params.id) {
+      if (params?.id) {
         try {
           // Check if property data was passed through URL parameters
-          const urlData = searchParams.get('data');
+          const urlData = searchParams?.get('data');
           
           if (urlData) {
             try {
@@ -583,7 +583,7 @@ export default function PropertyDetailPage() {
           } else {
             // No URL data provided - fetch property data from API
             try {
-              const propertyData = await fetchPropertyDetails(params.id as string);
+              const propertyData = await fetchPropertyDetails(params?.id as string);
               
               const transformedData: PropertyDetails = {
                 id: propertyData.id,
@@ -625,7 +625,7 @@ export default function PropertyDetailPage() {
     };
 
     loadProperty();
-  }, [params.id, searchParams]);
+  }, [params?.id, searchParams]);
 
   // Ensure devices are loaded when property is set (fallback)
   useEffect(() => {
