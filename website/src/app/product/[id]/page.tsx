@@ -378,6 +378,57 @@ export default function PropertyDetailPage() {
   const [devicesAttempted, setDevicesAttempted] = useState(false);
   const [surveyResults, setSurveyResults] = useState<SurveyResults | null>(null);
   const [surveyLoading, setSurveyLoading] = useState(false);
+  const [useSSE, setUseSSE] = useState(false);
+
+  useEffect(() => {
+    if (!property?.id) return;
+
+    loadAlerts(property.id);
+
+    if (useSSE) {
+      const eventSource = new EventSource(`/api/alerts/stream?property_id=${property.id}`);
+      
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.alerts) {
+            setProperty(prev => prev ? {
+              ...prev,
+              alerts: data.alerts
+            } : null);
+          }
+        } catch (error) {
+          console.error('Error parsing SSE data:', error);
+        }
+      };
+
+             eventSource.onerror = (error) => {
+         console.error('SSE connection error:', error);
+         eventSource.close();
+         setUseSSE(false);
+       };
+
+       return () => {
+         eventSource.close();
+       };
+    } else {
+      const interval = setInterval(() => {
+        loadAlerts(property.id);
+      }, 30000); // 30 seconds
+
+      return () => clearInterval(interval);
+    }
+  }, [property?.id, useSSE]);
+
+  const handleRefreshAlerts = async () => {
+    if (property?.id) {
+      await loadAlerts(property.id);
+    }
+  };
+
+  const toggleRealTimeMode = () => {
+    setUseSSE(!useSSE);
+  };
 
   const loadDevices = async (propertyName: string) => {
     setDevicesLoading(true);
@@ -437,7 +488,6 @@ export default function PropertyDetailPage() {
     try {
       const results = await fetchSurveyResults(propertyId);
       
-      // Helper function to extract survey data
       const extractSurveyData = (surveyItem: SurveyResults): SurveyResults => {
         return {
           id: surveyItem.id,
@@ -856,7 +906,27 @@ export default function PropertyDetailPage() {
           <div className="bg-white rounded-lg p-6 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-900">Smart Home Alerts</h2>
-              <AlertTriangle className="w-5 h-5 text-orange-500" />
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-orange-500" />
+                <button 
+                  onClick={handleRefreshAlerts}
+                  disabled={alertsLoading}
+                  className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-4 h-4 ${alertsLoading ? 'animate-spin' : ''}`} />
+                  {alertsLoading ? 'Refreshing...' : 'Refresh'}
+                </button>
+                <button 
+                  onClick={toggleRealTimeMode}
+                  className={`flex items-center gap-1 text-xs px-2 py-1 rounded transition-colors ${
+                    useSSE 
+                      ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                      : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                  }`}
+                >
+                  {useSSE ? 'SSE On' : 'SSE Off'}
+                </button>
+              </div>
             </div>
             <div className="space-y-3">
               {alertsLoading ? (
