@@ -55,8 +55,7 @@ export default function ProductPage() {
       );
     }
 
-    // Apply severity filter
-    if (filter !== 'Alert severity') {
+    if (filter !== 'All') {
       filtered = filtered.filter(property => {
         if (!property.alert) return false;
         return property.alert.severity.toLowerCase() === filter.toLowerCase();
@@ -129,11 +128,12 @@ export default function ProductPage() {
         onAddProperty={handleAddProperty}
         onSearchChange={handleSearchChange}
       />
+      <p className="text-gray-600 text-sm mt-4 pl-10">Found {filteredProperties.length} properties. New properties will be added as users connect their homes to Senchi</p>
       
       <div className="space-y-4 mt-8">
         {filteredProperties.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-gray-600">No properties found. Add your first property to get started.</p>
+          <div className="text-center">
+            <p className="text-gray-600">No properties found.</p>
           </div>
         ) : (
           filteredProperties.map((property) => (

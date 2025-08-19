@@ -2,34 +2,11 @@
 
 import { Button } from "./ui/button";
 
-import { useState } from "react";
 import Image from "next/image";
 
 export default function HeroSection() {
-  const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<null | 'success' | 'error'>(null);
-  const [loading, setLoading] = useState(false);
-
-  const handleJoinWaitlist = async () => {
-    setLoading(true);
-    setStatus(null);
-    try {
-      const res = await fetch("/api/waitlist", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      if (res.ok) {
-        setStatus("success");
-        setEmail("");
-      } else {
-        setStatus("error");
-      }
-    } catch {
-      setStatus("error");
-    } finally {
-      setLoading(false);
-    }
+  const handleBookDemo = () => {
+    window.open("https://cal.com/mldawes/senchi-demo", "_blank");
   };
 
   return (
@@ -51,36 +28,29 @@ export default function HeroSection() {
                 </p>
               </div>
               
-              {/* Waitlist Email Field */}
-              <div className="bg-white rounded-xl p-2 shadow-lg max-w-md">
-                <div className="flex flex-col sm:flex-row items-center gap-3">
-                  <input
-                    type="email"
-                    placeholder="Enter your email to join the waitlist"
-                    className="flex-1 px-2 py-3 rounded-lg focus:outline-none text-base"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    disabled={loading}
-                  />
-                  <Button 
-                    className="bg-senchi-primary hover:bg-senchi-primary/80 text-white font-semibold px-8 py-4 rounded-lg shadow-sm" 
-                    size="lg"
-                    onClick={handleJoinWaitlist}
-                    disabled={loading || !email}
+              {/* Demo Booking Button */}
+              <div className="bg-white rounded-xl shadow-lg max-w-sm">
+                <Button 
+                  className="w-full bg-senchi-primary hover:bg-senchi-primary/80 text-white font-semibold px-8 py-6 rounded-lg shadow-sm flex items-center justify-center gap-2 text-lg" 
+                  size="lg"
+                  onClick={handleBookDemo}
+                >
+                  Book a demo
+                  <svg 
+                    width="16" 
+                    height="16" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="2" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round"
                   >
-                    {loading ? "Joining..." : "Join Waitlist"}
-                  </Button>
-                </div>
+                    <path d="M5 12h14"/>
+                    <path d="m12 5 7 7-7 7"/>
+                  </svg>
+                </Button>
               </div>
-              {/* <p className="text-gray-500 text-sm max-w-md">
-                We expect to launch beta with our first customers in Q4 2025.
-              </p> */}
-              {status === 'success' && (
-                <div className="text-green-300 text-sm">You&apos;ve been added to the waitlist!</div>
-              )}
-              {status === 'error' && (
-                <div className="text-red-300 text-sm">There was an error. Please try again.</div>
-              )}
             </div>
           </div>
 

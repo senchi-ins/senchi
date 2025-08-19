@@ -3,9 +3,7 @@
 import * as React from "react"
 import { useRouter } from "next/navigation"
 import {
-  CreditCard,
   Settings,
-  User,
   Home,
 } from "lucide-react"
 
@@ -17,7 +15,6 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-  CommandShortcut,
 } from "@/components/ui/command"
 
 interface Property {
@@ -149,7 +146,6 @@ export function CommandSearch() {
             >
               <Home />
               <span>Properties</span>
-              <CommandShortcut>⌘P</CommandShortcut>
             </CommandItem>
             <CommandItem 
               onSelect={() => {
@@ -159,30 +155,9 @@ export function CommandSearch() {
             >
               <Settings />
               <span>Settings</span>
-              <CommandShortcut>⌘S</CommandShortcut>
             </CommandItem>
           </CommandGroup>
           <CommandSeparator />
-          <CommandGroup heading="Account">
-            <CommandItem 
-              onSelect={() => {
-                // TODO: Navigate to account page when implemented
-                setOpen(false)
-              }}
-            >
-              <User />
-              <span>Account</span>
-            </CommandItem>
-            <CommandItem 
-              onSelect={() => {
-                // TODO: Navigate to billing page when implemented
-                setOpen(false)
-              }}
-            >
-              <CreditCard />
-              <span>Billing</span>
-            </CommandItem>
-          </CommandGroup>
         </CommandList>
       </CommandDialog>
     </>

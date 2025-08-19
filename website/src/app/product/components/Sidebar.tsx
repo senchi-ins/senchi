@@ -1,9 +1,10 @@
 "use client"
 
 import React from 'react';
-import { Home, Settings, User2, ChevronUp, CreditCard, LogOut } from "lucide-react"
+import { Home, Settings, User2, ChevronUp, LogOut } from "lucide-react"
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 import {
     Sidebar,
     SidebarContent,
@@ -40,26 +41,22 @@ import { CommandSearch } from './CommandSearch';
 ]
 
 const accountItems = [
-  {
-    title: "Account",
-    url: "#",
-    icon: User2,
-  },
-  {
-    title: "Billing",
-    url: "#",
-    icon: CreditCard,
-  },
+  // {
+  //   title: "Account",
+  //   url: "#",
+  //   icon: User2,
+  // },
   {
     title: "Sign Out",
     url: "#",
     icon: LogOut,
   }
 ]
-const userName = "John Doe"
+const userName = "Michael Dawes"
 
 export default function ProductSidebar() {
   const router = useRouter();
+  const { logout } = useAuth();
 
   const handleMouseEnter = (url: string) => {
     // Preload the page on hover
@@ -70,6 +67,21 @@ export default function ProductSidebar() {
     // Force navigation even if we're in the same section
     router.push(url);
   };
+
+  const handleSignOut = () => {
+    logout();
+    router.push('/login');
+  };
+
+  const handleAccountItemClick = (title: string) => {
+    if (title === "Sign Out") {
+      handleSignOut();
+    } else if (title === "Account") {
+      // Handle account navigation if needed
+      console.log("Account clicked");
+    }
+  };
+
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="p-2">
@@ -129,7 +141,10 @@ export default function ProductSidebar() {
                 className="w-60 group-data-[collapsible=icon]:align-end"
               >
                 {accountItems.map((item) => (
-                  <DropdownMenuItem key={item.title}>
+                  <DropdownMenuItem 
+                    key={item.title}
+                    onClick={() => handleAccountItemClick(item.title)}
+                  >
                     <item.icon />
                     <span>{item.title}</span>
                   </DropdownMenuItem>

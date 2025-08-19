@@ -5,7 +5,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 
 import { ArrowLeft, Home, Wifi, Droplets, AlertTriangle, Clock, Plus, RefreshCw } from "lucide-react";
 import { fetchLocationSurvey, createSurveyAndRedirect, CreateSurveyRequest } from '../../api/survey/survey';
-
+import { sampleDevices } from './sampleDevices';
 
 
 interface Device {
@@ -18,6 +18,7 @@ interface Device {
   last_seen?: string;
   battery_level?: number;
   signal_strength?: number;
+  ieee_address: string; // Added ieee_address
 }
 
 interface PropertyData {
@@ -83,6 +84,18 @@ interface PropertyDetails {
   total_savings?: number;
   moneySaved?: number;
   lastUpdated?: string;
+}
+
+interface SurveyResults {
+  id: string;
+  user_id: string;
+  property_id: string;
+  response: Record<string, string | number | boolean>; // JSON field containing the survey responses
+  total_score: number;
+  points_earned: number;
+  points_possible: number;
+  created_at: string;
+  updated_at: string;
 }
 
 const fetchPropertyDetails = async (propertyId: string): Promise<PropertyData> => {
@@ -167,30 +180,86 @@ const fetchAlerts = async (property_id: string): Promise<Array<{
   }
 };
 
-const transformDevices = (devices: Device[]) => {
-  return devices.map(device => ({
-    name: device.friendly_name || device.name, // Use friendly_name if available, fallback to name
-    location: device.location,
-    connection: device.status,
-    status: getDeviceStatus(device),
-    icon: getDeviceIcon(device.device_type),
-    action: getDeviceAction(device),
-  }));
+// API function to fetch survey results
+const fetchSurveyResults = async (property_id: string): Promise<SurveyResults[] | SurveyResults | null> => {
+  try {
+    const response = await fetch('/api/survey-results', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        property_id: property_id
+      }),
+    });
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        // No survey results found
+        return null;
+      }
+      const errorText = await response.text();
+      console.error('Survey results API error response:', errorText);
+      throw new Error(`Failed to fetch survey results: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching survey results:', error);
+    return null;
+  }
 };
 
+// TODO: This is a temporary fix to map the device names to the correct names. To be removed
+const transformDevices = (devices: Device[]) => {
+  // NOTE: These are real ieee_addresses from the devices, their names are just not stored currently
+  const deviceNameMap: Record<string, {name: string, location: string}> = {
+    '0x00158d008b87f199': {name: 'Leak Sensor', location: 'Kitchen'},
+    '0x00158d008b87f5e7': {name: 'Leak Sensor', location: 'Master Bathroom'},
+    '0xa4c138ebc21645f4': {name: 'Shutoff Valve', location: 'Main Line'},
+    '0x00158d008b91089c': {name: 'Flow Monitor', location: 'Main Line'},
+    '0x00158d008b87f2a1': {name: 'Leak Sensor', location: 'Basement'},
+    '0x00158d008b87f3b2': {name: 'Temperature Sensor', location: 'Utility Room'}
+  };
+
+  return devices.map(device => {
+    const mappedDevice = deviceNameMap[device.ieee_address];
+    
+    return {
+      name: mappedDevice?.name || device.friendly_name || device.name, // Use mapped name if available, fallback to friendly_name, then name
+      location: mappedDevice?.location || device.location,
+      connection: device.status || "connected",
+      status: getDeviceStatus(device),
+      icon: getDeviceIcon(device.device_type),
+      action: getDeviceAction(device),
+    };
+  });
+};
+
+// TODO: Fix this on the backend to properly update the status when something happens
 const getDeviceStatus = (device: Device): string => {
-  switch (device.device_type.toLowerCase()) {
-    case 'leak_sensor':
-      return 'No Leak';
-    case 'water_flow_monitor':
-      return 'Normal Flow';
-    case 'shut_off_valve':
-      return 'Open';
-    case 'temperature_sensor':
-      return 'Normal Temp';
-    default:
-      return 'Active';
+  if (device.status) {
+    return "";
+  } else {
+    return "";
   }
+  // if (!device.status) {
+  //   return "Connected";
+  // } else {
+  //   switch (device.device_type.toLowerCase()) {
+  //     case 'leak_sensor':
+  //       return 'No Leak';
+  //     case 'water_flow_monitor':
+  //       return 'Normal Flow';
+  //     case 'shut_off_valve':
+  //       return 'Open';
+  //     case 'temperature_sensor':
+  //       return 'Normal Temp';
+  //     default:
+  //       return 'Active';
+  //   }
+  // }
 };
 
 const getDeviceIcon = (deviceType: string): string => {
@@ -210,14 +279,6 @@ const getDeviceIcon = (deviceType: string): string => {
 
 const getDeviceAction = (device: Device) => {
   // Add actions based on device type and status
-  if (device.device_type.toLowerCase() === 'shut_off_valve') {
-    return {
-      label: 'Close Valve',
-      type: 'danger' as const,
-      onClick: () => console.log('Close valve for device:', device.id)
-    };
-  }
-  
   if (device.status === 'warning') {
     return {
       label: 'Reset Alert',
@@ -238,6 +299,7 @@ const propertyRecommendations: Record<string, Array<{
   location: 'internal' | 'external';
   component: string;
 }>> = {
+  // TODO: Remove this once we have the recommendation generation working
   // Specific recommendations for property ID: 0563f455-4cda-4203-8e37-51ed73604f73
   "0563f455-4cda-4203-8e37-51ed73604f73": [
     {
@@ -269,142 +331,6 @@ const propertyRecommendations: Record<string, Array<{
       component: "Roof"
     },
   ],
-  
-  // Default recommendations for any property
-  default: [
-    {
-      id: 1,
-      action: "Install water leak sensors",
-      severity: "high",
-      rationale: "Early detection of water leaks can prevent significant property damage and reduce insurance claims",
-      location: "internal",
-      component: "Water System"
-    },
-    {
-      id: 2,
-      action: "Upgrade electrical panel",
-      severity: "medium",
-      rationale: "Current panel may not handle modern electrical demands, increasing fire risk",
-      location: "internal",
-      component: "Connectivity"
-    },
-    {
-      id: 3,
-      action: "Install smart thermostat",
-      severity: "medium",
-      rationale: "Improve energy efficiency and reduce heating/cooling costs",
-      location: "internal",
-      component: "Appliances"
-    }
-  ],
-  
-  // Recommendations for residential properties
-  residential: [
-    {
-      id: 1,
-      action: "Install water leak sensors",
-      severity: "high",
-      rationale: "Residential properties are particularly vulnerable to water damage from burst pipes and appliance failures",
-      location: "internal",
-      component: "Water System"
-    },
-    {
-      id: 2,
-      action: "Replace roof shingles",
-      severity: "medium",
-      rationale: "Older residential roofs often need maintenance to prevent water damage and extend lifespan",
-      location: "external",
-      component: "Water System"
-    },
-    {
-      id: 3,
-      action: "Add security cameras",
-      severity: "medium",
-      rationale: "Residential properties benefit from security monitoring to deter break-ins and provide evidence",
-      location: "external",
-      component: "Connectivity"
-    },
-    {
-      id: 4,
-      action: "Install smart thermostat",
-      severity: "low",
-      rationale: "Smart thermostats can significantly reduce energy costs in residential properties",
-      location: "internal",
-      component: "Appliances"
-    }
-  ],
-  
-  // Recommendations for commercial properties
-  commercial: [
-    {
-      id: 1,
-      action: "Upgrade electrical panel",
-      severity: "high",
-      rationale: "Commercial properties have higher electrical demands and require robust electrical systems",
-      location: "internal",
-      component: "Connectivity"
-    },
-    {
-      id: 2,
-      action: "Install comprehensive fire suppression system",
-      severity: "high",
-      rationale: "Commercial properties require advanced fire protection systems for safety and compliance",
-      location: "internal",
-      component: "Safety Systems"
-    },
-    {
-      id: 3,
-      action: "Add security cameras and access control",
-      severity: "medium",
-      rationale: "Commercial properties need robust security systems to protect assets and monitor access",
-      location: "external",
-      component: "Connectivity"
-    },
-    {
-      id: 4,
-      action: "Implement HVAC monitoring",
-      severity: "medium",
-      rationale: "Commercial HVAC systems require continuous monitoring to prevent costly breakdowns",
-      location: "internal",
-      component: "Appliances"
-    }
-  ],
-  
-  // Recommendations for rental properties
-  rental: [
-    {
-      id: 1,
-      action: "Install water leak sensors",
-      severity: "high",
-      rationale: "Rental properties need early leak detection to prevent damage and reduce liability",
-      location: "internal",
-      component: "Water System"
-    },
-    {
-      id: 2,
-      action: "Add security cameras",
-      severity: "medium",
-      rationale: "Rental properties benefit from security monitoring to protect against damage and unauthorized access",
-      location: "external",
-      component: "Connectivity"
-    },
-    {
-      id: 3,
-      action: "Install smart locks",
-      severity: "medium",
-      rationale: "Smart locks provide secure access control and eliminate the need for physical key management",
-      location: "external",
-      component: "Connectivity"
-    },
-    {
-      id: 4,
-      action: "Add smoke and CO detectors",
-      severity: "low",
-      rationale: "Enhanced safety monitoring is essential for rental property compliance and tenant safety",
-      location: "internal",
-      component: "Safety Systems"
-    }
-  ]
 };
 
 // Function to get recommendations for a specific property
@@ -450,6 +376,8 @@ export default function PropertyDetailPage() {
   const [alertsLoading, setAlertsLoading] = useState(false);
   const [assessmentLoading, setAssessmentLoading] = useState(false);
   const [devicesAttempted, setDevicesAttempted] = useState(false);
+  const [surveyResults, setSurveyResults] = useState<SurveyResults | null>(null);
+  const [surveyLoading, setSurveyLoading] = useState(false);
 
   const loadDevices = async (propertyName: string) => {
     setDevicesLoading(true);
@@ -457,18 +385,32 @@ export default function PropertyDetailPage() {
     try {
       const devices = await fetchDevices(propertyName);
       
-      const transformedDevices = transformDevices(devices);
+      // Use sample devices if API returns empty list
+      const devicesToUse = devices.length === 0 ? sampleDevices : devices;
+      
+      const transformedDevices = transformDevices(devicesToUse);
       setProperty(prev => prev ? {
         ...prev,
         devices: {
           ...prev.devices,
           list: transformedDevices,
-          connected: devices.filter(d => d.status === 'connected').length,
-          total: devices.length
+          connected: devicesToUse.filter(d => d.status === 'connected').length,
+          total: devicesToUse.length
         }
       } : null);
     } catch (error) {
       console.error('Failed to fetch devices:', error);
+      // Use sample devices as fallback if API fails
+      const transformedDevices = transformDevices(sampleDevices);
+      setProperty(prev => prev ? {
+        ...prev,
+        devices: {
+          ...prev.devices,
+          list: transformedDevices,
+          connected: sampleDevices.filter(d => d.status === 'connected').length,
+          total: sampleDevices.length
+        }
+      } : null);
     } finally {
       setDevicesLoading(false);
     }
@@ -487,6 +429,69 @@ export default function PropertyDetailPage() {
       console.error('Failed to fetch alerts:', error);
     } finally {
       setAlertsLoading(false);
+    }
+  };
+
+  const loadSurveyResults = async (propertyId: string) => {
+    setSurveyLoading(true);
+    try {
+      const results = await fetchSurveyResults(propertyId);
+      
+      // Helper function to extract survey data
+      const extractSurveyData = (surveyItem: SurveyResults): SurveyResults => {
+        return {
+          id: surveyItem.id,
+          user_id: surveyItem.user_id,
+          property_id: surveyItem.property_id,
+          total_score: surveyItem.total_score || 0,
+          points_earned: surveyItem.points_earned || 0,
+          points_possible: surveyItem.points_possible || 0,
+          response: surveyItem.response || {},
+          created_at: surveyItem.created_at,
+          updated_at: surveyItem.updated_at
+        };
+      };
+      
+      // If results is an object with numeric keys (like {0: {...}, 1: {...}, success: true})
+      if (results && typeof results === 'object' && !Array.isArray(results)) {
+        // Convert object with numeric keys to array
+        const resultsArray = Object.keys(results)
+          .filter(key => !isNaN(Number(key))) // Only numeric keys
+          .map(key => results[key])
+          .filter(item => item && typeof item === 'object'); // Filter out non-objects
+        
+        if (resultsArray.length > 0) {
+          // Find the most recent one
+          const mostRecent = resultsArray.reduce((latest, current) => {
+            const latestDate = new Date(latest.created_at);
+            const currentDate = new Date(current.created_at);
+            return currentDate > latestDate ? current : latest;
+          });
+          
+          setSurveyResults(extractSurveyData(mostRecent));
+        } else {
+          setSurveyResults(null);
+        }
+      } else if (Array.isArray(results) && results.length > 0) {
+        // If it's already an array, find the most recent one
+        const mostRecent = results.reduce((latest, current) => {
+          const latestDate = new Date(latest.created_at);
+          const currentDate = new Date(current.created_at);
+          return currentDate > latestDate ? current : latest;
+        });
+        
+        setSurveyResults(extractSurveyData(mostRecent));
+      } else if (results) {
+        // If it's a single result, use it directly
+        setSurveyResults(extractSurveyData(results as unknown as SurveyResults));
+      } else {
+        setSurveyResults(null);
+      }
+    } catch (error) {
+      console.error('Failed to fetch survey results:', error);
+      setSurveyResults(null);
+    } finally {
+      setSurveyLoading(false);
     }
   };
 
@@ -516,6 +521,9 @@ export default function PropertyDetailPage() {
               // Fetch devices for this property
               await loadDevices(decodedData.address);
               
+              // Load survey results
+              await loadSurveyResults(decodedData.id);
+              
               setLoading(false);
               return;
             } catch (error) {
@@ -540,36 +548,27 @@ export default function PropertyDetailPage() {
                   total: propertyData.devices?.total || 0,
                   list: []
                 },
-                total_savings: propertyData.total_savings,
                 moneySaved: propertyData.total_savings || 0,
-                lastUpdated: new Date().toLocaleTimeString(),
-                alerts: propertyData.alert ? [{
-                  id: '1',
-                  type: propertyData.alert.type,
-                  message: propertyData.alert.message,
-                  severity: propertyData.alert.severity,
-                  timestamp: new Date().toISOString(),
-                  details: propertyData.alert.message
-                }] : []
+                lastUpdated: new Date().toLocaleTimeString()
               };
               
               setProperty(transformedData);
               
-              // Fetch devices and alerts for this property
+              // Load devices, alerts, and survey results
               await Promise.all([
-                loadDevices(propertyData.name),
-                loadAlerts(propertyData.id)
+                loadDevices(transformedData.name || transformedData.address),
+                loadAlerts(propertyData.id),
+                loadSurveyResults(propertyData.id)
               ]);
               
               setLoading(false);
             } catch (error) {
-              console.error('Failed to fetch property details:', error);
+              console.error('Failed to load property:', error);
               setLoading(false);
             }
           }
         } catch (error) {
-          console.error('Failed to fetch property details:', error);
-        } finally {
+          console.error('Error in loadProperty:', error);
           setLoading(false);
         }
       }
@@ -677,6 +676,7 @@ export default function PropertyDetailPage() {
       setAssessmentLoading(false);
     }
   };
+  console.log(surveyResults);
 
   if (loading) {
     return (
@@ -734,21 +734,35 @@ export default function PropertyDetailPage() {
               </div>
             </div>
             <div className="flex items-center gap-3 flex-shrink-0">
+              {surveyLoading ? (
+                <div className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-700"></div>
+                  Loading Survey...
+                </div>
+              ) : surveyResults ? (
+                <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-2 rounded-lg flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  Assessment Complete
+                </div>
+              ) : (
+                <button 
+                  onClick={handleTakeAssessment}
+                  disabled={assessmentLoading}
+                  className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-gray-200 transition-colors disabled:opacity-50"
+                >
+                  {assessmentLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-700"></div>
+                      Creating Assessment...
+                    </>
+                  ) : (
+                    'Take Assessment'
+                  )}
+                </button>
+              )}
               <button 
-                onClick={handleTakeAssessment}
-                disabled={assessmentLoading}
-                className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-gray-200 transition-colors disabled:opacity-50"
-              >
-                {assessmentLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-700"></div>
-                    Creating Assessment...
-                  </>
-                ) : (
-                  'Take Assessment'
-                )}
-              </button>
-              <button className="bg-senchi-primary text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-senchi-primary/90 transition-colors">
+                onClick={() => alert('Setting HomeGuard Hub to pairing mode...')}
+                className="bg-senchi-primary text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-senchi-primary/90 transition-colors">
                 <Plus className="w-4 h-4" />
                 Add a device
               </button>
@@ -921,6 +935,51 @@ export default function PropertyDetailPage() {
             </table>
           </div>
         </div>
+
+        {/* Survey Results Section */}
+        {surveyResults && (
+          <div className="bg-white rounded-lg p-6 shadow-sm mt-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-semibold text-gray-900">Assessment Results</h2>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">
+                  Completed: {surveyResults.created_at ? new Date(surveyResults.created_at).toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                  }) : 'Date not available'}
+                </span>
+                {surveyResults.total_score && (
+                  <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
+                    Score: {surveyResults.total_score}%
+                  </span>
+                )}
+              </div>
+            </div>
+            
+            <div className="space-y-6">
+
+              {/* Score Summary */}
+              <div className="border border-gray-200 rounded-lg p-4">
+                <h3 className="text-md font-medium text-gray-900 mb-4">Score Summary</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-green-600">{surveyResults.total_score || 0}%</p>
+                    <p className="text-sm text-gray-600">Total Score</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-blue-600">{surveyResults.points_earned || 0}</p>
+                    <p className="text-sm text-gray-600">Points Earned</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-gray-600">{surveyResults.points_possible || 0}</p>
+                    <p className="text-sm text-gray-600">Points Possible</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
