@@ -320,3 +320,15 @@ class PostgresDB:
         VALUES (%s, %s, %s, %s, %s)
         """
         return self.execute_insert(query, (user_id, property_id, role, user_id, phone_number))
+    
+    def get_property_scores(self, property_id: str) -> Optional[dict]:
+        query = """
+        SELECT scores_overall, scores_internal, scores_external FROM zb_properties WHERE id = %s
+        """
+        return self.execute_with_return(query, (property_id,))
+    
+    def update_property_scores(self, property_id: str, scores: dict) -> bool:
+        query = """
+        UPDATE zb_properties SET scores_overall = %s, scores_internal = %s, scores_external = %s WHERE id = %s
+        """
+        return self.execute_insert(query, (scores['overall'], scores['internal'], scores['external'], property_id))

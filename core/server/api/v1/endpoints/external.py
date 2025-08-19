@@ -214,6 +214,17 @@ async def submit_assessment(
         
         # Generate recommendations
         recommendations = services['recommendation_engine'].get_improvement_recommendations(results)
+
+        # Adjust the scores in the database
+        # TODO: Get the property_id from the user_id
+        property_id = "98fff33b-435d-4bdb-9833-20858c128fbd"
+        property_scores = request.app.state.db.get_property_scores(property_id)
+        try:
+            if property_scores:
+                property_scores['scores_overall'] = (property_scores['scores_internal'] + results['total_score']) / 2
+                request.app.state.db.update_property_scores(property_id, property_scores)
+        except Exception as e:
+            print(f"Error updating property scores: {e}")
         
         assessment_response = AssessmentResponse(
             total_score=results["total_score"],
