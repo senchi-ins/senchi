@@ -3,9 +3,7 @@
 import * as React from "react"
 import { useRouter } from "next/navigation"
 import {
-  CreditCard,
   Settings,
-  User,
   Home,
 } from "lucide-react"
 
@@ -17,7 +15,6 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-  CommandShortcut,
 } from "@/components/ui/command"
 
 interface Property {

@@ -86,6 +86,18 @@ interface PropertyDetails {
   lastUpdated?: string;
 }
 
+interface SurveyResults {
+  id: string;
+  user_id: string;
+  property_id: string;
+  response: Record<string, string | number | boolean>; // JSON field containing the survey responses
+  total_score: number;
+  points_earned: number;
+  points_possible: number;
+  created_at: string;
+  updated_at: string;
+}
+
 const fetchPropertyDetails = async (propertyId: string): Promise<PropertyData> => {
   try {
     const response = await fetch(`/api/properties/${propertyId}`, {
@@ -165,6 +177,37 @@ const fetchAlerts = async (property_id: string): Promise<Array<{
   } catch (error) {
     console.error('Error fetching alerts:', error);
     return [];
+  }
+};
+
+// API function to fetch survey results
+const fetchSurveyResults = async (property_id: string): Promise<SurveyResults[] | SurveyResults | null> => {
+  try {
+    const response = await fetch('/api/survey-results', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        property_id: property_id
+      }),
+    });
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        // No survey results found
+        return null;
+      }
+      const errorText = await response.text();
+      console.error('Survey results API error response:', errorText);
+      throw new Error(`Failed to fetch survey results: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching survey results:', error);
+    return null;
   }
 };
 
@@ -333,6 +376,8 @@ export default function PropertyDetailPage() {
   const [alertsLoading, setAlertsLoading] = useState(false);
   const [assessmentLoading, setAssessmentLoading] = useState(false);
   const [devicesAttempted, setDevicesAttempted] = useState(false);
+  const [surveyResults, setSurveyResults] = useState<SurveyResults | null>(null);
+  const [surveyLoading, setSurveyLoading] = useState(false);
 
   const loadDevices = async (propertyName: string) => {
     setDevicesLoading(true);
@@ -387,6 +432,69 @@ export default function PropertyDetailPage() {
     }
   };
 
+  const loadSurveyResults = async (propertyId: string) => {
+    setSurveyLoading(true);
+    try {
+      const results = await fetchSurveyResults(propertyId);
+      
+      // Helper function to extract survey data
+      const extractSurveyData = (surveyItem: SurveyResults): SurveyResults => {
+        return {
+          id: surveyItem.id,
+          user_id: surveyItem.user_id,
+          property_id: surveyItem.property_id,
+          total_score: surveyItem.total_score || 0,
+          points_earned: surveyItem.points_earned || 0,
+          points_possible: surveyItem.points_possible || 0,
+          response: surveyItem.response || {},
+          created_at: surveyItem.created_at,
+          updated_at: surveyItem.updated_at
+        };
+      };
+      
+      // If results is an object with numeric keys (like {0: {...}, 1: {...}, success: true})
+      if (results && typeof results === 'object' && !Array.isArray(results)) {
+        // Convert object with numeric keys to array
+        const resultsArray = Object.keys(results)
+          .filter(key => !isNaN(Number(key))) // Only numeric keys
+          .map(key => results[key])
+          .filter(item => item && typeof item === 'object'); // Filter out non-objects
+        
+        if (resultsArray.length > 0) {
+          // Find the most recent one
+          const mostRecent = resultsArray.reduce((latest, current) => {
+            const latestDate = new Date(latest.created_at);
+            const currentDate = new Date(current.created_at);
+            return currentDate > latestDate ? current : latest;
+          });
+          
+          setSurveyResults(extractSurveyData(mostRecent));
+        } else {
+          setSurveyResults(null);
+        }
+      } else if (Array.isArray(results) && results.length > 0) {
+        // If it's already an array, find the most recent one
+        const mostRecent = results.reduce((latest, current) => {
+          const latestDate = new Date(latest.created_at);
+          const currentDate = new Date(current.created_at);
+          return currentDate > latestDate ? current : latest;
+        });
+        
+        setSurveyResults(extractSurveyData(mostRecent));
+      } else if (results) {
+        // If it's a single result, use it directly
+        setSurveyResults(extractSurveyData(results as unknown as SurveyResults));
+      } else {
+        setSurveyResults(null);
+      }
+    } catch (error) {
+      console.error('Failed to fetch survey results:', error);
+      setSurveyResults(null);
+    } finally {
+      setSurveyLoading(false);
+    }
+  };
+
   useEffect(() => {
     const loadProperty = async () => {
       if (params.id) {
@@ -413,6 +521,9 @@ export default function PropertyDetailPage() {
               // Fetch devices for this property
               await loadDevices(decodedData.address);
               
+              // Load survey results
+              await loadSurveyResults(decodedData.id);
+              
               setLoading(false);
               return;
             } catch (error) {
@@ -437,36 +548,27 @@ export default function PropertyDetailPage() {
                   total: propertyData.devices?.total || 0,
                   list: []
                 },
-                total_savings: propertyData.total_savings,
                 moneySaved: propertyData.total_savings || 0,
-                lastUpdated: new Date().toLocaleTimeString(),
-                alerts: propertyData.alert ? [{
-                  id: '1',
-                  type: propertyData.alert.type,
-                  message: propertyData.alert.message,
-                  severity: propertyData.alert.severity,
-                  timestamp: new Date().toISOString(),
-                  details: propertyData.alert.message
-                }] : []
+                lastUpdated: new Date().toLocaleTimeString()
               };
               
               setProperty(transformedData);
               
-              // Fetch devices and alerts for this property
+              // Load devices, alerts, and survey results
               await Promise.all([
-                loadDevices(propertyData.name),
-                loadAlerts(propertyData.id)
+                loadDevices(transformedData.name || transformedData.address),
+                loadAlerts(propertyData.id),
+                loadSurveyResults(propertyData.id)
               ]);
               
               setLoading(false);
             } catch (error) {
-              console.error('Failed to fetch property details:', error);
+              console.error('Failed to load property:', error);
               setLoading(false);
             }
           }
         } catch (error) {
-          console.error('Failed to fetch property details:', error);
-        } finally {
+          console.error('Error in loadProperty:', error);
           setLoading(false);
         }
       }
@@ -574,6 +676,7 @@ export default function PropertyDetailPage() {
       setAssessmentLoading(false);
     }
   };
+  console.log(surveyResults);
 
   if (loading) {
     return (
@@ -631,20 +734,32 @@ export default function PropertyDetailPage() {
               </div>
             </div>
             <div className="flex items-center gap-3 flex-shrink-0">
-              <button 
-                onClick={handleTakeAssessment}
-                disabled={assessmentLoading}
-                className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-gray-200 transition-colors disabled:opacity-50"
-              >
-                {assessmentLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-700"></div>
-                    Creating Assessment...
-                  </>
-                ) : (
-                  'Take Assessment'
-                )}
-              </button>
+              {surveyLoading ? (
+                <div className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-700"></div>
+                  Loading Survey...
+                </div>
+              ) : surveyResults ? (
+                <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-2 rounded-lg flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  Assessment Complete
+                </div>
+              ) : (
+                <button 
+                  onClick={handleTakeAssessment}
+                  disabled={assessmentLoading}
+                  className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-gray-200 transition-colors disabled:opacity-50"
+                >
+                  {assessmentLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-700"></div>
+                      Creating Assessment...
+                    </>
+                  ) : (
+                    'Take Assessment'
+                  )}
+                </button>
+              )}
               <button 
                 onClick={() => alert('Setting HomeGuard Hub to pairing mode...')}
                 className="bg-senchi-primary text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-senchi-primary/90 transition-colors">
@@ -820,6 +935,51 @@ export default function PropertyDetailPage() {
             </table>
           </div>
         </div>
+
+        {/* Survey Results Section */}
+        {surveyResults && (
+          <div className="bg-white rounded-lg p-6 shadow-sm mt-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-semibold text-gray-900">Assessment Results</h2>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">
+                  Completed: {surveyResults.created_at ? new Date(surveyResults.created_at).toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                  }) : 'Date not available'}
+                </span>
+                {surveyResults.total_score && (
+                  <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
+                    Score: {surveyResults.total_score}%
+                  </span>
+                )}
+              </div>
+            </div>
+            
+            <div className="space-y-6">
+
+              {/* Score Summary */}
+              <div className="border border-gray-200 rounded-lg p-4">
+                <h3 className="text-md font-medium text-gray-900 mb-4">Score Summary</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-green-600">{surveyResults.total_score || 0}%</p>
+                    <p className="text-sm text-gray-600">Total Score</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-blue-600">{surveyResults.points_earned || 0}</p>
+                    <p className="text-sm text-gray-600">Points Earned</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-gray-600">{surveyResults.points_possible || 0}</p>
+                    <p className="text-sm text-gray-600">Points Possible</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -52,7 +52,7 @@ const accountItems = [
     icon: LogOut,
   }
 ]
-const userName = "Senchi Demo"
+const userName = "Michael Dawes"
 
 export default function ProductSidebar() {
   const router = useRouter();
