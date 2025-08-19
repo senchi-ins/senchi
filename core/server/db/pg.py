@@ -92,7 +92,7 @@ class PostgresDB:
         Insert an assessment response for a user.
         """
         query = """
-        INSERT INTO assessment_responses (user_id, property_id, response, total_score, points_earned, points_possible, created_at, updated_at)
+        INSERT INTO zb_assessment_responses (user_id, property_id, response, total_score, points_earned, points_possible, created_at, updated_at)
         VALUES (%s, %s, %s, %s, %s, %s, NOW(), NOW())
         """
         resp = psycopg2.extras.Json(response)
@@ -104,7 +104,7 @@ class PostgresDB:
         """
         query = """
         SELECT id, user_id, property_id, response, total_score, points_earned, points_possible, created_at, updated_at 
-        FROM assessment_responses 
+        FROM zb_assessment_responses 
         WHERE user_id = %s 
         ORDER BY created_at DESC
         """
@@ -116,7 +116,7 @@ class PostgresDB:
         """
         query = """
         SELECT id, user_id, property_id, response, total_score, points_earned, points_possible, created_at, updated_at 
-        FROM assessment_responses 
+        FROM zb_assessment_responses 
         WHERE property_id = %s 
         ORDER BY created_at DESC
         """
