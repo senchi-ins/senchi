@@ -9,8 +9,7 @@ from schemas.external import (
     AssessmentResponse, 
     RiskQuestion, 
     LocationRiskResponse, 
-    AddressRequest,
-    WebAssessmentRequest
+    AddressRequest
 )
 from server.api.v1.utils.utils import decode_jwt
 
