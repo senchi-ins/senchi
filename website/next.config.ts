@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/:path*',
-        destination: 'https://joinaerium.com',
+        destination: 'https://aeriumhq.com',
         permanent: true,
       },
     ];
