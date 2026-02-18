@@ -1,132 +1,134 @@
-'use client'
+"use client";
 
-import { Button } from "./ui/button";
-import { Menu, X, ArrowRight } from "lucide-react";
-import { useState, useEffect } from "react";
-import Image from 'next/image';
-import Link from 'next/link';
+import { useState } from "react";
+import { Menu, X } from "lucide-react";
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollPosition = window.scrollY;
-      const heroSection = document.querySelector('section');
-      if (heroSection) {
-        const heroHeight = heroSection.offsetHeight;
-        const halfwayPoint = heroHeight / 2;
-        setIsScrolled(scrollPosition > halfwayPoint);
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-transparent backdrop-blur-sm">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
-          {/* Logo */}
-          <div className="flex items-center">
-            <Link href="/" className="flex items-center space-x-2">
-              <Image
-                src={isScrolled ? "/senchi-dark.png" : "/senchi.png"} 
-                alt="Senchi logo" 
-                width={1171} 
-                height={500} 
-                className="h-24 w-auto" 
-              />
-            </Link>
-          </div>
+    <header
+      className="w-full"
+      style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}
+    >
+      {/* Top marquee banner */}
+      <div className="marquee-banner">
+        <span>
+          *** Senchi Chemical Supply Co. &mdash; Trusted Since 1987 &mdash; ISO
+          9001:2000 Certified &mdash; Serving Industry Across North America
+          &mdash; Call Toll-Free: 1-800-555-CHEM &mdash; Fax: (416) 555-0199 ***
+        </span>
+      </div>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-6">
-            <a href="#halo" className={`transition-colors ${isScrolled ? 'text-gray-900 hover:text-senchi-primary' : 'text-white hover:text-senchi-accent-light'}`}>
-              Senchi HomeGuard
-            </a>
-            <a href="#plans" className={`transition-colors ${isScrolled ? 'text-gray-900 hover:text-senchi-primary' : 'text-white hover:text-senchi-accent-light'}`}>
-              Plans
-            </a>
-            <a href="/about" className={`transition-colors ${isScrolled ? 'text-gray-900 hover:text-senchi-primary' : 'text-white hover:text-senchi-accent-light'}`}>
-              About Us
-            </a>
-            <a href="mailto:mike@senchi.ca?subject=interested in seeing a demo" className={`transition-colors ${isScrolled ? 'text-gray-900 hover:text-senchi-primary' : 'text-white hover:text-senchi-accent-light'}`}>
-              See a demo
-            </a>
-            <Button asChild className={`px-4 py-2 transition-colors ${isScrolled ? 'bg-senchi-primary hover:bg-senchi-primary/90 text-white' : 'bg-white hover:bg-gray-100 text-senchi-primary'}`} size="sm">
-              <Link href="/login" className="flex items-center gap-2">
-                Sign in
-              </Link>
-            </Button>
-            <Button asChild className={`px-4 py-2 transition-colors ${isScrolled ? 'bg-senchi-primary hover:bg-senchi-primary/90 text-white' : 'bg-white hover:bg-gray-100 text-senchi-primary'}`} size="sm">
-              <Link href="/ext-assessment" className="flex items-center gap-2">
-                Take our home assessment
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </Button>
-          </nav>
-
-          {/* Mobile menu button */}
-          <div className="md:hidden">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
-              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </Button>
-          </div>
-        </div>
-
-        {/* Mobile Navigation */}
-        {isMenuOpen && (
-          <div className="md:hidden border-t bg-white">
-            <div className="px-2 pt-2 pb-3 space-y-1">
-              <a
-                href="#halo"
-                className="block px-3 py-2 text-gray-600 hover:text-senchi-primary transition-colors"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Senchi HomeGuard
-              </a>
-              <a
-                href="#plans"
-                className="block px-3 py-2 text-gray-600 hover:text-senchi-primary transition-colors"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Plans
-              </a>
-              <a
-                href="#demo"
-                className="block px-3 py-2 text-gray-600 hover:text-senchi-primary transition-colors"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                See a demo
-              </a>
-              <Button
-                asChild
-                className="mt-4 w-full bg-senchi-primary hover:bg-senchi-primary/90 text-white px-4 py-2"
-                size="sm"
-              >
-                {/* TODO Update to be in line with the desktop version */}
-                <a
-                  href="https://senchi.ca/ext-assessment"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2"
-                  onClick={() => setIsMenuOpen(false)}
+      {/* Main header bar */}
+      <div className="bg-[#f5f0e8] border-b-4 border-double border-[#1a3a1a]">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between py-4">
+            {/* Company name / logo area */}
+            <div className="flex items-center gap-4">
+              <div className="hidden sm:block w-16 h-16 border-2 border-[#8b7635] bg-[#1a3a1a] flex items-center justify-center">
+                <div
+                  className="w-16 h-16 flex items-center justify-center text-[#d4c9a8] font-bold text-lg"
+                  style={{ fontFamily: "'Courier New', monospace" }}
                 >
-                  Take our external assessment
-                  <ArrowRight className="w-4 h-4" />
-                </a>
-              </Button>
+                  SCS
+                </div>
+              </div>
+              <div>
+                <h1
+                  className="text-xl sm:text-2xl font-bold text-[#1a3a1a] tracking-wide"
+                  style={{ fontFamily: "'Georgia', serif" }}
+                >
+                  SENCHI CHEMICAL SUPPLY CO.
+                </h1>
+                <p className="text-xs text-[#8b7635] tracking-widest uppercase">
+                  Commodity-Derived Chemical Products &bull; Est. 1987
+                </p>
+              </div>
+            </div>
+
+            {/* Contact info - desktop */}
+            <div className="hidden lg:block text-right text-sm text-[#1a3a1a]">
+              <div className="font-bold">Toll-Free: 1-800-555-CHEM</div>
+              <div>Fax: (416) 555-0199</div>
+              <div className="text-xs text-[#8b7635]">sales@senchichem.com</div>
+            </div>
+
+            {/* Mobile menu button */}
+            <div className="lg:hidden">
+              <button
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="p-2 text-[#1a3a1a]"
+              >
+                {isMenuOpen ? (
+                  <X className="h-6 w-6" />
+                ) : (
+                  <Menu className="h-6 w-6" />
+                )}
+              </button>
             </div>
           </div>
-        )}
+        </div>
       </div>
+
+      {/* Navigation bar */}
+      <nav className="bg-[#1a3a1a] border-b-2 border-[#8b7635]">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="hidden lg:flex items-center justify-center gap-1 py-1">
+            {[
+              { label: "Home", href: "#" },
+              { label: "Product Catalog", href: "#catalog" },
+              { label: "Industries Served", href: "#industries" },
+              { label: "About Us", href: "#about" },
+              { label: "Request a Quote", href: "#contact" },
+              { label: "MSDS Sheets", href: "#catalog" },
+              { label: "Contact", href: "#contact" },
+            ].map((item, i) => (
+              <a
+                key={i}
+                href={item.href}
+                className="px-4 py-2 text-[#d4c9a8] hover:bg-[#8b7635] hover:text-white text-sm uppercase tracking-wider transition-colors"
+                style={{ fontFamily: "'Georgia', serif" }}
+              >
+                {item.label}
+              </a>
+            ))}
+          </div>
+        </div>
+      </nav>
+
+      {/* Mobile Navigation */}
+      {isMenuOpen && (
+        <div className="lg:hidden bg-[#1a3a1a] border-b-2 border-[#8b7635]">
+          <div className="px-4 py-2 space-y-1">
+            {[
+              { label: "Home", href: "#" },
+              { label: "Product Catalog", href: "#catalog" },
+              { label: "Industries Served", href: "#industries" },
+              { label: "About Us", href: "#about" },
+              { label: "Request a Quote", href: "#contact" },
+              { label: "MSDS Sheets", href: "#catalog" },
+              { label: "Contact", href: "#contact" },
+            ].map((item, i) => (
+              <a
+                key={i}
+                href={item.href}
+                onClick={() => setIsMenuOpen(false)}
+                className="block px-4 py-2 text-[#d4c9a8] hover:bg-[#8b7635] hover:text-white text-sm uppercase tracking-wider"
+                style={{ fontFamily: "'Georgia', serif" }}
+              >
+                {item.label}
+              </a>
+            ))}
+            <div className="border-t border-[#8b7635] pt-2 mt-2 px-4 pb-2">
+              <div className="text-[#d4c9a8] text-sm">
+                Toll-Free: 1-800-555-CHEM
+              </div>
+              <div className="text-[#8b7635] text-xs">sales@senchichem.com</div>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

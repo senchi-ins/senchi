@@ -1,23 +1,13 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import React from "react";
 import { Analytics } from "@vercel/analytics/next";
 import { AuthProvider } from "@/contexts/AuthContext";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
 export const metadata: Metadata = {
-  title: "Senchi: Predictive Protection",
-  description: "The future of home protection",
+  title: "Senchi Chemical Supply Co. - Commodity-Derived Chemical Products",
+  description:
+    "Manufacturer and distributor of high-purity chemicals synthesized from commodity feedstocks. Serving industrial, agricultural, and municipal clients across North America since 1987.",
 };
 
 export default function RootLayout({
@@ -28,11 +18,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        style={{ fontFamily: "'Georgia', 'Times New Roman', 'Times', serif" }}
       >
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        <AuthProvider>{children}</AuthProvider>
         <Analytics />
       </body>
     </html>

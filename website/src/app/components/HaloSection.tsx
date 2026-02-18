@@ -1,204 +1,349 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
-import Image from 'next/image';
-import { Brain, AlertTriangle, Car, Shield, Droplets, Activity, Settings } from "lucide-react";
-
+"use client";
 
 export default function HaloSection() {
-
-  const sensors = [
+  const chemicals = [
     {
-      icon: Activity,
-      title: "Ultrasonic clamp-on water flow monitor",
-      description: "Non-invasive monitoring of water flow rates to detect leaks and unusual usage patterns.",
-      image: '/assets/flow_monitor.png'
+      name: "Sodium Hydroxide (Caustic Soda)",
+      cas: "1310-73-2",
+      formula: "NaOH",
+      grade: "Industrial / Technical",
+      source: "Chlor-alkali process (salt)",
+      packaging: "Drums, Totes, Bulk",
+      msds: true,
     },
     {
-      icon: Droplets,
-      title: "Multi purpose leak detectors",
-      description: "Advanced sensor technology that detects water presence and alerts you before damage occurs.",
-      image: '/assets/leak_sensor.png'
+      name: "Hydrochloric Acid",
+      cas: "7647-01-0",
+      formula: "HCl",
+      grade: "Industrial / ACS",
+      source: "Salt + Sulfuric acid",
+      packaging: "Carboys, Drums, Bulk",
+      msds: true,
     },
     {
-      icon: Settings,
-      title: "Non-intrusive automatic valve control",
-      description: "Smart valve control system that can automatically shut off water flow when issues are detected.",
-      image: '/assets/valve_control.png'
-    }
+      name: "Sulfuric Acid",
+      cas: "7664-93-9",
+      formula: "H₂SO₄",
+      grade: "Technical / CP",
+      source: "Sulfur combustion",
+      packaging: "Drums, Totes, Tanker",
+      msds: true,
+    },
+    {
+      name: "Ethanol (Denatured)",
+      cas: "64-17-5",
+      formula: "C₂H₅OH",
+      grade: "SDA 40-B",
+      source: "Corn / Sugarcane fermentation",
+      packaging: "Drums, Totes",
+      msds: true,
+    },
+    {
+      name: "Methanol",
+      cas: "67-56-1",
+      formula: "CH₃OH",
+      grade: "Technical / ACS",
+      source: "Natural gas reforming",
+      packaging: "Drums, Totes, Bulk",
+      msds: true,
+    },
+    {
+      name: "Calcium Chloride",
+      cas: "10043-52-4",
+      formula: "CaCl₂",
+      grade: "Industrial / Food",
+      source: "Limestone + HCl",
+      packaging: "Bags, Drums, Bulk",
+      msds: true,
+    },
+    {
+      name: "Sodium Hypochlorite (Bleach)",
+      cas: "7681-52-9",
+      formula: "NaOCl",
+      grade: "12.5% / 15% Trade",
+      source: "Chlor-alkali + chlorination",
+      packaging: "Carboys, Drums",
+      msds: true,
+    },
+    {
+      name: "Phosphoric Acid",
+      cas: "7664-38-2",
+      formula: "H₃PO₄",
+      grade: "Technical / Food",
+      source: "Phosphate rock + acid",
+      packaging: "Drums, Totes",
+      msds: true,
+    },
+    {
+      name: "Ammonium Nitrate",
+      cas: "6484-52-2",
+      formula: "NH₄NO₃",
+      grade: "Agricultural / Technical",
+      source: "Ammonia + Nitric acid",
+      packaging: "Bags, Super sacks",
+      msds: true,
+    },
+    {
+      name: "Potassium Hydroxide (Caustic Potash)",
+      cas: "1310-58-3",
+      formula: "KOH",
+      grade: "Industrial / FCC",
+      source: "Electrolysis of KCl",
+      packaging: "Drums, Totes",
+      msds: true,
+    },
+    {
+      name: "Acetic Acid (Glacial)",
+      cas: "64-19-7",
+      formula: "CH₃COOH",
+      grade: "Technical / USP",
+      source: "Methanol carbonylation",
+      packaging: "Drums, Totes",
+      msds: true,
+    },
+    {
+      name: "Sodium Carbonate (Soda Ash)",
+      cas: "497-19-8",
+      formula: "Na₂CO₃",
+      grade: "Dense / Light",
+      source: "Trona ore processing",
+      packaging: "Bags, Bulk",
+      msds: true,
+    },
+    {
+      name: "Hydrogen Peroxide",
+      cas: "7722-84-1",
+      formula: "H₂O₂",
+      grade: "35% / 50% Technical",
+      source: "Anthraquinone process",
+      packaging: "Drums, Totes",
+      msds: true,
+    },
+    {
+      name: "Ferric Chloride",
+      cas: "7705-08-0",
+      formula: "FeCl₃",
+      grade: "Technical / Water Treatment",
+      source: "Iron + HCl / Cl₂",
+      packaging: "Drums, Totes, Bulk",
+      msds: true,
+    },
+    {
+      name: "Citric Acid",
+      cas: "77-92-9",
+      formula: "C₆H₈O₇",
+      grade: "Anhydrous / Monohydrate",
+      source: "Sugar fermentation (Aspergillus)",
+      packaging: "Bags, Drums",
+      msds: true,
+    },
   ];
 
   return (
-    <section id="halo" className="py-16 sm:py-24 bg-white">
+    <section
+      id="catalog"
+      className="py-12 bg-white"
+      style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}
+    >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-            Smart sensors that actually work.
-          </h2>
-          <p className="text-lg text-gray-600">
-            Professional-grade monitoring that catches problems before they become expensive.
+        {/* Section header */}
+        <div className="text-center mb-8">
+          <div
+            className="inline-block border-2 border-[#8b7635] bg-[#1a3a1a] px-8 py-3"
+            style={{ boxShadow: "3px 3px 0px #8b7635" }}
+          >
+            <h2 className="text-[#d4c9a8] text-xl sm:text-2xl font-bold tracking-wider uppercase">
+              Product Catalog
+            </h2>
+          </div>
+          <p className="mt-4 text-[#1a3a1a] max-w-3xl mx-auto">
+            We manufacture and distribute over 200 chemical products derived
+            from commodity feedstocks. Below is a selection of our most popular
+            items. For a complete listing or custom formulations, please{" "}
+            <a
+              href="#contact"
+              className="text-[#8b7635] underline hover:text-[#1a3a1a]"
+            >
+              contact our sales team
+            </a>
+            .
           </p>
         </div>
 
-        {/* Three Core Features */}
-        <div className="grid md:grid-cols-3 gap-8 mb-16">
-          <div className="text-center">
-            <div className="w-16 h-16 bg-senchi-accent-light rounded-full flex items-center justify-center mx-auto mb-4">
-              <Brain className="h-8 w-8 text-senchi-primary" />
-            </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Catch leaks early</h3>
-            <p className="text-gray-600">
-              Smart sensors detect pressure drops and moisture changes before pipes burst or appliances fail.
-            </p>
-          </div>
-          
-          <div className="text-center">
-            <div className="w-16 h-16 bg-senchi-accent-light rounded-full flex items-center justify-center mx-auto mb-4">
-              <AlertTriangle className="h-8 w-8 text-senchi-primary" />
-            </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Water shuts off automatically</h3>
-            <p className="text-gray-600">
-              System immediately stops water flow and sends you alerts, preventing damage while you&apos;re away.
-            </p>
-          </div>
-          
-          <div className="text-center">
-            <div className="w-16 h-16 bg-senchi-accent-light rounded-full flex items-center justify-center mx-auto mb-4">
-              <Car className="h-8 w-8 text-senchi-primary" />
-            </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Trusted plumbers dispatched</h3>
-            <p className="text-gray-600">
-              Pre-vetted contractors arrive quickly to fix the issue before it becomes expensive.
-            </p>
-          </div>
+        {/* Note box */}
+        <div className="mb-6 border-2 border-[#8b7635] bg-[#f5f0e8] p-3 text-sm text-center text-[#1a3a1a]">
+          <strong>NOTE:</strong> All products available in bulk quantities.
+          Minimum order quantities apply. MSDS / SDS sheets available upon
+          request or download. All prices FOB our facility in Mississauga, ON.
         </div>
 
-        {/* How it Works */}
-        <div className="bg-gradient-to-r from-senchi-accent-light to-white rounded-2xl p-8 lg:p-12">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">
-                How Senchi HomeGuard Works
-              </h3>
-              <div className="space-y-6">
-                <div className="flex items-start space-x-4">
-                  <div className="flex-shrink-0 w-8 h-8 bg-senchi-primary text-white rounded-full flex items-center justify-center text-sm font-bold">1</div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900 mb-2">Connect Your Smart Home</h4>
-                    <p className="text-gray-600">Install wireless sensors in 5 minutes. No tools, wiring, or plumber needed.</p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-4">
-                  <div className="flex-shrink-0 w-8 h-8 bg-senchi-primary text-white rounded-full flex items-center justify-center text-sm font-bold">2</div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900 mb-2">AI Analyzes Data</h4>
-                    <p className="text-gray-600">AI monitors pressure, temperature, and flow 24/7. Detects problems 6 hours before pipes burst.</p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-4">
-                  <div className="flex-shrink-0 w-8 h-8 bg-senchi-primary text-white rounded-full flex items-center justify-center text-sm font-bold">3</div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900 mb-2">Stops Disasters Automatically</h4>
-                    <p className="text-gray-600">System automatically shuts off water and calls trusted repair services. Damage prevented, not just detected.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="relative">
-              <div className="bg-white rounded-xl p-6 shadow-xl border border-gray-100">
-                {/* Dashboard Preview */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-semibold text-gray-900">HomeGuard Dashboard</h4>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="text-sm text-gray-600">Online</span>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-gray-50 rounded-lg p-3">
-                      <div className="text-sm text-gray-600">Risk Score</div>
-                      <div className="text-xl font-bold text-green-600">Low</div>
-                    </div>
-                    <div className="bg-gray-50 rounded-lg p-3">
-                      <div className="text-sm text-gray-600">Savings</div>
-                      <div className="text-xl font-bold text-senchi-primary">$1,247</div>
-                    </div>
-                  </div>
-
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                    <div className="flex items-center space-x-2">
-                      <Shield className="h-4 w-4 text-green-600" />
-                      <span className="text-sm font-medium text-green-800">All systems protected</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="text-sm font-medium text-gray-900">Recent Alerts</div>
-                    <div className="text-xs text-gray-600">• Increased water usage by dishwasher</div>
-                    <div className="text-xs text-gray-600">• Proper water flow restored</div>
-                    <div className="text-xs text-gray-600">• Outdoor temperature to drop 5 degree in the next week</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Floating notification */}
-              <div className="absolute -right-4 -top-4 bg-yellow-100 border border-yellow-300 rounded-lg p-3 shadow-lg">
-                <div className="flex items-center space-x-2">
-                  <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                  <span className="text-xs font-medium text-yellow-800">Prediction Alert</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="text-center mt-12">
-
-          </div>
-        </div>
-
-        {/* Smart AI Sensors Section */}
-        <div className="mt-16">
-          <div className="text-center max-w-3xl mx-auto mb-12">
-            <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
-              Smart AI Powered Sensors Provided by Senchi
-            </h3>
-            <p className="text-lg text-gray-600">
-              Our comprehensive sensor suite works together to provide complete home monitoring and protection.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {sensors.map((sensor, index) => (
-              <Card key={index} className="border-gray-100 hover:border-senchi-primary/20 hover:shadow-lg transition-all duration-300">
-                <CardHeader className="text-center">
-                  <div className="w-32 h-32 mx-auto mb-4 flex items-center justify-center">
-                    {sensor.image ? (
-                      <Image 
-                        src={sensor.image} 
-                        alt={sensor.title}
-                        width={128}
-                        height={128}
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gray-100 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
-                        <div className="text-center">
-                          <sensor.icon className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                          <span className="text-sm text-gray-500">Coming Soon</span>
-                        </div>
-                      </div>
+        {/* Product table */}
+        <div
+          className="overflow-x-auto border-2 border-[#8b7635]"
+          style={{ boxShadow: "3px 3px 0px #8b7635" }}
+        >
+          <table className="oldschool">
+            <thead>
+              <tr>
+                <th>Chemical Name</th>
+                <th>CAS No.</th>
+                <th>Formula</th>
+                <th>Grade(s)</th>
+                <th className="hidden md:table-cell">Commodity Source</th>
+                <th className="hidden sm:table-cell">Packaging</th>
+                <th>MSDS</th>
+              </tr>
+            </thead>
+            <tbody>
+              {chemicals.map((chem, i) => (
+                <tr key={i}>
+                  <td className="font-bold text-[#1a3a1a]">{chem.name}</td>
+                  <td
+                    className="text-[#8b7635]"
+                    style={{
+                      fontFamily: "'Courier New', monospace",
+                      fontSize: "0.8rem",
+                    }}
+                  >
+                    {chem.cas}
+                  </td>
+                  <td style={{ fontFamily: "'Courier New', monospace" }}>
+                    {chem.formula}
+                  </td>
+                  <td>{chem.grade}</td>
+                  <td className="hidden md:table-cell text-[#555]">
+                    {chem.source}
+                  </td>
+                  <td className="hidden sm:table-cell">{chem.packaging}</td>
+                  <td className="text-center">
+                    {chem.msds && (
+                      <span className="inline-block bg-[#1a3a1a] text-[#d4c9a8] px-2 py-0.5 text-xs cursor-pointer hover:bg-[#2a5a2a]">
+                        PDF
+                      </span>
                     )}
-                  </div>
-                  <CardTitle className="text-xl">{sensor.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-gray-600 text-center">
-                    {sensor.description}
-                  </CardDescription>
-                </CardContent>
-              </Card>
-            ))}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Bottom note */}
+        <div className="mt-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <p className="text-xs text-[#8b7635]">
+            * Custom blends and concentrations available upon request. Contact
+            our technical department.
+          </p>
+          <a
+            href="#contact"
+            className="inline-block bg-[#8b7635] text-white px-5 py-2 text-sm uppercase tracking-wider font-bold hover:bg-[#a08940] transition-colors"
+            style={{ border: "2px outset #b09950" }}
+          >
+            Request Bulk Pricing &gt;&gt;
+          </a>
+        </div>
+
+        <hr className="fancy" />
+
+        {/* Commodity feedstocks explanation */}
+        <div className="grid md:grid-cols-2 gap-8 mt-8">
+          <div className="bevel-box">
+            <h3 className="text-lg font-bold text-[#1a3a1a] mb-3 uppercase tracking-wider border-b-2 border-[#8b7635] pb-2">
+              Our Commodity Feedstocks
+            </h3>
+            <ul className="space-y-2 text-sm text-[#1a3a1a]">
+              <li className="flex items-start gap-2">
+                <span className="text-[#8b7635] font-bold">&raquo;</span>
+                <span>
+                  <strong>Rock Salt &amp; Brine</strong> &mdash; Chlor-alkali
+                  electrolysis for NaOH, Cl₂, HCl, and bleach
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-[#8b7635] font-bold">&raquo;</span>
+                <span>
+                  <strong>Sulfur</strong> &mdash; Contact process for sulfuric
+                  acid and downstream products
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-[#8b7635] font-bold">&raquo;</span>
+                <span>
+                  <strong>Natural Gas</strong> &mdash; Steam reforming for
+                  methanol, ammonia, and hydrogen
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-[#8b7635] font-bold">&raquo;</span>
+                <span>
+                  <strong>Corn &amp; Sugarcane</strong> &mdash; Fermentation for
+                  ethanol and citric acid
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-[#8b7635] font-bold">&raquo;</span>
+                <span>
+                  <strong>Phosphate Rock</strong> &mdash; Acid digestion for
+                  phosphoric acid and fertilizers
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-[#8b7635] font-bold">&raquo;</span>
+                <span>
+                  <strong>Limestone</strong> &mdash; Processing for
+                  calcium-based chemical products
+                </span>
+              </li>
+            </ul>
+          </div>
+          <div className="bevel-box">
+            <h3 className="text-lg font-bold text-[#1a3a1a] mb-3 uppercase tracking-wider border-b-2 border-[#8b7635] pb-2">
+              Why Senchi Chemical?
+            </h3>
+            <ul className="space-y-2 text-sm text-[#1a3a1a]">
+              <li className="flex items-start gap-2">
+                <span className="text-[#8b7635] font-bold">&raquo;</span>
+                <span>
+                  <strong>Vertically Integrated</strong> &mdash; We buy raw
+                  commodities and manufacture in-house for cost control
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-[#8b7635] font-bold">&raquo;</span>
+                <span>
+                  <strong>Quality Assurance</strong> &mdash; Every batch tested
+                  with COA provided. ISO 9001 &amp; ISO 14001 certified
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-[#8b7635] font-bold">&raquo;</span>
+                <span>
+                  <strong>Logistics Network</strong> &mdash; Owned fleet of
+                  tanker trucks and rail car access for continent-wide delivery
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-[#8b7635] font-bold">&raquo;</span>
+                <span>
+                  <strong>Custom Formulations</strong> &mdash; Our chemists can
+                  blend to your exact specifications
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-[#8b7635] font-bold">&raquo;</span>
+                <span>
+                  <strong>Competitive Pricing</strong> &mdash; Volume discounts
+                  for contracts over 10,000 kg/month
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-[#8b7635] font-bold">&raquo;</span>
+                <span>
+                  <strong>Responsible Care&reg;</strong> &mdash; Committed to
+                  environmental stewardship and safety
+                </span>
+              </li>
+            </ul>
           </div>
         </div>
       </div>

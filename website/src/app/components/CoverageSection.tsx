@@ -1,109 +1,190 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
-import { Button } from "./ui/button";
-import { Home, Building } from "lucide-react";
-import Image from 'next/image';
+"use client";
 
 export default function CoverageSection() {
-  const planOptions = [
+  const industries = [
     {
-      icon: Home,
-      title: "For Homeowners",
-      description: "Predictive monitoring to protect your most valuable asset.",
-      image: '/assets/abnb_home.png',
-      features: [
-        "24/7 leak monitoring and alerts",
-        "Set up in <5 minutes",
-        "Non-intrusive sensor installation",
-      ]
+      title: "Water & Wastewater Treatment",
+      description:
+        "Municipal and industrial water purification, pH adjustment, disinfection, and flocculation chemicals.",
+      products: [
+        "Sodium Hypochlorite",
+        "Ferric Chloride",
+        "Calcium Chloride",
+        "Sulfuric Acid",
+        "Sodium Hydroxide",
+      ],
     },
     {
-      icon: Building,
-      title: "For Property Managers",
-      description: "Predictive monitoring to give you peace of mind on your portfolio.",
-      image: '/assets/abnb_condo.png',
-      features: [
-        "Multi-property smart monitoring",
-        "Emergency event alerts across portfolio",
-        "Tenant support tools",
-      ]
+      title: "Pulp & Paper Manufacturing",
+      description:
+        "Bleaching agents, caustic soda for pulping, and specialty chemicals for paper production.",
+      products: [
+        "Sodium Hydroxide",
+        "Hydrogen Peroxide",
+        "Sodium Carbonate",
+        "Sulfuric Acid",
+      ],
     },
     {
-      icon: Building,
-      title: "For Insurers",
-      description: "Improve loss ratios and reduce claims through non-intrusive monitoring.",
-      image: '/assets/insurer.png',
-      features: [
-        "Decrease loss ratio across portfolio",
-        "Reduce claims",
-        "Improve customer satisfaction",
-      ]
-    }
+      title: "Agriculture & Fertilizers",
+      description:
+        "Nitrogen, phosphate, and potassium-based compounds for crop nutrition and soil treatment.",
+      products: [
+        "Ammonium Nitrate",
+        "Phosphoric Acid",
+        "Potassium Hydroxide",
+        "Calcium Chloride",
+      ],
+    },
+    {
+      title: "Food & Beverage Processing",
+      description:
+        "Food-grade acids, sanitizers, and pH regulators for processing and packaging.",
+      products: [
+        "Citric Acid",
+        "Phosphoric Acid",
+        "Acetic Acid",
+        "Ethanol (Food Grade)",
+      ],
+    },
+    {
+      title: "Mining & Mineral Processing",
+      description:
+        "Flotation reagents, leaching acids, and process chemicals for ore extraction.",
+      products: [
+        "Sulfuric Acid",
+        "Hydrochloric Acid",
+        "Sodium Hydroxide",
+        "Methanol",
+      ],
+    },
+    {
+      title: "Petrochemical & Refining",
+      description:
+        "Process chemicals, catalysts, and treatment agents for oil and gas operations.",
+      products: [
+        "Methanol",
+        "Sulfuric Acid",
+        "Sodium Hydroxide",
+        "Hydrochloric Acid",
+      ],
+    },
   ];
 
   return (
-    <section id="plans" className="py-16 sm:py-24 bg-gradient-to-b from-white to-senchi-accent-light/20">
+    <section
+      id="industries"
+      className="py-12 bg-[#f5f0e8]"
+      style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}
+    >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="text-center max-w-4xl mx-auto mb-20">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6 leading-tight">
-            External Protective Plans for Residences
-          </h2>
-          <p className="text-lg text-gray-600 leading-relaxed max-w-3xl mx-auto">
-            Professional external protection for homeowners and property managers. These are not insurance products, but proactive plans enhanced with smart technology for unprecedented claim prevention and peace of mind.
+        {/* Section header */}
+        <div className="text-center mb-10">
+          <div
+            className="inline-block border-2 border-[#8b7635] bg-[#1a3a1a] px-8 py-3"
+            style={{ boxShadow: "3px 3px 0px #8b7635" }}
+          >
+            <h2 className="text-[#d4c9a8] text-xl sm:text-2xl font-bold tracking-wider uppercase">
+              Industries We Serve
+            </h2>
+          </div>
+          <p className="mt-4 text-[#1a3a1a] max-w-2xl mx-auto">
+            Senchi Chemical provides reliable supply to a wide range of
+            industries. Our technical sales staff can recommend the right
+            product for your application.
           </p>
         </div>
 
-        {/* Plan Options */}
-        <div className="grid lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {planOptions.map((option, index) => (
-            <Card key={index} className="border-gray-100 hover:border-senchi-primary/20 hover:shadow-lg transition-all duration-300 h-full flex flex-col">
-              <CardHeader className="text-center pb-6">
-                <div className="h-28 mx-auto mb-6 flex justify-center">
-                  <div className={`flex items-end justify-center ${
-                    index === 1 ? 'w-20 h-20' : 'w-28 h-28'
-                  }`}>
-                    <Image
-                      src={option.image}
-                      alt={`${option.title} illustration`}
-                      width={300}
-                      height={300}
-                      className="w-full h-full object-contain"
-                    />
+        {/* Industries grid */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+          {industries.map((industry, i) => (
+            <div
+              key={i}
+              className="border-2 border-[#8b7635] bg-white"
+              style={{ boxShadow: "3px 3px 0px #8b7635" }}
+            >
+              <div className="bg-[#1a3a1a] px-4 py-2 border-b-2 border-[#8b7635]">
+                <h3 className="text-[#d4c9a8] font-bold text-sm uppercase tracking-wider">
+                  {industry.title}
+                </h3>
+              </div>
+              <div className="p-4">
+                <p className="text-sm text-[#1a3a1a] mb-3 leading-relaxed">
+                  {industry.description}
+                </p>
+                <div className="border-t border-[#d4c9a8] pt-3">
+                  <div className="text-xs uppercase tracking-wider text-[#8b7635] font-bold mb-2">
+                    Key Products:
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {industry.products.map((product, j) => (
+                      <span
+                        key={j}
+                        className="inline-block bg-[#f5f0e8] border border-[#d4c9a8] px-2 py-0.5 text-xs text-[#1a3a1a]"
+                      >
+                        {product}
+                      </span>
+                    ))}
                   </div>
                 </div>
-                <CardTitle className="text-xl font-bold text-gray-900 mb-2">
-                  {option.title}
-                </CardTitle>
-                <CardDescription className="text-gray-600 text-sm leading-relaxed">
-                  {option.description}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex-1 flex flex-col">
-                <ul className="space-y-3 mb-8 flex-1">
-                  {option.features.map((feature, featureIndex) => (
-                    <li key={featureIndex} className="flex items-start space-x-3">
-                      <div className="w-2 h-2 bg-senchi-primary rounded-full flex-shrink-0 mt-2"></div>
-                      <span className="text-sm text-gray-600 leading-relaxed">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Button 
-                  asChild
-                  className="w-full bg-senchi-primary hover:bg-senchi-primary/90 text-white font-medium"
-                  size="lg"
-                >
-                  <a href="mailto:mike@senchi.ca?subject=Interest in Senchi HomeGuard">Get {option.title}</a>
-                </Button>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ))}
         </div>
 
-        {/* Call to Action */}
-        <div className="text-center mt-20">
-          <p className="text-gray-600 text-lg font-medium">
-            All plans include Senchi HomeGuard smart monitoring.
-          </p>
+        {/* About section */}
+        <div
+          id="about"
+          className="border-2 border-[#8b7635] bg-white"
+          style={{ boxShadow: "3px 3px 0px #8b7635" }}
+        >
+          <div className="bg-[#8b7635] px-6 py-2 border-b-2 border-[#8b7635]">
+            <h3 className="text-white font-bold text-sm uppercase tracking-wider text-center">
+              About Senchi Chemical Supply Co.
+            </h3>
+          </div>
+          <div className="p-6 sm:p-8">
+            <div className="grid md:grid-cols-2 gap-8">
+              <div className="space-y-4 text-sm text-[#1a3a1a] leading-relaxed">
+                <p>
+                  <strong>Senchi Chemical Supply Co.</strong> was founded in
+                  1987 in Mississauga, Ontario by industrial chemist Gerald R.
+                  Dawes. What began as a small caustic soda reseller has grown
+                  into one of Canada&apos;s most trusted commodity chemical
+                  manufacturers.
+                </p>
+                <p>
+                  Our 120,000 sq. ft. manufacturing campus houses chlor-alkali
+                  cells, acid reactors, distillation columns, and blending
+                  facilities capable of producing over 50,000 metric tonnes of
+                  product annually.
+                </p>
+                <p>
+                  We source commodity feedstocks&mdash;salt, sulfur, natural
+                  gas, corn, phosphate rock, and limestone&mdash;and transform
+                  them into the essential chemicals that keep industry running.
+                </p>
+              </div>
+              <div className="space-y-4 text-sm text-[#1a3a1a] leading-relaxed">
+                <p>
+                  Our commitment to quality is backed by ISO 9001:2015 and ISO
+                  14001 certifications. Every batch ships with a Certificate of
+                  Analysis. Our laboratory runs 24 hours a day to ensure the
+                  purity and consistency our customers depend on.
+                </p>
+                <p>
+                  With a fleet of dedicated tanker trucks and access to CN and
+                  CP rail networks, we deliver anywhere in Canada and the
+                  continental United States. Emergency and same-day shipments
+                  available for select products.
+                </p>
+                <p className="font-bold text-[#8b7635]">
+                  &ldquo;Quality chemicals from commodity roots &mdash;
+                  delivered on time, every time.&rdquo;
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
