@@ -14,9 +14,9 @@ export default function Header() {
       {/* Top marquee banner */}
       <div className="marquee-banner">
         <span>
-          *** Senchi Chemical Supply Co. &mdash; Trusted Since 1987 &mdash; ISO
-          9001:2000 Certified &mdash; Serving Industry Across North America
-          &mdash; Call Toll-Free: 1-800-555-CHEM &mdash; Fax: (416) 555-0199 ***
+          *** Senchi Chemical Supply Co. &mdash; ISO 9001:2000 Certified &mdash;
+          Serving Industry Across North America &mdash; Call Toll-Free:
+          1-800-555-CHEM &mdash; Fax: (416) 555-0199 ***
         </span>
       </div>
 
@@ -42,7 +42,7 @@ export default function Header() {
                   SENCHI CHEMICAL SUPPLY CO.
                 </h1>
                 <p className="text-xs text-[#8b7635] tracking-widest uppercase">
-                  Commodity-Derived Chemical Products &bull; Est. 1987
+                  Commodity-Derived Chemical Products
                 </p>
               </div>
             </div>
@@ -79,7 +79,6 @@ export default function Header() {
               { label: "Home", href: "#" },
               { label: "Product Catalog", href: "#catalog" },
               { label: "Industries Served", href: "#industries" },
-              { label: "About Us", href: "#about" },
               { label: "Request a Quote", href: "#contact" },
               { label: "MSDS Sheets", href: "#catalog" },
               { label: "Contact", href: "#contact" },
@@ -105,7 +104,6 @@ export default function Header() {
               { label: "Home", href: "#" },
               { label: "Product Catalog", href: "#catalog" },
               { label: "Industries Served", href: "#industries" },
-              { label: "About Us", href: "#about" },
               { label: "Request a Quote", href: "#contact" },
               { label: "MSDS Sheets", href: "#catalog" },
               { label: "Contact", href: "#contact" },

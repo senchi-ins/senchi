@@ -7,7 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 export const metadata: Metadata = {
   title: "Senchi Chemical Supply Co. - Commodity-Derived Chemical Products",
   description:
-    "Manufacturer and distributor of high-purity chemicals synthesized from commodity feedstocks. Serving industrial, agricultural, and municipal clients across North America since 1987.",
+    "Manufacturer and distributor of high-purity chemicals synthesized from commodity feedstocks. Serving industrial, agricultural, and municipal clients across North America.",
 };
 
 export default function RootLayout({

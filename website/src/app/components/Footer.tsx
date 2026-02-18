@@ -103,8 +103,7 @@ export default function Footer() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-[#8b7635]">
           <div className="text-center md:text-left">
-            &copy; 1987&ndash;2026 Senchi Chemical Supply Co. All Rights
-            Reserved.
+            &copy; 2026 Senchi Chemical Supply Co. All Rights Reserved.
             <br />
             Responsible Care&reg; &bull; ISO 9001:2015 &bull; ISO 14001 &bull;
             Member, Chemistry Industry Association of Canada

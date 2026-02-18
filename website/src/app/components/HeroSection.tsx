@@ -29,11 +29,11 @@ export default function HeroSection() {
                     Commodity-Derived Chemicals
                   </h3>
                   <p className="text-[#1a3a1a] leading-relaxed">
-                    For over 35 years, Senchi Chemical Supply Co. has been a
-                    leading manufacturer and distributor of high-purity
-                    chemicals synthesized from commodity feedstocks. From our
-                    state-of-the-art facilities in Ontario, we serve industrial,
-                    agricultural, and municipal clients across North America.
+                    Senchi Chemical Supply Co. is a leading manufacturer and
+                    distributor of high-purity chemicals synthesized from
+                    commodity feedstocks. From our facilities in Ontario, we
+                    serve industrial, agricultural, and municipal clients across
+                    North America.
                   </p>
                 </div>
 
@@ -49,9 +49,11 @@ export default function HeroSection() {
                     </div>
                   </div>
                   <div className="bevel-box">
-                    <div className="text-2xl font-bold text-[#1a3a1a]">35+</div>
+                    <div className="text-2xl font-bold text-[#1a3a1a]">
+                      50K+
+                    </div>
                     <div className="text-xs uppercase tracking-wider text-[#8b7635]">
-                      Years in Business
+                      Tonnes Annually
                     </div>
                   </div>
                   <div className="bevel-box">
