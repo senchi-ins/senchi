@@ -123,6 +123,8 @@ def build_network_from_profile(profile_id: str) -> wntr.network.WaterNetworkMode
         add_pipe("ToBath2", "Manifold", "Bathroom2", branch["avg_length_m"], branch["diameter_mm"], branch["roughness_mm"])
     add_pipe("ToLaundry", "Manifold", "Laundry", branch["avg_length_m"] * 0.5, branch["diameter_mm"], branch["roughness_mm"])
 
+    # Use LPS so emitter coefficients (L/s per m^0.5) are consistent
+    wn.options.hydraulic.inpfile_units = "LPS"
     # Simulation options – will be overridden by HouseSimulator
     wn.options.time.duration = 24 * 3600
     wn.options.time.hydraulic_timestep = 300  # default 5-min

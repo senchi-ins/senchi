@@ -45,8 +45,11 @@ class LeakEvent:
             np.random.seed(random_seed)
             
         self._initialize_parameters()
-        # Ensure leak controls are added only once to the network (idempotent)
-        self._leak_applied: bool = False
+        # Track scheduled control times to avoid duplicates when called repeatedly
+        self._scheduled_seconds: set[int] = set()
+        self._control_counter: int = 0
+        # Track whether a WNTR leak has been attached to avoid duplicates
+        self._wntr_leak_added: bool = False
         
     def _initialize_parameters(self):
         """Set leak parameters based on type."""
@@ -110,34 +113,101 @@ class LeakEvent:
         area = self.get_leak_area(time_hours)
         if area == 0:
             return 0.0
+        # EPANET emitter coefficient units depend on flow units; with LPS the
+        # coefficient is in L/s per m^0.5. We adopt Cd*A*sqrt(2g) and convert to L/s.
         g = 9.81
-        return self.discharge_coeff * area * math.sqrt(2 * g) * 1000  # L/s per m^0.5
+        return self.discharge_coeff * area * math.sqrt(2 * g) * 1000.0  # L/s per m^0.5
         
     def apply_to_network(self, wn: wntr.network.WaterNetworkModel, 
                         time_hours: float) -> None:
-        """Apply leak to WNTR network."""
+        """Schedule EPANET emitter-coefficient controls to model the leak.
+
+        This creates time-based controls that set the junction's
+        `emitter_coefficient` at the leak location. It supports a progressive
+        leak by scheduling updates whenever this function is called at new
+        times (e.g., hourly) prior to running a single EPANET simulation.
+        """
         if time_hours < self.start_time:
             return
-            
+
         try:
             node = wn.get_node(self.location)
-            area = self.get_leak_area(time_hours)
-            
-            # Add the leak control only once; subsequent calls just return
-            if area > 0 and not self._leak_applied:
-                end_time_sec = None
-                if self.duration_hours is not None and self.duration_hours > 0:
-                    end_time_sec = (self.start_time + self.duration_hours) * 3600
-                node.add_leak(
-                    wn,
-                    area=area,
-                    discharge_coeff=self.discharge_coeff,
-                    start_time=self.start_time * 3600,
-                    end_time=end_time_sec,
-                )
-                self._leak_applied = True
         except Exception as e:
-            print(f"Warning: Could not apply leak: {e}")
+            print(f"Warning: Could not find leak node '{self.location}': {e}")
+            return
+
+        # Helper to add a time control safely (idempotent by second)
+        def _schedule_emitter(second: int, coeff: float) -> None:
+            if second in self._scheduled_seconds:
+                return
+            try:
+                action = wntr.network.ControlAction(node, "emitter_coefficient", coeff)
+                # Use public API to build a time control if available; fallback to
+                # private helper retained for backwards compat in WNTR
+                try:
+                    from wntr.network.controls import Control, SimTimeCondition  # type: ignore
+                    cond = SimTimeCondition(wn, second)
+                    ctrl = Control(cond, action)
+                except Exception:
+                    ctrl = wntr.network.controls.Control._time_control(
+                        wn, second, "SIM_TIME", False, action
+                    )
+                # Ensure unique control name per event/time
+                name = f"leak_{self.location}_{second}_{self._control_counter}"
+                self._control_counter += 1
+                wn.add_control(name, ctrl)
+                self._scheduled_seconds.add(second)
+            except Exception as ex:
+                print(f"Warning: Could not schedule emitter control at t={second}s: {ex}")
+
+        # Schedule initial activation at start_time (for EPANET emitter approach)
+        start_sec = int(self.start_time * 3600)
+        start_coeff = self.get_emitter_coefficient(self.start_time)
+        if start_coeff > 0:
+            _schedule_emitter(start_sec, start_coeff)
+
+        # Schedule progressive update at this call time (e.g., hourly resolution)
+        current_sec = int(time_hours * 3600)
+        coeff_now = self.get_emitter_coefficient(time_hours)
+        if coeff_now > 0:
+            _schedule_emitter(current_sec, coeff_now)
+
+        # Schedule termination reset to zero at end time (if finite duration)
+        if self.duration_hours is not None and self.duration_hours > 0:
+            end_sec = int((self.start_time + self.duration_hours) * 3600)
+            _schedule_emitter(end_sec, 0.0)
+
+        # WNTR engine: add a piecewise-constant leak segment per hydraulic step
+        # so progressive growth is honored when using WNTRSimulator.
+        try:
+            # Time resolution from network options (seconds)
+            step_s = int(getattr(wn.options.time, "hydraulic_timestep", 0)) or 3600
+            # Do not schedule outside a finite leak window
+            leak_end_sec = None
+            if self.duration_hours is not None and self.duration_hours > 0:
+                leak_end_sec = int((self.start_time + self.duration_hours) * 3600)
+
+            # For the current call time, schedule exactly one segment if not already
+            if current_sec not in self._scheduled_seconds:
+                # Only within leak window (or indefinite leak after start)
+                if (leak_end_sec is None) or (current_sec < leak_end_sec):
+                    area_now = self.get_leak_area(time_hours)
+                    if area_now > 0:
+                        seg_end = current_sec + step_s
+                        if leak_end_sec is not None:
+                            seg_end = min(seg_end, leak_end_sec)
+                        node.add_leak(
+                            wn,
+                            area=area_now,
+                            discharge_coeff=self.discharge_coeff,
+                            start_time=current_sec,
+                            end_time=seg_end,
+                        )
+                        # Mark current second as scheduled to avoid duplicate segments
+                        self._scheduled_seconds.add(current_sec)
+        except Exception:
+            # Best-effort; safe to ignore if WNTR leak API not available
+            pass
 
 
 class LeakGenerator:
@@ -203,10 +273,12 @@ class LeakGenerator:
             start_time = np.random.uniform(0, duration_days * 24)
             
             # Choose type
-            leak_type = np.random.choice(
-                [LeakType.PINHOLE, LeakType.GRADUAL, LeakType.FREEZE_BURST, LeakType.PRESSURE_BURST],
-                p=[0.4, 0.35, 0.15, 0.1]
-            )
+            # leak_type = np.random.choice(
+            #     [LeakType.PINHOLE, LeakType.GRADUAL, LeakType.FREEZE_BURST, LeakType.PRESSURE_BURST],
+            #     p=[0.4, 0.35, 0.15, 0.1]
+            # )
+            # Test mode: restrict to pressure-burst leaks only
+            leak_type = LeakType.PRESSURE_BURST
             
             location_choice = (
                     np.random.choice(available_nodes)

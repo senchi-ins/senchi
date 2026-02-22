@@ -38,7 +38,7 @@ class HydraulicSolver:
         self.results = None
         self.time_step = wn.options.time.hydraulic_timestep
         
-    def run_hydraulics(self, duration_s: float) -> wntr.sim.SimulationResults:
+    def run_hydraulics(self, duration_s: float, engine: str | None = None) -> wntr.sim.SimulationResults:
         """
         Run EPANET hydraulic simulation.
         
@@ -52,11 +52,15 @@ class HydraulicSolver:
         wntr.sim.SimulationResults
             Hydraulic simulation results
         """
-        # Set simulation duration
-        self.wn.options.time.duration = duration_s
+        # Set simulation duration (seconds)
+        self.wn.options.time.duration = int(duration_s)
         
-        # Use EpanetSimulator for accuracy
-        sim = wntr.sim.EpanetSimulator(self.wn)
+        # Select engine: default to EPANET; allow WNTR when dynamic node controls are present
+        selected_engine = (engine or "epanet").lower()
+        if selected_engine == "wntr":
+            sim = wntr.sim.WNTRSimulator(self.wn)
+        else:
+            sim = wntr.sim.EpanetSimulator(self.wn)
         self.results = sim.run_sim()
         
         return self.results

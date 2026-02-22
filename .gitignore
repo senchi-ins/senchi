@@ -2,3 +2,7 @@
 .env
 *.csv
 *.venv
+__pycache__/
+*.inp
+output/
+package-lock.json

@@ -267,10 +267,21 @@ class HouseSimulator:
             for t_h in time_hours:
                 self.scheduler.apply_events_to_network(t_h)
 
-            # (b) One EPANET run for the whole duration – duration equals full
-            #     simulation window; hydraulic timestep already set to
-            #     `self.resolution_seconds` in __init__.
-            self.hydraulics.run_hydraulics(self.duration_seconds)
+            # (b) Choose the appropriate engine. EPANET ignores time-controls on
+            #     node emitter coefficients; when leaks are scheduled we prefer
+            #     WNTR's hydraulic engine to honor dynamic emitter controls.
+            #     Otherwise default to EPANET for performance parity.
+            engine = "epanet"
+            if self.scheduler.events.get(EventCategory.LEAK):
+                try:
+                    # Ensure emitter exponent is standard 0.5 for orifice physics
+                    self.wn.options.hydraulic.emitter_exponent = 0.5  # type: ignore[attr-defined]
+                except Exception:
+                    pass
+                engine = "wntr"
+
+            # One run over the entire horizon
+            self.hydraulics.run_hydraulics(self.duration_seconds, engine=engine)
             res = self.hydraulics.results
 
             # (c) Extract the full time-series for the pipe and junction of

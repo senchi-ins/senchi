@@ -126,8 +126,11 @@ class EventScheduler:
         node_list = self.wn.junction_name_list if self.wn else None
         # Filter out service connection points (too close to municipal supply)
         if node_list:
-            excluded_nodes = {"StreetConnection", "SERVICE_ENTRY", "Meter"}  # Support both naming schemes
+            excluded_nodes = {"StreetConnection", "SERVICE_ENTRY", "Meter"}
             node_list = [node for node in node_list if node not in excluded_nodes]
+            # For testing: force leaks at a known downstream node so they affect MainSupply
+            if "DISHWASHER" in node_list:
+                node_list = ["DISHWASHER"]
         leaks = leak_gen.generate_leaks(
             duration_days=duration_days,
             network_length_km=network_length_km,
@@ -387,9 +390,10 @@ def create_simple_event_schedule(duration_days: int = 30,
         
     scheduler = EventScheduler()
     
-    # Add leaks
+    # Add leaks – test mode: pressure-burst only
     for i in range(n_leaks):
-        leak_type = np.random.choice(list(LeakType))
+        # leak_type = np.random.choice(list(LeakType))
+        leak_type = LeakType.PRESSURE_BURST
         leak = LeakEvent(
             start_time_hours=np.random.uniform(0, duration_days * 24),
             location=f"junction_{i+1}",

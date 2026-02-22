@@ -242,6 +242,8 @@ def simulate_cohort(
                         pipe_diameter DOUBLE PRECISION,
                         number_of_traverses INT,
                         pipe_material TEXT,
+                        water_temperature_C DOUBLE PRECISION,
+                        ambient_temperature_C DOUBLE PRECISION,
                         leak BOOLEAN,
                         location TEXT
                     );
